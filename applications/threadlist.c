@@ -1,0 +1,380 @@
+/*****************************************************************************/
+/* File      : threadlist.c                                                 */
+/*****************************************************************************/
+/*  History:                                                                 */
+/*****************************************************************************/
+/*  Date       * Author          * Changes                                   */
+/*****************************************************************************/
+/*  2017-02-20 * Shengfeng Dong  * Creation of the file                      */
+/*             *                 *                                           */
+/*****************************************************************************/
+
+/*****************************************************************************/
+/*  Include Files                                                            */
+/*****************************************************************************/
+#include <board.h>
+#include <rtthread.h>
+#include <rtdevice.h>
+#include <threadlist.h>
+#include <board.h>
+#include <rtthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <lwip/netdb.h> /* 为了解析主机名，需要包含netdb.h头文件 */
+#include <lwip/sockets.h> /* 使用BSD socket，需要包含sockets.h头文件 */
+#include "SEGGER_RTT.h"
+#include "led.h"
+#include "key.h"
+#include "sys.h"
+#include "usart5.h"
+#include "Flash_24L512.h"
+#include "led.h"
+#include "timer.h"
+#include "string.h"
+#include "RFM300H.h"
+#include "variation.h"
+#include "event.h"
+#include "inverter.h"
+#include "watchdog.h"
+#include "file.h"
+
+#ifdef RT_USING_DFS
+#include <dfs_fs.h>
+#include <dfs_init.h>
+#include <dfs_elm.h>
+#endif
+
+#ifdef RT_USING_LWIP
+#include <stm32_eth.h>
+#include <netif/ethernetif.h>
+extern int lwip_system_init(void);
+#endif
+
+#ifdef RT_USING_FINSH
+#include <shell.h>
+#include <finsh.h>
+#endif
+
+#ifdef EEPROM		
+#include "Flash_24L512.h"
+#endif
+#include "ds1302z_rtc.h"
+
+/*****************************************************************************/
+/*  Variable Declarations                                                    */
+/*****************************************************************************/
+#ifdef THREAD_PRIORITY_LED
+#include "led.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t led_stack[500];
+static struct rt_thread led_thread;
+#endif
+
+#ifdef THREAD_PRIORITY_LAN8720_RST
+#include "lan8720rst.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t lan8720_rst_stack[400];
+static struct rt_thread lan8720_rst_thread;
+#endif 
+
+#ifdef THREAD_PRIORITY_EVENT
+#include "ECUEvent.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t event_stack[4096];
+static struct rt_thread event_thread;
+#endif 
+
+#ifdef THREAD_PRIORITY_COMM
+#include "ECUCOMM.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t comm_stack[4096];
+static struct rt_thread comm_thread;
+#endif 
+
+char ECUID12[13] = {'\0'};
+char ECUID6[7] = {'\0'};
+char Signal_Level = 0;
+char Signal_Channel[3] = {'\0'};
+char Channel_char = 0;
+char IO_Init_Status = 0;			//IO初始状态
+char ver = 0;						//优化器版本号
+int validNum = 0;				//当前有效台数
+int curSequence = 0;		//心跳轮训机器号
+inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};
+int Data_Len = 0,Command_Id = 0,ResolveFlag = 0,messageLen = 0,messageUsart1Len = 0;
+int UART1_Data_Len = 0,UART1_Command_Id = 0,UART1_ResolveFlag = 0;
+unsigned char ID[9] = {'\0'};
+
+/*****************************************************************************/
+/*  Function Implementations                                                 */
+/*****************************************************************************/
+extern void cpu_usage_init(void);
+extern void cpu_usage_get(rt_uint8_t *major, rt_uint8_t *minor);
+
+/*****************************************************************************/
+/* Function Description:                                                     */
+/*****************************************************************************/
+/*   Device Init program entry                                               */
+/*****************************************************************************/
+/* Parameters:                                                               */
+/*****************************************************************************/
+/*   parameter[in]   unused                                                  */
+/*****************************************************************************/
+/* Return Values:                                                            */
+/*****************************************************************************/
+/*   void                                                                    */
+/*****************************************************************************/
+void rt_init_thread_entry(void* parameter)
+{
+#ifdef RT_USING_LWIP
+  /* initialize eth interface */
+  rt_hw_stm32_eth_init();
+
+	/* initialize lwip stack */
+	/* register ethernetif device */
+	eth_system_device_init();
+
+	/* initialize lwip system */
+	lwip_system_init();
+	
+	SEGGER_RTT_printf(0,"TCP/IP initialized!\n");
+	rt_kprintf("TCP/IP initialized!\n");
+#endif
+
+#ifdef RT_USING_FINSH
+	/* initialize finsh */
+	finsh_system_init();
+	finsh_set_device(RT_CONSOLE_DEVICE_NAME);
+#endif
+	/* initialize rtc */
+	rt_hw_rtc_init();		
+
+	cpu_usage_init();	
+	
+	I2C_Init();										//FLASH 芯片初始化
+	EXTIX_Init();									//恢复出厂设置IO中断初始化
+	KEY_Init();										//恢复出厂设置按键初始化
+	RFM_init();
+	RFM_off();
+	rt_hw_led_init();
+	CMT2300_init();
+	uart5_init(57600);					//串口初始化
+	TIM2_Int_Init(9999,7199);    //心跳包超时事件定时器初始化
+	rt_hw_watchdog_init();
+	SEGGER_RTT_printf(0, "init OK \n");
+	init_ecu();										//初始化ECU
+	init_inverter(inverterInfo);	//初始化逆变器
+	
+}
+
+/*****************************************************************************/
+/* Function Description:                                                     */
+/*****************************************************************************/
+/*   LED program entry                                                       */
+/*****************************************************************************/
+/* Parameters:                                                               */
+/*****************************************************************************/
+/*   parameter[in]   unused                                                  */
+/*****************************************************************************/
+/* Return Values:                                                            */
+/*****************************************************************************/
+/*   void                                                                    */
+/*****************************************************************************/
+#ifdef THREAD_PRIORITY_LED
+static void led_thread_entry(void* parameter)
+{
+    unsigned int count=0;	
+		rt_uint8_t major,minor;
+		/* Initialize led */
+    rt_hw_led_init();
+
+		while (1)
+    {
+        /* led1 on */
+        count++;
+        rt_hw_led_on();
+				//rt_kprintf("rt_hw_led_on:%d\n",count);
+        rt_thread_delay( RT_TICK_PER_SECOND/2 ); /* sleep 0.5 second and switch to other thread */
+			
+        rt_hw_led_off();
+				//rt_kprintf("rt_hw_led_off:%d\n",count);
+        rt_thread_delay( RT_TICK_PER_SECOND/2 );
+				cpu_usage_get(&major, &minor);
+				//printf("CPU : %d.%d%\n", major, minor);
+    }
+}
+#endif
+
+/*****************************************************************************/
+/* Function Description:                                                     */
+/*****************************************************************************/
+/*   Lan8720 Reset program entry                                             */
+/*****************************************************************************/
+/* Parameters:                                                               */
+/*****************************************************************************/
+/*   parameter[in]   unused                                                  */
+/*****************************************************************************/
+/* Return Values:                                                            */
+/*****************************************************************************/
+/*   void                                                                    */
+/*****************************************************************************/
+#ifdef THREAD_PRIORITY_LAN8720_RST
+static void lan8720_rst_thread_entry(void* parameter)
+{
+    int value;
+	
+	  while (1)
+    {
+			value = ETH_ReadPHYRegister(0x00, 0);
+			
+			if(0 == value)	//判断控制寄存器是否变为0  表示断开
+			{
+				//printf("reg 0:%x\n",value);
+				rt_hw_lan8720_rst();
+			}
+      rt_thread_delay( RT_TICK_PER_SECOND*60 );
+    }
+
+}
+#endif
+
+/*****************************************************************************/
+/* Function Description:                                                     */
+/*****************************************************************************/
+/*   Create Application ALL Tasks                                            */
+/*****************************************************************************/
+/* Parameters:                                                               */
+/*****************************************************************************/
+/*   void                                                                    */
+/*****************************************************************************/
+/* Return Values:                                                            */
+/*****************************************************************************/
+/*   void                                                                    */
+/*****************************************************************************/
+void tasks_new(void)
+{
+	rt_err_t result;
+	rt_thread_t tid;
+	
+	/* init init thread */
+  tid = rt_thread_create("init",rt_init_thread_entry, RT_NULL,1024, THREAD_PRIORITY_INIT, 20);
+	if (tid != RT_NULL) rt_thread_startup(tid);
+	
+#ifdef THREAD_PRIORITY_LED
+  /* init led thread */
+  result = rt_thread_init(&led_thread,"led",led_thread_entry,RT_NULL,(rt_uint8_t*)&led_stack[0],sizeof(led_stack),THREAD_PRIORITY_LED,5);
+  if (result == RT_EOK)	rt_thread_startup(&led_thread);
+#endif
+
+#ifdef THREAD_PRIORITY_LAN8720_RST
+  /* init LAN8720RST thread */
+  result = rt_thread_init(&lan8720_rst_thread,"lanrst",lan8720_rst_thread_entry,RT_NULL,(rt_uint8_t*)&lan8720_rst_stack[0],sizeof(lan8720_rst_stack),THREAD_PRIORITY_LAN8720_RST,5);
+  if (result == RT_EOK)	rt_thread_startup(&lan8720_rst_thread);
+#endif
+	
+#ifdef THREAD_PRIORITY_EVENT
+  /* init LAN8720RST thread */
+  result = rt_thread_init(&event_thread,"event",ECUEvent_thread_entry,RT_NULL,(rt_uint8_t*)&event_stack[0],sizeof(event_stack),THREAD_PRIORITY_EVENT,5);
+  if (result == RT_EOK)	rt_thread_startup(&event_thread);
+#endif
+
+#ifdef THREAD_PRIORITY_COMM
+  /* init LAN8720RST thread */
+  result = rt_thread_init(&comm_thread,"comm",ECUComm_thread_entry,RT_NULL,(rt_uint8_t*)&comm_stack[0],sizeof(comm_stack),THREAD_PRIORITY_COMM,5);
+  if (result == RT_EOK)	rt_thread_startup(&comm_thread);
+#endif
+	
+}
+
+/*****************************************************************************/
+/* Function Description:                                                     */
+/*****************************************************************************/
+/*   Reset Application Tasks                                                 */
+/*****************************************************************************/
+/* Parameters:                                                               */
+/*****************************************************************************/
+/*   type[In]:                                                               */
+/*            TYPE_LED           :  Reset Led Task                           */
+/*            TYPE_LANRST        :  Reset Lan8720 reset Task                 */
+/*****************************************************************************/
+/* Return Values:                                                            */
+/*****************************************************************************/
+/*   void                                                                    */
+/*****************************************************************************/
+void restartThread(threadType type)
+{
+	rt_err_t result;
+	switch(type)
+	{
+#ifdef THREAD_PRIORITY_LED
+		case TYPE_LED:
+			rt_thread_detach(&led_thread);
+			/* init led thread */
+			result = rt_thread_init(&led_thread,"led",led_thread_entry,RT_NULL,(rt_uint8_t*)&led_stack[0],sizeof(led_stack),THREAD_PRIORITY_LED,5);
+			if (result == RT_EOK)	rt_thread_startup(&led_thread);
+			break;
+#endif 
+
+#ifdef THREAD_PRIORITY_LAN8720_RST
+		case TYPE_LANRST:
+			rt_thread_detach(&lan8720_rst_thread);
+			/* init LAN8720RST thread */
+			result = rt_thread_init(&lan8720_rst_thread,"lanrst",lan8720_rst_thread_entry,RT_NULL,(rt_uint8_t*)&lan8720_rst_stack[0],sizeof(lan8720_rst_stack),THREAD_PRIORITY_LAN8720_RST,5);
+			if (result == RT_EOK)	rt_thread_startup(&lan8720_rst_thread);
+			break;
+#endif 			
+
+		default:
+			break;
+	}
+}
+
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+void restart(int type)
+{
+	restartThread((threadType)type);
+}
+FINSH_FUNCTION_EXPORT(restart, eg:restart());
+
+#include "arch/sys_arch.h"
+void dhcpreset(void)
+{
+	dhcp_reset();
+}
+FINSH_FUNCTION_EXPORT(dhcpreset, eg:dhcpreset());
+
+void teststaticIP(void)
+{
+	IP_t IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr;
+	IPAddr.IP1 = 192;
+	IPAddr.IP2 = 168;
+	IPAddr.IP3 = 1;
+	IPAddr.IP4 = 192;
+
+	MSKAddr.IP1 = 255;
+	MSKAddr.IP2 = 255;
+	MSKAddr.IP3 = 255;
+	MSKAddr.IP4 = 0;
+
+	GWAddr.IP1 = 192;
+	GWAddr.IP2 = 168;
+	GWAddr.IP3 = 1;
+	GWAddr.IP4 = 1;
+	
+	DNS1Addr.IP1 = 0;
+	DNS1Addr.IP2 = 0;
+	DNS1Addr.IP3 = 0;
+	DNS1Addr.IP4 = 0;
+
+	DNS1Addr.IP1 = 0;
+	DNS1Addr.IP2 = 0;
+	DNS1Addr.IP3 = 0;
+	DNS1Addr.IP4 = 0;
+	
+	StaticIP(IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr);	
+
+}
+FINSH_FUNCTION_EXPORT(teststaticIP, eg:teststaticIP());
+
+#endif
