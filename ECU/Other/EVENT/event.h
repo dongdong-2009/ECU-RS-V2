@@ -19,25 +19,8 @@
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
-extern char ECUID12[13];
-extern char ECUID6[7];
-extern char Signal_Level;
-extern unsigned char ID[9];
-extern char Signal_Channel[3];
-extern char Channel_char;
-extern char IO_Init_Status;			//IO初始状态
-extern char ver;						//优化器版本号
-extern int validNum;				//当前有效台数
-extern int curSequence;		//心跳轮训机器号
+extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
-extern int Data_Len;
-extern int Command_Id;
-extern int ResolveFlag ;
-extern int messageLen;
-extern int messageUsart1Len;
-extern int UART1_Data_Len;
-extern int UART1_Command_Id;
-extern int UART1_ResolveFlag;
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */

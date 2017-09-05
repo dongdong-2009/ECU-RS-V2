@@ -91,19 +91,8 @@ static rt_uint8_t comm_stack[4096];
 static struct rt_thread comm_thread;
 #endif 
 
-char ECUID12[13] = {'\0'};
-char ECUID6[7] = {'\0'};
-char Signal_Level = 0;
-char Signal_Channel[3] = {'\0'};
-char Channel_char = 0;
-char IO_Init_Status = 0;			//IO初始状态
-char ver = 0;						//优化器版本号
-int validNum = 0;				//当前有效台数
-int curSequence = 0;		//心跳轮训机器号
-inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};
-int Data_Len = 0,Command_Id = 0,ResolveFlag = 0,messageLen = 0,messageUsart1Len = 0;
-int UART1_Data_Len = 0,UART1_Command_Id = 0,UART1_ResolveFlag = 0;
-unsigned char ID[9] = {'\0'};
+ecu_info ecu;	//ecu相关信息
+inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -126,6 +115,38 @@ extern void cpu_usage_get(rt_uint8_t *major, rt_uint8_t *minor);
 /*****************************************************************************/
 void rt_init_thread_entry(void* parameter)
 {
+	{
+		extern void rt_platform_init(void);
+		rt_platform_init();
+	}
+
+	/* Filesystem Initialization */
+#if defined(RT_USING_DFS) && defined(RT_USING_DFS_ELMFAT)
+	/* initialize the device file system */
+	dfs_init();
+
+	/* initialize the elm chan FatFS file system*/
+	elm_init();
+    
+	/* mount flash fat partition 1 as root directory */
+	if (dfs_mount("flash", "/", "elm", 0, 0) == 0)
+	{
+		rt_kprintf("File System initialized!\n");
+	}
+	else
+	{
+		rt_kprintf("File System initialzation failed!\n");
+		dfs_mkfs("elm","flash");
+		if (dfs_mount("flash", "/", "elm", 0, 0) == 0)
+		{
+			rt_kprintf("File System initialized!\n");
+		}
+				
+		rt_kprintf("PATH initialized!\n");
+	}
+#endif /* RT_USING_DFS && RT_USING_DFS_ELMFAT */
+
+	
 #ifdef RT_USING_LWIP
   /* initialize eth interface */
   rt_hw_stm32_eth_init();

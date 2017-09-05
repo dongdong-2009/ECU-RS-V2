@@ -29,15 +29,15 @@ extern unsigned int TimeOut_times;
 int init_ecu(void)
 {
 
-	Read_ECUID(ECUID6);						//读取ECU ID
-	transformECUID(ECUID6,ECUID12);		//转换ECU ID
+	Read_ECUID(ecu.ECUID6);						//读取ECU ID
+	transformECUID(ecu.ECUID6,ecu.ECUID12);		//转换ECU ID
 	
-	Read_CHANNEL(Signal_Channel);
-	Channel_char = (Signal_Channel[0] -'0')*10 +(Signal_Channel[1] -'0');
-	setChannel(Channel_char);
+	Read_CHANNEL(ecu.Signal_Channel);
+	ecu.Channel_char = (ecu.Signal_Channel[0] -'0')*10 +(ecu.Signal_Channel[1] -'0');
+	setChannel(ecu.Channel_char);
 
-	Read_IO_INIT_STATU(&IO_Init_Status);
-	printf("ECU ID :%s        Signal_Channel:   %s    %d   IO_Init_Status:%x\n",ECUID12,Signal_Channel,Channel_char,IO_Init_Status);
+	Read_IO_INIT_STATU(&ecu.IO_Init_Status);
+	printf("ECU ID :%s        Signal_Channel:   %s    %d   IO_Init_Status:%x\n",ecu.ECUID12,ecu.Signal_Channel,ecu.Channel_char,ecu.IO_Init_Status);
 	return 0;
 }
 
@@ -56,37 +56,54 @@ int init_inverter(inverter_info *inverter)
 	//???ùóDμ???±??÷????
 	for(i=0; i<MAXINVERTERCOUNT; i++, curinverter++)
 	{
-		memset(curinverter->uid, 0xff, sizeof(curinverter->uid));			//??????±??÷ID
+		memset(curinverter->uid, 0xff, sizeof(curinverter->uid));			
 		curinverter->heart_rate = 0;
 		curinverter->off_times = 0;
+		curinverter->status.bind_status = 0;
 		curinverter->status.mos_status = 0;
 		curinverter->status.function_status = 0;
 		curinverter->status.heart_Failed_times = 0;
 		curinverter->status.pv1_low_voltage_pritection = 0;
 		curinverter->status.pv2_low_voltage_pritection = 0;
 		curinverter->status.device_Type = 0;
+		curinverter->status.channel_failed = 0;
+		curinverter->channel = 0;
+		curinverter->find_channel = 0;
 		curinverter->restartNum = 0;
 		curinverter->PV1 = 0;
 		curinverter->PV2 = 0;
 		curinverter->PI = 0;
+		curinverter->PV_Output = 0;
 		curinverter->Power1 = 0;
 		curinverter->Power2 = 0;
+		curinverter->RSSI = 0;
+		curinverter->PV1_Energy = 0;
+		curinverter->PV2_Energy = 0;
+		curinverter->Mos_CloseNum = 0;
+		memset(curinverter->CurCommTime,0x00,15);
+		curinverter->Last_PV1_Energy = 0;
+		curinverter->Last_PV2_Energy = 0;
+		memset(curinverter->LastCommTime,0x00,15);
+		curinverter->AveragePower1 = 0;
+		curinverter->AveragePower1 = 0;
+		
+		
 	}
 	
 	//′óEEPROM?D?áè???±??÷D??￠
 
 	Read_UID_NUM((char *)&UID_NUM);
-	validNum = UID_NUM[0] *256 + UID_NUM[1];
-	if(validNum > MAXINVERTERCOUNT)
+	ecu.validNum = UID_NUM[0] *256 + UID_NUM[1];
+	if(ecu.validNum > MAXINVERTERCOUNT)
 	{
-		validNum = 0;
+		ecu.validNum = 0;
 	}
 	//è?1?μ±?°ó??ˉ?÷êyá??a0￡????′ìáê?μ?3￡áá
-	//if(validNum == 0)
+	//if(ecu.validNum == 0)
 		//LED_on();
-	printf("validNum :%d     \n",validNum);
+	printf("validNum :%d     \n",ecu.validNum);
 	curinverter = inverter;
-	for(i=0; (i<MAXINVERTERCOUNT && i<validNum); i++, curinverter++)
+	for(i=0; (i<MAXINVERTERCOUNT && i<ecu.validNum); i++, curinverter++)
 	{
 		Read_UID((char *)curinverter->uid,(i+1));
 		Read_UID_Bind(&bindstatus,(i+1));

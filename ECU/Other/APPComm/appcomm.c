@@ -38,7 +38,7 @@ int Resolve_RecvData(char *RecvData,int* Data_Len,int* Command_Id)
 		return -1;
 	//°æ±¾ºÅ 
 	//³¤¶È
-	*Data_Len = packetlen((unsigned char *)&RecvData[5]);
+	*Data_Len = packetlen_A((unsigned char *)&RecvData[5]);
 	//ID
 	*Command_Id = (RecvData[9]-'0')*10 + (RecvData[10]-'0');
 	return 0;

@@ -319,7 +319,7 @@ rt_inline void rt_work_init(struct rt_work* work, void (*work_func)(struct rt_wo
 #endif /* RT_USING_RTC */
 
 #ifdef RT_USING_SPI
-#include "drivers/spi.h"
+#include "spi.h"
 #endif /* RT_USING_SPI */
 
 #ifdef RT_USING_MTD_NOR

@@ -29,6 +29,7 @@
 #include "file.h"
 #include "datetime.h"
 #include "debug.h"
+#include "lan8720rst.h"
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -127,7 +128,7 @@ int connect_server( char *host, int port )
     int       result;
     ssize_t   len;
     fd_set rd;
-		struct timeval timeout;
+	struct timeval timeout;
 	buf = malloc(512);
     ctrl_sock = socket_connect(host, port);
     if (ctrl_sock == -1) {
@@ -140,6 +141,7 @@ int connect_server( char *host, int port )
 		timeout.tv_usec = 0;
 		len = select(ctrl_sock+1, &rd, NULL, NULL, &timeout);
 		if(len <= 0){
+			closesocket( ctrl_sock );
 			free(buf);
 			return -1;
 		}else
@@ -377,10 +379,11 @@ int ftp_retrfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
     result = ftp_sendcmd( c_sock, buf );
     if (result >= 300 || result == 0)
     {
-			printmsg(ECU_DBG_UPDATE,"RETR response error");
-      fileclose(handle);
-			free(buf);
-			unlink(d);
+    	closesocket( d_sock );
+		printmsg(ECU_DBG_UPDATE,"RETR response error");
+	    fileclose(handle);
+		free(buf);
+		unlink(d);
       return result;
     }
      
@@ -543,6 +546,10 @@ int ftp_storfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
 int ftp_connect( char *host, int port, char *user, char *pwd )
 {
     int     c_sock;
+	if(rt_hw_GetWiredNetConnect() == 0)
+	{
+		return -1;
+	}
     c_sock = connect_server( host, port );
     if ( c_sock == -1 ) return -1;
     if ( login_server( c_sock, user, pwd ) == -1 ) {
@@ -561,6 +568,19 @@ int ftp_quit( int c_sock)
     return re;
 }
 
+//删除文件
+int ftp_deletefile( int c_sock, char *s )
+{
+    char    buf[512];
+    int     re;
+     
+    sprintf( buf, "DELE %s\r\n", s );
+    re = ftp_sendcmd( c_sock, buf );
+    if ( re != 250 ) return re;
+    return 0;
+}
+
+
 //下载文件
 int ftpgetfile(char *host, int port, char *user, char *pwd,char *remotefile,char *localfile)
 {
@@ -569,7 +589,11 @@ int ftpgetfile(char *host, int port, char *user, char *pwd,char *remotefile,char
 	int sockfd = ftp_connect( host, port, user, pwd  );
 	if(sockfd != -1)
 	{
-		printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);	
+		printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);
+	}else
+	{
+		printmsg(ECU_DBG_UPDATE,"ftp connect failed");
+		return -1;
 	}
 	
 	ret = ftp_retrfile(sockfd, remotefile, localfile ,&stor_size, &stop);
@@ -590,9 +614,13 @@ int ftpputfile(char *host, int port, char *user, char *pwd,char *remotefile,char
 	if(sockfd != -1)
 	{
 		printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);	
+	}else
+	{
+		printmsg(ECU_DBG_UPDATE,"ftp connect failed");
+		return -1;
 	}
 
-  ret = ftp_storfile(sockfd, localfile,remotefile ,&stor_size, &stop);
+  	ret = ftp_storfile(sockfd, localfile,remotefile ,&stor_size, &stop);
 	printdecmsg(ECU_DBG_UPDATE,"ret",ret);
 	printdecmsg(ECU_DBG_UPDATE,"stor_size",stor_size);
 	printdecmsg(ECU_DBG_UPDATE,"stop",stop);
@@ -600,6 +628,29 @@ int ftpputfile(char *host, int port, char *user, char *pwd,char *remotefile,char
 	ftp_quit( sockfd);
 	return ret;
 }
+
+//删除文件
+int ftpdeletefile(char *host, int port, char *user, char *pwd,char *remotefile)
+{
+	int ret = 0;
+	int sockfd = ftp_connect( host, port, user, pwd  );
+
+	if(sockfd != -1)
+	{
+		printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);	
+	}else
+	{
+		printmsg(ECU_DBG_UPDATE,"ftp connect failed");
+		return -1;
+	}
+		
+  	ret = ftp_deletefile( sockfd,remotefile);
+	printdecmsg(ECU_DBG_UPDATE,"ftp_deletefile ret",ret);
+	ftp_quit( sockfd);
+	return ret;
+}
+
+
 
 int getfile(char *remoteFile, char *localFile)
 {
@@ -633,6 +684,23 @@ int putfile(char *remoteFile, char *localFile)
 	return ftpputfile(FTPIP,port, user, password,remoteFile,localFile);
 }
 
+int deletefile(char *remoteFile)
+{
+	char FTPIP[50];
+	int port=0;
+	char user[20]={'\0'};
+	char password[20]={'\0'};
+	getFTPConf(FTPIP,&port,user,password);
+
+	print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
+	printdecmsg(ECU_DBG_UPDATE,"port",port);
+	print2msg(ECU_DBG_UPDATE,"user",user);
+	print2msg(ECU_DBG_UPDATE,"password",password);
+
+	return ftpdeletefile(FTPIP,port, user, password,remoteFile);
+}
+
+
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 
@@ -640,49 +708,7 @@ FINSH_FUNCTION_EXPORT(getfile,get file from ftp.)
 
 FINSH_FUNCTION_EXPORT(putfile,put file from ftp.)
 
-void sockettest()
-{
-
-	struct hostent *host;
-	int sock;
-	struct sockaddr_in server_addr;
-	rt_hw_s_delay(10);
-	
-	
-	/* 通过函数入口参数url获得host地址（如果是域名，会做域名解析） */
-	host = gethostbyname("60.190.131.190");
-
-	while(1)
-	{
-		/* 创建一个socket，类型是SOCKET_STREAM，TCP类型 */
-		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-		{
-			/* 创建socket失败 */
-			rt_kprintf("Socket error\n");
-			return;
-		}
-		printf("sockfd:%d\n",sock);
-		/* 初始化预连接的服务端地址 */
-		server_addr.sin_family = AF_INET;
-		server_addr.sin_port = htons(9219);
-		server_addr.sin_addr = *((struct in_addr *) host->h_addr);
-		rt_memset(&(server_addr.sin_zero), 0, sizeof(server_addr.sin_zero));
-		/* 连接到服务端 */
-		if (connect(sock, (struct sockaddr *) &server_addr,
-		sizeof(struct sockaddr)) == -1)
-		{
-			/* 连接失败 */
-			rt_kprintf("Connect error\n");
-			/*释放接收缓冲 */
-			return;
-		}
-			
-	}
-
-	
-}
-
-FINSH_FUNCTION_EXPORT(sockettest, eg:sockettest());
+FINSH_FUNCTION_EXPORT(deletefile,delete file from ftp.)
 
 
 #endif

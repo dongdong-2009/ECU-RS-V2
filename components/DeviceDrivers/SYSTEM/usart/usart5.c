@@ -33,10 +33,40 @@ rt_mutex_t wifi_uart_lock = RT_NULL;
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
-unsigned short packetlen(unsigned char *packet)
+
+void delayMS(unsigned int ms)
+{
+	rt_hw_ms_delay(ms);
+}
+
+//4个字节
+unsigned short packetlen_A(unsigned char *packet)
 {
 	unsigned short len = 0;
 	len = ((packet[0]-'0')*1000 +(packet[1]-'0')*100 + (packet[2]-'0')*10 + (packet[3]-'0'));
+	return len;
+}
+
+//2个字节
+unsigned short packetlen_B(unsigned char *packet)
+{
+	unsigned short len = 0,count = 0;
+	count = (packet[0] - '0') * 10 + (packet[1] - '0');
+	len =  3 + 9 + count *14;
+	return len;
+	
+}
+
+//5个字节
+unsigned short packetlen_C(unsigned char *packet)
+{
+	unsigned short len = 0;
+	int i = 0;
+	for(i = 0;i < 5;i++)
+	{
+		if(packet[i] == 'A') packet[i] = '0';
+	}
+	len = ((packet[0]-'0')*10000 +(packet[1]-'0')*1000 + (packet[2]-'0')*100 + (packet[3]-'0')*10 + (packet[4]-'0'));
 	return len;
 }
 
@@ -53,7 +83,6 @@ int WIFI_SendData(char *data, int num)
 	}
 	return index;
 }
-
  
 
 //初始化IO 串口5
@@ -115,15 +144,31 @@ void uart5_init(u32 bound){
 //串口2中断服务程序
 //注意,读取USARTx->SR能避免莫名其妙的错误   	
 
-unsigned char WIFI_RecvData[USART_REC_LEN] = {'\0'};
-unsigned char WIFI_Recv_Event = 0;
+unsigned char ID[9] = {'\0'};
 
-unsigned char USART_RX_BUF[USART_REC_LEN];     //接收缓冲,最大USART_REC_LEN个字节.
-unsigned short Cur = 0;		//当前采值位置
+//WIFI  socket A 当串口发出来的数据组包成功时 ,数组赋值，并且Socket事件变为1
+unsigned char WIFI_RecvSocketAData[SOCKETA_LEN] = {'\0'};
+unsigned char WIFI_Recv_SocketA_Event = 0;
+unsigned int WIFI_Recv_SocketA_LEN =0;
+unsigned char ID_A[9] = {'\0'};
+	
+//WIFI  socket B 当串口发出来的数据组包成功时 ,数组赋值，并且Socket事件变为1
+unsigned char WIFI_RecvSocketBData[SOCKETB_LEN] = {'\0'};
+unsigned char WIFI_Recv_SocketB_Event = 0;
+unsigned int WIFI_Recv_SocketB_LEN =0;
+
+//WIFI  socket C 当串口发出来的数据组包成功时 ,数组赋值，并且Socket事件变为1
+unsigned char WIFI_RecvSocketCData[SOCKETC_LEN] = {'\0'};
+unsigned char WIFI_Recv_SocketC_Event = 0;
+unsigned int WIFI_Recv_SocketC_LEN =0;
+
+//wifi  串口当前收到的数据 
+unsigned char USART_RX_BUF[USART_REC_LEN];     			//接收缓冲,最大USART_REC_LEN个字节.
+unsigned short Cur = 0;															//当前采值位置
 unsigned short PackLen = 0;
-eRecvSM eStateMachine = EN_RECV_ST_GET_A;	//数据采集状态机
-unsigned short pos = 0;				//数据解析位置
-unsigned short mvsize = 0;
+eRecvSM eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;	//数据采集状态机
+eRecvType eTypeMachine = EN_RECV_TYPE_UNKNOWN;     	//
+unsigned short pos = 0;															//数据解析位置
 
 void UART5_IRQHandler(void)                	//串口1中断服务程序
 {
@@ -138,30 +183,43 @@ void UART5_IRQHandler(void)                	//串口1中断服务程序
 		}
 	}
 }
-
-void WIFI_GetEvent(int *messageLen,unsigned char *ID)
+void WIFI_GetEvent(void)
 {
 	  pos = 0;
-		rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+		
 		//接收A报文头部
-		if(eStateMachine == EN_RECV_ST_GET_A)
+		if(eStateMachine == EN_RECV_ST_GET_SCOKET_HEAD)
 		{
 			while(pos < Cur)
       {
-				mvsize = Cur - pos;		//当前第几个字节
-				if(1 == mvsize)   //'a'
+				if(1 == pos)   //'a'
 				{
-						if(USART_RX_BUF[0] != 'a')
+						if((USART_RX_BUF[0] != 'a') && (USART_RX_BUF[0] != 'b') && (USART_RX_BUF[0] != 'c'))
 						{
 							Cur = 0;
 							pos = 0;
-							eStateMachine = EN_RECV_ST_GET_A;
+							eTypeMachine = EN_RECV_TYPE_UNKNOWN;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 							break;
-						}else
+						}else if(USART_RX_BUF[0] == 'a')
 						{
-							rt_hw_ms_delay(2);
-							eStateMachine = EN_RECV_ST_GET_ID;
+							//SEGGER_RTT_printf(0, "a %d\n",eTypeMachine);
+							delayMS(2);
+							eStateMachine = EN_RECV_ST_GET_SCOKET_ID;
+							eTypeMachine = EN_RECV_TYPE_A;
 							break;
+						}else if(USART_RX_BUF[0] == 'b')
+						{
+							delayMS(2);
+							eTypeMachine = EN_RECV_TYPE_B;
+							//SEGGER_RTT_printf(0, "b %d\n",eTypeMachine);
+							eStateMachine = EN_RECV_ST_GET_SCOKET_ID;
+						}else if(USART_RX_BUF[0] == 'c')
+						{
+							delayMS(2);
+							eTypeMachine = EN_RECV_TYPE_C;
+							//SEGGER_RTT_printf(0, "c %d\n",eTypeMachine);
+							eStateMachine = EN_RECV_ST_GET_SCOKET_ID;
 						}
 				}
 				pos++;
@@ -169,7 +227,7 @@ void WIFI_GetEvent(int *messageLen,unsigned char *ID)
 		}		
 	
 		//接收ID
-		if(eStateMachine == EN_RECV_ST_GET_ID)
+		if(eStateMachine == EN_RECV_ST_GET_SCOKET_ID)
 		{
       while(pos < Cur)
       {
@@ -210,86 +268,105 @@ void WIFI_GetEvent(int *messageLen,unsigned char *ID)
 				
 				if(9 == pos)   //接收版本号完毕
 				{
-
+					//SEGGER_RTT_printf(0, "eTypeMachine %d\n",eTypeMachine);
 					ID[7] = USART_RX_BUF[8];
-					eStateMachine = EN_RECV_ST_GET_HEAD;
-
-					break;
-				}
-				
-				
-				pos++;
-			}
-		}			
-	
-		//receive start character
-		if(eStateMachine == EN_RECV_ST_GET_HEAD)    //接收报文头部
-		{
-			// check for the start character(SYNC_CHARACTER)
-      // also check it's not arriving the end of valid data
-      while(pos < Cur)
-      {
-				mvsize = Cur - pos;		//当前第几个字节
-				if(10 == mvsize)   //'A'
-				{
-						if(USART_RX_BUF[9] != 'A')
-						{
-							Cur = 0;
-							pos = 0;
-							eStateMachine = EN_RECV_ST_GET_A;
-							break;
-						}
-				}
-				
-				if(11 == mvsize)   //'P'
-				{
-						if(USART_RX_BUF[10] != 'P')
-						{
-							Cur = 0;
-							pos = 0;
-							eStateMachine = EN_RECV_ST_GET_A;
-							break;
-						}
-				}	
-				
-				if(12 == mvsize)   //'S'
-				{
-						if(USART_RX_BUF[11] != 'S')
-						{
-							Cur = 0;
-							pos = 0;
-							eStateMachine = EN_RECV_ST_GET_A;
-							break;
-						}
-				}
-				
-				if(14 == mvsize)   //接收版本号完毕
-				{
-					eStateMachine = EN_RECV_ST_GET_LEN;
-
+					if(eTypeMachine == EN_RECV_TYPE_A)
+					{
+						//SEGGER_RTT_printf(0, "ID A\n");
+						eStateMachine = EN_RECV_ST_GET_A_HEAD;
+					}
+					else if(eTypeMachine == EN_RECV_TYPE_B)
+					{
+						//SEGGER_RTT_printf(0, "ID B\n");
+						eStateMachine = EN_RECV_ST_GET_B_HEAD;
+					}
+					else if(eTypeMachine == EN_RECV_TYPE_C)
+					{
+						//SEGGER_RTT_printf(0, "ID C\n");
+						eStateMachine = EN_RECV_ST_GET_C_HEAD;
+					}
+					else
+					{
+						Cur = 0;
+						pos = 0;
+						eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+					}
+							
 					break;
 				}
 								
 				pos++;
 			}
+		}			
+	
+		//SOCKET A
+		//receive start character
+		if(eStateMachine == EN_RECV_ST_GET_A_HEAD)    //接收报文头部
+		{
+			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_A_HEAD\n");
+			// check for the start character(SYNC_CHARACTER)
+      // also check it's not arriving the end of valid data
+      while(pos < Cur)
+      {
+
+				if(10 == pos)   //'A'
+				{
+						if(USART_RX_BUF[9] != 'A')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+				}
+				
+				if(11 == pos)   //'P'
+				{
+						if(USART_RX_BUF[10] != 'P')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+				}	
+				
+				if(12 == pos)   //'S'
+				{
+						if(USART_RX_BUF[11] != 'S')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+				}
+				
+				if(14 == pos)   //接收版本号完毕
+				{
+					//SEGGER_RTT_printf(0, "APS11\n");
+					eStateMachine = EN_RECV_ST_GET_A_LEN;
+					break;
+				}
+				
+				pos++;
+			}
 		}
 		
 		//receive data length
-		if(eStateMachine == EN_RECV_ST_GET_LEN)
+		if(eStateMachine == EN_RECV_ST_GET_A_LEN)
 		{
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_LEN\n");
 			while(pos < Cur)
       {
-				//TIM3_Int_Deinit();
 				//判断是否有a出现  如果出现了判断后面8个字节
-				mvsize = Cur - pos;		//当前第几个字节
-				if(18 == mvsize)   //接收数据长度结束
+				if(18 == pos)   //接收数据长度结束
 				{
-					PackLen = (packetlen(&USART_RX_BUF[14])+9);
+					PackLen = (packetlen_A(&USART_RX_BUF[14])+9);
 					//SEGGER_RTT_printf(0, "LENGTH11111 : %d\n",PackLen);
 					//计算长度
-					eStateMachine = EN_RECV_ST_GET_DATA;
-					rt_hw_ms_delay(5);
+					eStateMachine = EN_RECV_ST_GET_A_DATA;
+					delayMS(10);
 					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
@@ -299,16 +376,15 @@ void WIFI_GetEvent(int *messageLen,unsigned char *ID)
 		}
 		
 		//Continue to receive data
-		if(eStateMachine == EN_RECV_ST_GET_DATA)
+		if(eStateMachine == EN_RECV_ST_GET_A_DATA)
 		{
 			pos = 0;
 			while(pos < Cur)
       {
-				//TIM3_Int_Deinit();
 
 				if((PackLen - 3) == pos)   //接收数据长度结束
 				{
-					eStateMachine = EN_RECV_ST_GET_END;
+					eStateMachine = EN_RECV_ST_GET_A_END;
 					break;
 				}
 				pos++;
@@ -316,59 +392,61 @@ void WIFI_GetEvent(int *messageLen,unsigned char *ID)
 		}		
 		
 		//receive END
-		if(eStateMachine == EN_RECV_ST_GET_END)
+		if(eStateMachine == EN_RECV_ST_GET_A_END)
 		{
 			pos = 0;
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_END\n");
-			while(pos < Cur)
+			while(pos <= Cur)
       {
-				mvsize = Cur - pos;		//当前第几个字节
-				if((PackLen - 2) == mvsize)   //'A'
+				
+				if((PackLen - 2) == pos)   //'A'
 				{
 						if(USART_RX_BUF[PackLen - 3] != 'E')
 						{
 							Cur = 0;
 							pos = 0;
-							eStateMachine = EN_RECV_ST_GET_A;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 							break;
 						}
 				}
 				
-				if((PackLen - 1) == mvsize)   //'P'
+				if((PackLen - 1) == pos)   //'P'
 				{
 						if(USART_RX_BUF[PackLen - 2] != 'N')
 						{
 							Cur = 0;
 							pos = 0;
-							eStateMachine = EN_RECV_ST_GET_A;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 							break;
 						}
 				}	
 				
-				if((PackLen) == mvsize)   //'S'
+				if((PackLen) == pos)   //'S'
 				{
 						if(USART_RX_BUF[PackLen - 1] != 'D')
 						{
 							Cur = 0;
 							pos = 0;
-							eStateMachine = EN_RECV_ST_GET_A;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 							break;
 						}
 						//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_END OVER\n");
-						
+						//SEGGER_RTT_printf(0, "ID %x %x %x %x %x %x %x %x\n",ID[0],ID[1],ID[2],ID[3],ID[4],ID[5],ID[6],ID[7]);
 						
 						//报文接收完毕
 						//进行完毕的相应操作
 						//将采集成功的数据复制到成功数组
-						memset(WIFI_RecvData,0x00,USART_REC_LEN);
-						memcpy(WIFI_RecvData,&USART_RX_BUF[9],(PackLen-9));
+						memset(WIFI_RecvSocketAData,0x00,USART_REC_LEN);
+						memcpy(WIFI_RecvSocketAData,&USART_RX_BUF[9],(PackLen-9));
+						memcpy(ID_A,ID,8);
 						//解析数据，去掉多包问题
-						*messageLen = PackLen-9;
+						WIFI_Recv_SocketA_LEN = PackLen-9;
 						
-						WIFI_RecvData[*messageLen] = '\0';
-						WIFI_Recv_Event = 1;
-						//SEGGER_RTT_printf(0, "WIFI_RecvData :%s\n",WIFI_RecvData);
-						eStateMachine = EN_RECV_ST_GET_A;
+						WIFI_RecvSocketAData[WIFI_Recv_SocketA_LEN] = '\0';
+						WIFI_Recv_SocketA_Event = 1;
+						//SEGGER_RTT_printf(0, "WIFI_RecvData :%s\n",WIFI_RecvSocketAData);
+						eTypeMachine = EN_RECV_TYPE_UNKNOWN;
+						eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 						Cur = 0;
 						pos = 0;		
 						TIM3_Int_Deinit();
@@ -378,13 +456,254 @@ void WIFI_GetEvent(int *messageLen,unsigned char *ID)
 				pos++;
 			}
 		}
-		rt_mutex_release(wifi_uart_lock);
+		
+		//SOCKET B
+		//receive start character
+		if(eStateMachine == EN_RECV_ST_GET_B_HEAD)    //接收报文头部
+		{
+			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_B_HEAD\n");
+      while(pos < Cur)
+      {	
+				if(10 == pos)   // 101   14字节的时间点
+				{
+					if(USART_RX_BUF[9] != '1')
+					{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+					}
+					else
+					{
+						
+						eStateMachine = EN_RECV_ST_GET_B_LEN;
+						break;
+					}
+				}
+				pos++;
+			}
+		}
+		
+		//receive data length
+		if(eStateMachine == EN_RECV_ST_GET_B_LEN)
+		{
+			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_B_LEN\n");
+			while(pos < Cur)
+      {
+				//判断是否有a出现  如果出现了判断后面8个字节
+				if(19 == pos)   //接收数据长度结束
+				{
+					//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_B_LEN LENGTH11111 :     %s\n",&USART_RX_BUF[19]);
+					PackLen = (packetlen_B(&USART_RX_BUF[19])+9);
+					//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_B_LEN LENGTH11111 : %d\n",PackLen);
+					//计算长度
+					eStateMachine = EN_RECV_ST_GET_B_DATA;
+					delayMS(10);
+					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+
+					break;
+				}
+				pos++;
+			}
+		}
+		
+		//Continue to receive data
+		if(eStateMachine == EN_RECV_ST_GET_B_DATA)
+		{
+			pos = 0;
+			while(pos <= Cur)
+      {
+				if(PackLen == pos)   //接收数据长度结束
+				{
+					eStateMachine = EN_RECV_ST_GET_B_END;
+					break;
+				}
+				pos++;
+			}
+		}		
+		
+		//receive END
+		if(eStateMachine == EN_RECV_ST_GET_B_END)
+		{
+			//报文接收完毕
+			//进行完毕的相应操作
+			//将采集成功的数据复制到成功数组
+			memset(WIFI_RecvSocketBData,0x00,USART_REC_LEN);
+			memcpy(WIFI_RecvSocketBData,&USART_RX_BUF[9],(PackLen-9));
+			//解析数据，去掉多包问题
+			WIFI_Recv_SocketB_LEN = PackLen-9;
+			
+			WIFI_RecvSocketBData[WIFI_Recv_SocketB_LEN] = '\0';
+			WIFI_Recv_SocketB_Event = 1;
+			//SEGGER_RTT_printf(0, "WIFI_RecvData :%s\n",WIFI_RecvSocketBData);
+			eTypeMachine = EN_RECV_TYPE_UNKNOWN;
+			eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+			Cur = 0;
+			pos = 0;		
+			TIM3_Int_Deinit();
+		}
+		
+		//SOCKET C
+		//receive start character
+		if(eStateMachine == EN_RECV_ST_GET_C_HEAD)    //接收报文头部
+		{
+			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_C_HEAD\n");
+			// check for the start character(SYNC_CHARACTER)
+      // also check it's not arriving the end of valid data
+      while(pos < Cur)
+      {
+
+				if(10 == pos)   //'A'
+				{
+						if(USART_RX_BUF[9] != 'A')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+				}
+				
+				if(11 == pos)   //'P'
+				{
+						if(USART_RX_BUF[10] != 'P')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+				}	
+				
+				if(12 == pos)   //'S'
+				{
+						if(USART_RX_BUF[11] != 'S')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+				}
+				
+				if(14 == pos)   //接收版本号完毕
+				{
+					//SEGGER_RTT_printf(0, "APS11\n");
+					eStateMachine = EN_RECV_ST_GET_C_LEN;
+					break;
+				}
+				
+				pos++;
+			}
+		}
+		
+		//receive data length
+		if(eStateMachine == EN_RECV_ST_GET_C_LEN)
+		{
+			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_C_LEN\n");
+			while(pos < Cur)
+      {
+				//判断是否有a出现  如果出现了判断后面8个字节
+				if(19 == pos)   //接收数据长度结束
+				{
+					PackLen = (packetlen_C(&USART_RX_BUF[14])+9);
+					//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_C_LEN LENGTH11111 : %d\n",PackLen);
+					//计算长度
+					eStateMachine = EN_RECV_ST_GET_C_DATA;
+					delayMS(10);
+					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+
+					break;
+				}
+				pos++;
+			}
+		}
+		
+		//Continue to receive data
+		if(eStateMachine == EN_RECV_ST_GET_C_DATA)
+		{
+			pos = 0;
+			while(pos <= Cur)
+      {
+				if((PackLen-3) == pos)   //接收数据长度结束
+				{
+					eStateMachine = EN_RECV_ST_GET_C_END;
+					break;
+				}
+				pos++;
+			}
+		}		
+		
+		//receive END
+		if(eStateMachine == EN_RECV_ST_GET_C_END)
+		{
+			pos = 0;
+			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_C_END\n");
+			while(pos <= Cur)
+      {
+				
+				if((PackLen - 2) == pos)   //'A'
+				{
+						if(USART_RX_BUF[PackLen - 3] != 'E')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+				}
+				
+				if((PackLen - 1) == pos)   //'P'
+				{
+						if(USART_RX_BUF[PackLen - 2] != 'N')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+				}	
+				
+				if((PackLen) == pos)   //'S'
+				{
+						if(USART_RX_BUF[PackLen - 1] != 'D')
+						{
+							Cur = 0;
+							pos = 0;
+							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							break;
+						}
+						//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_END OVER\n");
+						//SEGGER_RTT_printf(0, "ID %x %x %x %x %x %x %x %x\n",ID[0],ID[1],ID[2],ID[3],ID[4],ID[5],ID[6],ID[7]);
+						
+						//报文接收完毕
+						//进行完毕的相应操作
+						//将采集成功的数据复制到成功数组
+						memset(WIFI_RecvSocketCData,0x00,USART_REC_LEN);
+						memcpy(WIFI_RecvSocketCData,&USART_RX_BUF[9],(PackLen-9));
+						//解析数据，去掉多包问题
+						WIFI_Recv_SocketC_LEN = PackLen-9;
+						
+						WIFI_RecvSocketCData[WIFI_Recv_SocketC_LEN] = '\0';
+						WIFI_Recv_SocketC_Event = 1;
+						//SEGGER_RTT_printf(0, "WIFI_RecvData :%s\n",WIFI_RecvSocketCData);
+						eTypeMachine = EN_RECV_TYPE_UNKNOWN;
+						eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+						Cur = 0;
+						pos = 0;		
+						TIM3_Int_Deinit();
+						break;
+				}
+								
+				pos++;
+			}
+		}	
 }
 
 void clear_WIFI(void)
 {
 	//TIM3_Int_Deinit();
-	eStateMachine = EN_RECV_ST_GET_A;
+	eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 	Cur = 0;
 }
 

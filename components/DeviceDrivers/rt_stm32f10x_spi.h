@@ -1,31 +1,43 @@
 /*****************************************************************************/
-/* File      : inverter.h                                                    */
+/* File      : rt_stm32f10x_spi.h                                            */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-06-05 * Shengfeng Dong  * Creation of the file                      */
+/*  2017-02-20 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
-#ifndef __INVERTER_H__
-#define __INVERTER_H__
+#ifndef STM32_SPI_H_INCLUDED
+#define STM32_SPI_H_INCLUDED
 
 /*****************************************************************************/
 /*  Include Files                                                            */
 /*****************************************************************************/
-#include "variation.h"
+#include <rtdevice.h>
+#include "stm32f10x.h"
+#include "board.h"
 
-/*****************************************************************************/
-/*  Variable Declarations                                                    */
-/*****************************************************************************/
-extern ecu_info ecu;
-extern inverter_info inverterInfo[MAXINVERTERCOUNT];
+struct stm32_spi_bus
+{
+    struct rt_spi_bus parent;
+    SPI_TypeDef * SPI;
+};
+
+
+struct stm32_spi_cs
+{
+    GPIO_TypeDef * GPIOx;
+    uint16_t GPIO_Pin;
+};
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-int init_ecu(void);
-int init_inverter(inverter_info *inverter);
-int add_inverter(inverter_info *inverter,int num,char *uidstring);
-#endif /*__INVERTER_H__*/
+
+/* public function list */
+rt_err_t stm32_spi_register(SPI_TypeDef * SPI,
+                            struct stm32_spi_bus * stm32_spi,
+                            const char * spi_bus_name);
+
+#endif // STM32_SPI_H_INCLUDED

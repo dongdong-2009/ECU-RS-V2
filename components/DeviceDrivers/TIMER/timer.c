@@ -70,7 +70,7 @@ void TIM3_IRQHandler(void)   //TIM3ÖÐ¶Ï
 			if( usart_flag > 1)
 			{
 				SEGGER_RTT_printf(0, "TIM3_IRQHandler\n");
-				eStateMachine = EN_RECV_ST_GET_A;
+				eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 				Cur = 0;
 				TIM3_Int_Deinit();
 			}

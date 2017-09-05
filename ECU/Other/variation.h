@@ -28,7 +28,8 @@ typedef struct
 	unsigned short pv1_low_voltage_pritection:1;	// PV1欠压保护
 	unsigned short pv2_low_voltage_pritection:1;	// PV2欠压保护
 	unsigned short device_Type:4;					//设备类型  0:开关设备 1；监控设备
-	unsigned short unused:4;						//未使用变量  备用
+	unsigned short channel_failed:1;				//修改信道失败标志
+	unsigned short unused:3;						//未使用变量  备用
 }status_t;
 
 
@@ -38,13 +39,42 @@ typedef struct inverter_info_t{
 	unsigned short off_times;	//心跳超时次数
 	status_t status;			//部分状态信息 
 	unsigned char channel;		//信道状态
+	unsigned char find_channel; //查找的信道
 	unsigned char restartNum;	//一天内的重启次数
 	unsigned short PV1;		//PV1输入电压  精度1V
 	unsigned short PV2;		//PV2输入电压  精度 1V
 	unsigned char PI;		//输入电流 	精度0.1A
+	unsigned short PV_Output; //输出电压
 	unsigned short Power1;	//PV1输入功率  精度1W
 	unsigned short Power2;	//PV2输入功率  精度1W 
+	unsigned char RSSI;	//信号强度
+	unsigned int PV1_Energy;//当前一轮PV1发电量
+	unsigned int PV2_Energy;//当前一轮PV2发电量
+	unsigned char Mos_CloseNum;//设备上电后MOS管关断次数
+	char CurCommTime[15];	//本次的通讯时间
+	//上一轮相关的数据，这里的上一轮指的是5分钟一轮
+	unsigned int Last_PV1_Energy;//上一轮PV1发电量
+	unsigned int Last_PV2_Energy;//上一轮PV2发电量
+	char LastCommTime[15];	//上一次的通讯时间
+	unsigned short AveragePower1; //5分钟平均功率1
+	unsigned short AveragePower2; //5分钟平均功率
+	
 }inverter_info;
+
+typedef struct ecu_info_t{
+	char ECUID12[13];
+	char ECUID6[7];
+	char Signal_Level;
+	char Signal_Channel[3];
+	char Channel_char;
+	char IO_Init_Status;	//IO初始状态
+	char ver;				//优化器版本号
+	int validNum;			//当前有效台数
+	int curSequence;		//心跳轮训机器号
+}ecu_info;
+
+
+
 
 #pragma pack(pop) 
 
