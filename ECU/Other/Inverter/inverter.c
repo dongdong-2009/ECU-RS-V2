@@ -80,7 +80,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->PV1_Energy = 0;
 		curinverter->PV2_Energy = 0;
 		curinverter->Mos_CloseNum = 0;
-		memset(curinverter->CurCommTime,0x00,15);
+		//memset(curinverter->CurCommTime,0x00,15);
 		curinverter->Last_PV1_Energy = 0;
 		curinverter->Last_PV2_Energy = 0;
 		memset(curinverter->LastCommTime,0x00,15);

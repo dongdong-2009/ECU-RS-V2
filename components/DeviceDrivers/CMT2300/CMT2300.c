@@ -3,7 +3,7 @@
 #include "string.h"
 #include "rthw.h"
 #include "SEGGER_RTT.h"
-
+#include "rtthread.h"
 
 
 #ifdef RFM_433
@@ -851,7 +851,7 @@ byte GetMessage(byte *p)
 	}
 	if(RFM300H_SW==1)
 	{	
-		for(index =0 ;index<400;index++)
+		for(index =0 ;index<40;index++)
 		{
 			if(GPIO3==1)
 			{
@@ -859,7 +859,7 @@ byte GetMessage(byte *p)
 				//SEGGER_RTT_printf(0, "GetIrqFlag_Tx:%d\n",index);
 				break;
 			}
-			rt_hw_ms_delay(1);	
+			rt_thread_delay(RT_TICK_PER_SECOND/100);	
 		}
 		
 	}

@@ -51,11 +51,12 @@ typedef struct inverter_info_t{
 	unsigned int PV1_Energy;//当前一轮PV1发电量
 	unsigned int PV2_Energy;//当前一轮PV2发电量
 	unsigned char Mos_CloseNum;//设备上电后MOS管关断次数
-	char CurCommTime[15];	//本次的通讯时间
+	char LastCommTime[15];	//RSD最后一次通讯上的时间
 	//上一轮相关的数据，这里的上一轮指的是5分钟一轮
+	char LastCollectTime[15];	//ECU上一轮采集时间	5分钟采集一轮
 	unsigned int Last_PV1_Energy;//上一轮PV1发电量
 	unsigned int Last_PV2_Energy;//上一轮PV2发电量
-	char LastCommTime[15];	//上一次的通讯时间
+	char CurCollectTime[15];	//ECU本轮采集时间   	5分钟采集一轮
 	unsigned short AveragePower1; //5分钟平均功率1
 	unsigned short AveragePower2; //5分钟平均功率
 	
@@ -71,6 +72,12 @@ typedef struct ecu_info_t{
 	char ver;				//优化器版本号
 	int validNum;			//当前有效台数
 	int curSequence;		//心跳轮训机器号
+	
+	float life_energy;			//系统历史总电量
+	float current_energy;		//系统当前一轮电量
+	float today_energy;			//当天的发电量
+	int system_power;			//系统总功率
+	
 }ecu_info;
 
 

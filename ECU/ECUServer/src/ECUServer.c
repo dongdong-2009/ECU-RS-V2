@@ -2,6 +2,10 @@
 #include "rtthread.h"
 #include "datetime.h"
 #include "inverter.h"
+#include "variation.h"
+
+extern ecu_info ecu;
+extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
 //数据采集
 void dataCollection(void)
