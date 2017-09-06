@@ -39,8 +39,12 @@ typedef enum THREADTYPE {
 #define THREAD_PRIORITY_EVENT            	13			//其他相关事件线程
 //LED thread priority
 #define THREAD_PRIORITY_COMM              14			//OPT700-RS通信线程
-
-#define THREAD_PRIORITY_SERVER            15			//上报远端服务器
+//Data Collection thread priority
+#define THREAD_PRIORITY_DATACOLLECT       15			//OPT700-RS相关数据采集
+//Client thread priority
+#define THREAD_PRIORITY_CLIENT       			17			//OPT700-RS数据上报
+//Control Client thread priority
+#define THREAD_PRIORITY_CONTROL_CLIENT  	16			//OPT700-RS远程控制
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */

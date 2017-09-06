@@ -91,6 +91,8 @@ static rt_uint8_t comm_stack[4096];
 static struct rt_thread comm_thread;
 #endif 
 
+
+
 ecu_info ecu;	//ecu相关信息
 inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
 

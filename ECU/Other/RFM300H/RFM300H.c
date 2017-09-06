@@ -16,6 +16,7 @@
 #include "SEGGER_RTT.h"
 #include "rthw.h"
 #include "string.h"
+#include "rtc.h"
 
 
 volatile unsigned int Heart_times = 0;
@@ -178,6 +179,8 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 			(Senddata[15]==Recvdata[15]))
 		{
 			Heart_times++;
+			apstime(cur_inverter->LastCommTime);
+			cur_inverter->LastCommTime[14] = '\0';
 			if((Recvdata[3] == 0xD0))	//监控设备
 			{
 				cur_inverter->status.device_Type = 1;		//监控设备
