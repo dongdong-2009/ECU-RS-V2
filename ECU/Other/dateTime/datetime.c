@@ -21,6 +21,18 @@
 /*  Function Implementations                                                 */
 /*****************************************************************************/
 
+// 时间结构体 
+typedef struct{  
+       unsigned char second;  
+       unsigned char minute;  
+       unsigned char hour;  
+       unsigned char day;    
+       unsigned char month;  
+       unsigned char year;  
+       unsigned char century;  
+}DATETIME;  
+
+
 
 int acquire_time()
 {
@@ -65,18 +77,93 @@ int get_hour()
 	return hour;
 }
 
+//时间转换 Time为当前的时间字符串  14字节
+DATETIME timeSwitch(char *Time)
+{
+	DATETIME tmpdatetime;
+	tmpdatetime.century = (Time[0]-'0')*10+(Time[1]-'0');
+	tmpdatetime.year = (Time[2]-'0')*10+(Time[3]-'0');
+	tmpdatetime.month = (Time[4]-'0')*10+(Time[5]-'0');
+	tmpdatetime.day = (Time[6]-'0')*10+(Time[7]-'0');
+	tmpdatetime.hour = (Time[8]-'0')*10+(Time[9]-'0');
+	tmpdatetime.century = (Time[10]-'0')*10+(Time[11]-'0');
+	tmpdatetime.century = (Time[12]-'0')*10+(Time[13]-'0');
+	return tmpdatetime;
+}
+
+/******************************************************************* 
+ *  函数功能:将当前时间(如:2017-09-7 21:28:25)转换为格林尼治时间  格林尼治时间:从1970年1月1日开始到现在的秒数 
+ *  函数输入:curData 当前时间 
+ *  函数输出:格林尼治时间(单位:S) 
+ */  
+long TimerSwitch( DATETIME curData )  
+{  
+       unsigned short curyear;         // 当前年份 16位  
+       int cyear = 0;                  // 当前年和1970年的差值 
+       int cday = 0;                   // 差值年转换为天数  
+       int curmonthday = 0;            // 当前月份转换为天数
+   
+       //当前年份  
+       curyear= curData.century*100+curData.year;  
+       //无效年份判断 
+       if(curyear < 1970 || curyear > 9000 )  
+              return 0;  
+       //计算差值并计算当前年份差值对应的天数 
+       cyear= curyear - 1970;  
+       cday= cyear/4*(365*3+366);  
+       //计算平年和闰年 对应的相应差值年对应的天数 1970-平 1971-平 1972-闰 1973-平  
+       if(cyear%4 >= 3 )  
+              cday += (cyear%4-1)*365 + 366;  
+       else  
+              cday += (cyear%4)*365;  
+   
+       //当前月份对应的天数  当月的天数不算  
+       switch(curData.month )  
+       {  
+              case 2:  curmonthday = 31;  break;  
+              case 3:  curmonthday = 59;  break;  
+              case 4:  curmonthday = 90;  break;  
+              case 5:  curmonthday = 120; break;  
+              case 6:  curmonthday = 151; break;  
+              case 7:  curmonthday = 181; break;  
+              case 8:  curmonthday = 212; break;  
+              case 9:  curmonthday = 243; break;  
+              case 10: curmonthday = 273; break;  
+              case 11: curmonthday = 304; break;  
+              case 12: curmonthday = 334; break;  
+              default:curmonthday = 0;   break;  
+       }  
+       //平年和闰年对应天数 如果闰年+1  
+       if((curyear%4 == 0) && (curData.month >= 3) )  
+              curmonthday+= 1;  
+       //总天数加上月份对应的天数 加上当前天数-1 当前天数不算  
+       cday += curmonthday;  
+       cday += (curData.day-1);  
+   
+       //返回格林尼治时间秒数 
+       return(long)(((cday*24+curData.hour)*60+curData.minute)*60+curData.second);   
+}  
+
+
 
 int Time_difference(char *curTime,char *lastTime)
 {
-	unsigned char curhour, curminute, cursecond;
-	unsigned char lasthour, lastminute, lastsecond;
-	curhour = ((curTime[8] - 0x30) *10) + (curTime[9] - 0x30);
-	curminute = ((curTime[10] - 0x30) *10) + (curTime[11] - 0x30);
-	cursecond = ((curTime[12] - 0x30) *10) + (curTime[13] - 0x30);
+	DATETIME curDateTime,lastDateTime;
 	
-	lasthour = ((lastTime[8] - 0x30) *10) + (lastTime[9] - 0x30);
-	lastminute = ((lastTime[10] - 0x30) *10) + (lastTime[11] - 0x30);
-	lastsecond = ((lastTime[12] - 0x30) *10) + (lastTime[13] - 0x30);
-	
-	
+	curDateTime = timeSwitch(curTime);
+	lastDateTime = timeSwitch(lastTime);
+	return TimerSwitch(curDateTime) - TimerSwitch(lastDateTime);
 }
+
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+#include <stdio.h>
+void list_Greentime(char *time)
+{
+	DATETIME curDateTime;
+	curDateTime = timeSwitch(time);
+	printf("Greentime:%ld\n",TimerSwitch(curDateTime));
+}
+
+
+#endif
