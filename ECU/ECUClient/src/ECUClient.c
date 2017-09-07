@@ -3,6 +3,7 @@
 #include "datetime.h"
 #include "inverter.h"
 #include "variation.h"
+#include "stdio.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -16,6 +17,7 @@ void ECUClient_thread_entry(void* parameter)
 	while(1)
 	{
 		if(compareTime(ClientDurabletime ,ClientThistime,ClientReportinterval)){
+			printf("ECUCollect_thread_entry\n");
 			//定时上报数据 5分钟上报
 			ClientThistime = acquire_time();
 			//采集一轮数据

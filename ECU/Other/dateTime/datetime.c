@@ -20,32 +20,7 @@
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
-int get_time(char *sendcommanddatetime, char *sendcommandtime)		//发给EMA记录时获取的时间，格式：年月日时分秒，如20120902142835
-{
-	char datetime[15] = {'\0'};
-	unsigned hour, minute;
-	apstime(datetime);
-	rt_memcpy(sendcommanddatetime,datetime,14);
-	sendcommanddatetime[14] = '\0';
-	hour = ((datetime[8] - 0x30) * 10) + (datetime[9] - 0x30);
-	minute = ((datetime[10] - 0x30) * 10) + (datetime[11] - 0x30);
-    
-	sendcommandtime[0] = hour;
-	sendcommandtime[1] = minute;
-    
-	return hour;
-}
 
-
-//获取日期，用于当天发电量，格式：年月日，如20120902
-void getdate(char date[10])		
-{
-	char datetime[15] = {'\0'};
-	apstime(datetime);
-	rt_memcpy(date,datetime,8);
-	
-
-}
 
 int acquire_time()
 {
@@ -79,26 +54,7 @@ int compareTime(int durabletime ,int thistime,int reportinterval)
 	return 0;
 }
 
-//<
-// >=
-int compareTimeLess(int durabletime ,int thistime,int reportinterval)
-{
-	if((durabletime < reportinterval) && (thistime > reportinterval))
-	{
-		if((durabletime+(24*60*60+1)-thistime) <= reportinterval)
-		{
-			return 1;
-		}
-		
-	}else
-	{
-		if((durabletime-thistime) < reportinterval)
-		{
-			return 1;
-		}
-	}
-	return 0;
-}
+
 
 int get_hour()
 {
@@ -109,8 +65,18 @@ int get_hour()
 	return hour;
 }
 
-void getcurrenttime(char db_time[])		
+
+int Time_difference(char *curTime,char *lastTime)
 {
-	apstime(db_time);
-	db_time[14] = '\0';
+	unsigned char curhour, curminute, cursecond;
+	unsigned char lasthour, lastminute, lastsecond;
+	curhour = ((curTime[8] - 0x30) *10) + (curTime[9] - 0x30);
+	curminute = ((curTime[10] - 0x30) *10) + (curTime[11] - 0x30);
+	cursecond = ((curTime[12] - 0x30) *10) + (curTime[13] - 0x30);
+	
+	lasthour = ((lastTime[8] - 0x30) *10) + (lastTime[9] - 0x30);
+	lastminute = ((lastTime[10] - 0x30) *10) + (lastTime[11] - 0x30);
+	lastsecond = ((lastTime[12] - 0x30) *10) + (lastTime[13] - 0x30);
+	
+	
 }

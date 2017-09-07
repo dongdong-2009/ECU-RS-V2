@@ -8,3 +8,9 @@
 #include "dfs_fs.h"
 #include "rthw.h"
 #include "variation.h"
+
+void init_tmpdb(inverter_info *firstinverter)
+{
+
+}
+

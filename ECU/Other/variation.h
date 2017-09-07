@@ -14,8 +14,13 @@
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-#define MAXINVERTERCOUNT 100	//最大的逆变器数
-#define INVERTERLENGTH 22	//最大的逆变器数
+#define MAXINVERTERCOUNT 		100	//最大的逆变器数
+#define INVERTERLENGTH 			22	//最大的逆变器数  //与手机通讯
+//Client 相关通信参数
+#define CLIENT_RECORD_HEAD 							20
+#define CLIENT_RECORD_ECU_HEAD 					78
+#define CLIENT_RECORD_INVERTER_LENGTH		104
+
 #pragma pack(push)  
 #pragma pack(1) 
 
@@ -54,11 +59,11 @@ typedef struct inverter_info_t{
 	char LastCommTime[15];	//RSD最后一次通讯上的时间
 	//上一轮相关的数据，这里的上一轮指的是5分钟一轮
 	char LastCollectTime[15];	//ECU上一轮采集时间	5分钟采集一轮
-	unsigned int Last_PV1_Energy;//上一轮PV1发电量
-	unsigned int Last_PV2_Energy;//上一轮PV2发电量
+	unsigned int Last_PV1_Energy;//上一轮PV1发电量 指的是5分钟前的一轮
+	unsigned int Last_PV2_Energy;//上一轮PV2发电量 指的是5分钟前的一轮
 	char CurCollectTime[15];	//ECU本轮采集时间   	5分钟采集一轮
-	unsigned short AveragePower1; //5分钟平均功率1
-	unsigned short AveragePower2; //5分钟平均功率
+	double AveragePower1; //5分钟平均功率1
+	double AveragePower2; //5分钟平均功率2
 	
 }inverter_info;
 

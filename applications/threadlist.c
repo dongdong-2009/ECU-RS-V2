@@ -91,6 +91,29 @@ static rt_uint8_t comm_stack[4096];
 static struct rt_thread comm_thread;
 #endif 
 
+#ifdef THREAD_PRIORITY_DATACOLLECT
+#include "ECUCollect.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t collect_stack[4096];
+static struct rt_thread collect_thread;
+#endif 
+
+#ifdef THREAD_PRIORITY_CLIENT
+#include "ECUClient.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t client_stack[4096];
+static struct rt_thread client_thread;
+#endif 
+
+#ifdef THREAD_PRIORITY_CONTROL_CLIENT
+#include "ECUControl.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t control_stack[4096];
+static struct rt_thread control_thread;
+#endif 
+
+
+
 
 
 ecu_info ecu;	//ecu相关信息
@@ -171,7 +194,6 @@ void rt_init_thread_entry(void* parameter)
 #endif
 	/* initialize rtc */
 	rt_hw_rtc_init();		
-
 	cpu_usage_init();	
 	
 	I2C_Init();										//FLASH 芯片初始化
@@ -185,8 +207,10 @@ void rt_init_thread_entry(void* parameter)
 	TIM2_Int_Init(9999,7199);    //心跳包超时事件定时器初始化
 	rt_hw_watchdog_init();
 	SEGGER_RTT_printf(0, "init OK \n");
+	
 	init_ecu();										//初始化ECU
 	init_inverter(inverterInfo);	//初始化逆变器
+//	init_tmpdb();
 	
 }
 
@@ -296,17 +320,32 @@ void tasks_new(void)
 #endif
 	
 #ifdef THREAD_PRIORITY_EVENT
-  /* init LAN8720RST thread */
+  /* init Event thread */
   result = rt_thread_init(&event_thread,"event",ECUEvent_thread_entry,RT_NULL,(rt_uint8_t*)&event_stack[0],sizeof(event_stack),THREAD_PRIORITY_EVENT,5);
   if (result == RT_EOK)	rt_thread_startup(&event_thread);
 #endif
 
 #ifdef THREAD_PRIORITY_COMM
-  /* init LAN8720RST thread */
+  /* init Communication thread */
   result = rt_thread_init(&comm_thread,"comm",ECUComm_thread_entry,RT_NULL,(rt_uint8_t*)&comm_stack[0],sizeof(comm_stack),THREAD_PRIORITY_COMM,5);
   if (result == RT_EOK)	rt_thread_startup(&comm_thread);
 #endif
 	
+#ifdef THREAD_PRIORITY_DATACOLLECT
+  /* init Communication thread */
+  result = rt_thread_init(&collect_thread,"collect",ECUCollect_thread_entry,RT_NULL,(rt_uint8_t*)&collect_stack[0],sizeof(collect_stack),THREAD_PRIORITY_DATACOLLECT,5);
+  if (result == RT_EOK)	rt_thread_startup(&collect_thread);
+#endif
+#ifdef THREAD_PRIORITY_CLIENT
+  /* init Communication thread */
+  result = rt_thread_init(&client_thread,"client",ECUClient_thread_entry,RT_NULL,(rt_uint8_t*)&client_stack[0],sizeof(client_stack),THREAD_PRIORITY_CLIENT,5);
+  if (result == RT_EOK)	rt_thread_startup(&client_thread);
+#endif
+#ifdef THREAD_PRIORITY_CONTROL_CLIENT
+  /* init Communication thread */
+  result = rt_thread_init(&control_thread,"control",ECUControl_thread_entry,RT_NULL,(rt_uint8_t*)&control_stack[0],sizeof(control_stack),THREAD_PRIORITY_CONTROL_CLIENT,5);
+  if (result == RT_EOK)	rt_thread_startup(&control_thread);
+#endif
 }
 
 /*****************************************************************************/

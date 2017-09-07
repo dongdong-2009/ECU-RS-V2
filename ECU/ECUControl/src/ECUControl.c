@@ -3,6 +3,7 @@
 #include "datetime.h"
 #include "inverter.h"
 #include "variation.h"
+#include "stdio.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -16,7 +17,7 @@ void ECUControl_thread_entry(void* parameter)
 	{
 		if(compareTime(ControlDurabletime ,ControlThistime,ControlReportinterval))
 		{	//远程控制 15分钟上报
-			
+			printf("ECUCollect_thread_entry\n");
 		}
 		
 		//上报告警标志

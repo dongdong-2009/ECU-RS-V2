@@ -1031,6 +1031,11 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUDBG\src\SEGGER_RTT_printf.c</FilePath>
             </File>
+            <File>
+              <FileName>debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUDBG\src\debug.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
