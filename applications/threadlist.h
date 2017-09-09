@@ -42,9 +42,19 @@ typedef enum THREADTYPE {
 //Data Collection thread priority
 #define THREAD_PRIORITY_DATACOLLECT       17			//OPT700-RS相关数据采集
 //Client thread priority
-//#define THREAD_PRIORITY_CLIENT       			19			//OPT700-RS数据上报
+#define THREAD_PRIORITY_CLIENT       			19			//OPT700-RS数据上报
 //Control Client thread priority
 //#define THREAD_PRIORITY_CONTROL_CLIENT  	18			//OPT700-RS远程控制
+
+
+//thread start time
+#define START_TIME_UPDATE									15
+
+#define START_TIME_COLLECT								10			//90
+#define START_TIME_CONTROL_CLIENT					20			//120
+#define START_TIME_CLIENT									5			//180
+
+
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */

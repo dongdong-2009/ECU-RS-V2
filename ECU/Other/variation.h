@@ -14,12 +14,20 @@
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-#define MAXINVERTERCOUNT 		100	//最大的逆变器数
-#define INVERTERLENGTH 			22	//最大的逆变器数  //与手机通讯
+#define MAXINVERTERCOUNT 								100	//最大的逆变器数
+#define INVERTERLENGTH 									22	//最大的逆变器数  //与手机通讯
 //Client 相关通信参数
-#define CLIENT_RECORD_HEAD 							20
-#define CLIENT_RECORD_ECU_HEAD 					78
+#define CLIENT_RECORD_HEAD							20
+#define CLIENT_RECORD_ECU_HEAD					78
 #define CLIENT_RECORD_INVERTER_LENGTH		104
+#define CLIENT_RECORD_OTHER							100
+
+#define CONTROL_RECORD_HEAD							18
+#define CONTROL_RECORD_ECU_HEAD					33
+#define CONTROL_RECORD_INVERTER_LENGTH	41
+#define CONTROL_RECORD_OTHER						100
+
+
 
 #pragma pack(push)  
 #pragma pack(1) 
@@ -34,6 +42,7 @@ typedef struct
 	unsigned short pv2_low_voltage_pritection:1;	// PV2欠压保护
 	unsigned short device_Type:4;					//设备类型  0:开关设备 1；监控设备
 	unsigned short channel_failed:1;				//修改信道失败标志
+	unsigned short comm_status:1;					//采集数据通讯状态
 	unsigned short unused:3;						//未使用变量  备用
 }status_t;
 
@@ -64,6 +73,8 @@ typedef struct inverter_info_t{
 	char CurCollectTime[15];	//ECU本轮采集时间   	5分钟采集一轮
 	double AveragePower1; //5分钟平均功率1
 	double AveragePower2; //5分钟平均功率2
+	unsigned int EnergyPV1;		//当前一轮电量
+	unsigned int EnergyPV2;		//当前一轮电量
 	
 }inverter_info;
 
@@ -82,11 +93,9 @@ typedef struct ecu_info_t{
 	float current_energy;		//系统当前一轮电量
 	float today_energy;			//当天的发电量
 	int system_power;			//系统总功率
+	int lastCommNum;
 	
 }ecu_info;
-
-
-
 
 #pragma pack(pop) 
 

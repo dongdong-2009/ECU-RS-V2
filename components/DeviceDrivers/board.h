@@ -37,7 +37,7 @@
 
 // <o> Internal SRAM memory size[Kbytes] <8-64>
 //	<i>Default: 64
-#define STM32_SRAM_SIZE         128
+#define STM32_SRAM_SIZE         256
 #define STM32_SRAM_END          (0x20000000 + STM32_SRAM_SIZE * 1024)
 
 #define RT_USING_UART1

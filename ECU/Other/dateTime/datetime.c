@@ -16,6 +16,7 @@
 #include "datetime.h"
 #include <string.h>
 #include <rtthread.h>
+#include <stdio.h>
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -32,6 +33,24 @@ typedef struct{
        unsigned char century;  
 }DATETIME;  
 
+int get_time(char *sendcommanddatetime, char *sendcommandtime)		//发给EMA记录时获取的时间，格式：年月日时分秒，如20120902142835
+{
+	char datetime[15] = {'\0'};
+	unsigned hour, minute;
+	apstime(datetime);
+	rt_memcpy(sendcommanddatetime,datetime,14);
+	sendcommanddatetime[14] = '\0';
+	hour = ((datetime[8] - 0x30) * 10) + (datetime[9] - 0x30);
+	minute = ((datetime[10] - 0x30) * 10) + (datetime[11] - 0x30);
+    
+	sendcommandtime[0] = hour;
+	sendcommandtime[1] = minute;
+    
+	//print2msg(ECU_DBG_OTHER,"Broadcast time", sendcommanddatetime);
+
+
+	return hour;
+}
 
 
 int acquire_time()
@@ -82,12 +101,13 @@ DATETIME timeSwitch(char *Time)
 {
 	DATETIME tmpdatetime;
 	tmpdatetime.century = (Time[0]-'0')*10+(Time[1]-'0');
+	
 	tmpdatetime.year = (Time[2]-'0')*10+(Time[3]-'0');
 	tmpdatetime.month = (Time[4]-'0')*10+(Time[5]-'0');
 	tmpdatetime.day = (Time[6]-'0')*10+(Time[7]-'0');
 	tmpdatetime.hour = (Time[8]-'0')*10+(Time[9]-'0');
-	tmpdatetime.century = (Time[10]-'0')*10+(Time[11]-'0');
-	tmpdatetime.century = (Time[12]-'0')*10+(Time[13]-'0');
+	tmpdatetime.minute = (Time[10]-'0')*10+(Time[11]-'0');
+	tmpdatetime.second = (Time[12]-'0')*10+(Time[13]-'0');
 	return tmpdatetime;
 }
 
@@ -96,7 +116,7 @@ DATETIME timeSwitch(char *Time)
  *  函数输入:curData 当前时间 
  *  函数输出:格林尼治时间(单位:S) 
  */  
-long TimerSwitch( DATETIME curData )  
+long GreenSwitch( DATETIME curData )  
 {  
        unsigned short curyear;         // 当前年份 16位  
        int cyear = 0;                  // 当前年和1970年的差值 
@@ -151,19 +171,22 @@ int Time_difference(char *curTime,char *lastTime)
 	DATETIME curDateTime,lastDateTime;
 	
 	curDateTime = timeSwitch(curTime);
+
 	lastDateTime = timeSwitch(lastTime);
-	return TimerSwitch(curDateTime) - TimerSwitch(lastDateTime);
+	
+	return (GreenSwitch(curDateTime) - GreenSwitch(lastDateTime));
 }
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 #include <stdio.h>
-void list_Greentime(char *time)
+void greenTime(char *time)
 {
 	DATETIME curDateTime;
 	curDateTime = timeSwitch(time);
-	printf("Greentime:%ld\n",TimerSwitch(curDateTime));
+	printf("Greentime:%ld\n",GreenSwitch(curDateTime));
 }
+FINSH_FUNCTION_EXPORT(greenTime, get green time. e.g: greenTime("20170908084018"))
 
 
 #endif

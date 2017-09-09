@@ -15,6 +15,7 @@
 /*  Function Declarations                                                    */
 /*****************************************************************************/
 
+int get_time(char *sendcommanddatetime, char *sendcommandtime);
 int acquire_time(void);
 //时间比较
 int compareTime(int durabletime ,int thistime,int reportinterval);

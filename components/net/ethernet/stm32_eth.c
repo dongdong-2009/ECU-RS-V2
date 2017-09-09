@@ -21,7 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32_eth.h"
 #include "stm32f10x_rcc.h"
-
+#include "serverfile.h"
 /* STM32F107 ETH dirver options */
 #define CHECKSUM_BY_HARDWARE    1      /* don't ues hardware checksum. */
 #define RMII_MODE               1       /* 0: MII MODE, 1: RMII MODE. */
@@ -3587,7 +3587,7 @@ void rt_hw_stm32_eth_init()
     stm32_eth_device.dev_addr[3] = (0x04);
     stm32_eth_device.dev_addr[4] = (0x72);
     stm32_eth_device.dev_addr[5] = (0x1C);
-		//get_mac(stm32_eth_device.dev_addr);
+		get_mac(stm32_eth_device.dev_addr);
     stm32_eth_device.parent.parent.init       = rt_stm32_eth_init;
     stm32_eth_device.parent.parent.open       = rt_stm32_eth_open;
     stm32_eth_device.parent.parent.close      = rt_stm32_eth_close;

@@ -4,6 +4,7 @@
 #include "inverter.h"
 #include "variation.h"
 #include "stdio.h"
+#include "debug.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -16,8 +17,13 @@ void ECUControl_thread_entry(void* parameter)
 	while(1)
 	{
 		if(compareTime(ControlDurabletime ,ControlThistime,ControlReportinterval))
-		{	//远程控制 15分钟上报
-			printf("ECUCollect_thread_entry\n");
+		{	
+			//远程控制 15分钟上报	
+			printmsg(ECU_DBG_CONTROL_CLIENT,"ECUControl_thread_entry     Control DATA  Start-------------------------");
+
+			ControlThistime = acquire_time();
+			
+			printmsg(ECU_DBG_COLLECT,"ECUControl_thread_entry     Control DATA  End-------------------------");
 		}
 		
 		//上报告警标志

@@ -19,6 +19,7 @@
 #include "timer.h"
 #include "string.h"
 #include "led.h"
+#include "serverfile.h"
 
 extern unsigned int Heart_times;
 extern unsigned int TimeOut_times;
@@ -37,6 +38,7 @@ int init_ecu(void)
 	setChannel(ecu.Channel_char);
 
 	Read_IO_INIT_STATU(&ecu.IO_Init_Status);
+	ecu.life_energy = get_lifetime_power();
 	printf("ECU ID :%s        Signal_Channel:   %s    %d   IO_Init_Status:%x\n",ecu.ECUID12,ecu.Signal_Channel,ecu.Channel_char,ecu.IO_Init_Status);
 	return 0;
 }
@@ -83,7 +85,9 @@ int init_inverter(inverter_info *inverter)
 		//memset(curinverter->CurCommTime,0x00,15);
 		curinverter->Last_PV1_Energy = 0;
 		curinverter->Last_PV2_Energy = 0;
-		memset(curinverter->LastCommTime,0x00,15);
+		memset(curinverter->LastCommTime,'0',15);
+		memset(curinverter->CurCollectTime,'0',15);
+		memset(curinverter->LastCollectTime,'0',15);
 		curinverter->AveragePower1 = 0;
 		curinverter->AveragePower1 = 0;
 		

@@ -37,6 +37,7 @@
 #include "inverter.h"
 #include "watchdog.h"
 #include "file.h"
+#include "serverfile.h"
 
 #ifdef RT_USING_DFS
 #include <dfs_fs.h>
@@ -207,10 +208,10 @@ void rt_init_thread_entry(void* parameter)
 	TIM2_Int_Init(9999,7199);    //心跳包超时事件定时器初始化
 	rt_hw_watchdog_init();
 	SEGGER_RTT_printf(0, "init OK \n");
-	
+	init_RecordMutex();
 	init_ecu();										//初始化ECU
 	init_inverter(inverterInfo);	//初始化逆变器
-//	init_tmpdb();
+	init_tmpdb(inverterInfo);
 	
 }
 

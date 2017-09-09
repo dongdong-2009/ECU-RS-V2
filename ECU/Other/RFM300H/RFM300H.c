@@ -164,7 +164,7 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 		SendMessage((unsigned char *)Senddata,28);
 
 		RF_leng = GetMessage((unsigned char *)Recvdata);
-		if((RF_leng==58)&&			
+		if((RF_leng==46)&&			
 			(Senddata[4]==Recvdata[4])&&
 			(Senddata[5]==Recvdata[5])&&
 			(Senddata[6]==Recvdata[6])&&
