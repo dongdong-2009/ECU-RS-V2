@@ -375,6 +375,7 @@ int serverCommunication_Control(char *sendbuff,int sendLength,char *recvbuff,int
 }
 
 
+
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 void testS1()

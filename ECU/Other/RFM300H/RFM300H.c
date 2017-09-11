@@ -17,6 +17,7 @@
 #include "rthw.h"
 #include "string.h"
 #include "rtc.h"
+#include "serverfile.h"
 
 
 volatile unsigned int Heart_times = 0;
@@ -117,6 +118,11 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 	char status = 0;
 	int i,check = 0;
 	unsigned char RF_leng = 0;
+	unsigned char last_mos_status;		//最后一次开关机状态
+	unsigned char last_function_status;	//最后一次功能状态
+	unsigned char last_pv1_low_voltage_pritection;	//最后一次PV1欠压状态
+	unsigned char last_pv2_low_voltage_pritection;	//最后一次PV2欠压状态
+	
 	char Senddata[64] = {'\0'};
 	char Recvdata[64] = {'\0'};
 	
@@ -200,18 +206,24 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 			cur_inverter->Power2 = (Recvdata[25]*256) + Recvdata[26];
 			cur_inverter->off_times = Recvdata[27]*256+Recvdata[28];
 			cur_inverter->heart_rate = Recvdata[29]*256+Recvdata[30];
-			cur_inverter->status.mos_status = 1;	//设置为开机状态
+
+			//保存上一轮报警状态数据
+			last_mos_status = cur_inverter->status.mos_status;
+			last_function_status = cur_inverter->status.function_status;
+			last_pv1_low_voltage_pritection = cur_inverter->status.pv1_low_voltage_pritection;
+			last_pv2_low_voltage_pritection = cur_inverter->status.pv2_low_voltage_pritection;
+			
+			cur_inverter->status.mos_status = 1;	//设置为开机状态	
 			//采集功能状态
 			status = (Recvdata[31] & 1);
 			cur_inverter->status.function_status = status;
-
 			//采集PV1欠压保护状态
 			status = (Recvdata[31] & ( 1 << 1 ) ) >> 1;
 			cur_inverter->status.pv1_low_voltage_pritection= status;
-
 			//采集PV2欠压保护状态
 			status = (Recvdata[31] & ( 1 << 2 )) >> 2;
 			cur_inverter->status.pv2_low_voltage_pritection= status;
+			
 			cur_inverter->RSSI = Recvdata[32];
 			
 			//PV1累计发电量
@@ -223,6 +235,10 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 	
 			SEGGER_RTT_printf(0, "RFM300_Heart_Beat %02x%02x%02x%02x%02x%02x  dt:%d pv1:%d pv2:%d pi:%d p1:%d p2:%d ot:%d hr:%d fs:%d pv1low:%d pv2low:%d\n",Senddata[10],Senddata[11],Senddata[12],Senddata[13],Senddata[14],Senddata[15],	
 							cur_inverter->status.device_Type,cur_inverter->PV1,cur_inverter->PV2,cur_inverter->PI,cur_inverter->Power1,cur_inverter->Power2,cur_inverter->off_times,cur_inverter->heart_rate,cur_inverter->status.function_status,cur_inverter->status.pv1_low_voltage_pritection,cur_inverter->status.pv2_low_voltage_pritection);
+
+			//生成相关的报警报文
+			
+			create_alarm_record(last_mos_status,last_function_status,last_pv1_low_voltage_pritection,last_pv2_low_voltage_pritection,cur_inverter); 
 			return 1;
 		}
 		else
@@ -244,6 +260,11 @@ int RFM300_Status_Init(char *ECUID,char *UID,char Heart_Function,char Device_Typ
 	unsigned char RF_leng = 0;
 	char Senddata[64] = {'\0'};
 	char Recvdata[64] = {'\0'};
+	unsigned char last_function_status;	//最后一次功能状态
+	inverter_info cur_inverter;
+
+	memcpy(cur_inverter.uid,UID,6);
+	cur_inverter.status = *status;
 	
 	Senddata[0]=0xFB;
 	Senddata[1]=0xFB;
@@ -307,10 +328,17 @@ int RFM300_Status_Init(char *ECUID,char *UID,char Heart_Function,char Device_Typ
 			Status = Recvdata[16];
 			if(Status == 1)
 			{
+				
+				last_function_status = status->function_status;
 				status->function_status = 1;
+				cur_inverter.status.function_status = 1;
+				create_alarm_record(cur_inverter.status.mos_status,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 		
 			}else
 			{
+				last_function_status = status->function_status;
 				status->function_status = 0;
+				cur_inverter.status.function_status = 0;
+				create_alarm_record(cur_inverter.status.mos_status,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 
 			}
 			Status = Recvdata[17];
 			if(Status == 1)

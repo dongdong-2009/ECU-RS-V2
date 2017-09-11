@@ -28,6 +28,10 @@
 #define CONTROL_RECORD_OTHER						100
 
 
+#define CONTROL_RECORD_ALARM_ECU_HEAD						(14*99+36)
+
+
+
 
 #pragma pack(push)  
 #pragma pack(1) 

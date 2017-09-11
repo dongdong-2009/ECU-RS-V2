@@ -156,8 +156,6 @@ void ECUClient_thread_entry(void* parameter)
 			
 		}
 		
-		
-		
 		rt_thread_delay(RT_TICK_PER_SECOND);
 		ClientDurabletime = acquire_time();		
 	}

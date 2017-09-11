@@ -39,7 +39,23 @@ int update_send_flag(char *send_date_time);
 
 //保存15分钟远程控制数据以及其他远程控制相关操作
 void save_control_record(char sendbuff[], char *date_time);
+int detection_control_resendflag2(void);
+int change_control_resendflag(char *time,char flag);
+int search_control_readflag(char *data,char * time, int *flag,char sendflag);
+void delete_control_file_resendflag0(void);
+int clear_control_send_flag(char *readbuff);
+int update_control_send_flag(char *send_date_time);
 
 
+//远程控制告警信息
+//生成告警标志
+void create_alarm_record(unsigned char last_mos_status,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter); 
+void save_alarm_record(char sendbuff[], char *date_time);
+int detection_alarm_resendflag2(void);
+int change_alarm_resendflag(char *time,char flag);
+int search_alarm_readflag(char *data,char * time, int *flag,char sendflag);
+void delete_alarm_file_resendflag0(void);
+int clear_alarm_send_flag(char *readbuff);
+int update_alarm_send_flag(char *send_date_time);
 
 #endif /*__SERVERFILE_H__*/

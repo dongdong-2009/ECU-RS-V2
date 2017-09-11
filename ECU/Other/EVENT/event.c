@@ -22,6 +22,7 @@
 #include "inverter.h"
 #include "rthw.h"
 #include "led.h"
+#include "serverfile.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -131,12 +132,9 @@ void process_WIFIEvent(void)
 void process_HeartBeatEvent(void)
 {
 	int ret = 0;
-	//SEGGER_RTT_printf(0, "COMM_Timeout_Event \n");
 	//发送心跳包
 	if(	ecu.validNum >0	)
 	{
-		//SEGGER_RTT_printf(0, "RFM300_Heart_Beat %02x%02x%02x%02x%02x%02x\n",inverterInfo[curSequence].uid[0],inverterInfo[curSequence].uid[1],inverterInfo[curSequence].uid[2],inverterInfo[curSequence].uid[3],inverterInfo[curSequence].uid[4],inverterInfo[curSequence].uid[5]);
-
 		if(ecu.curSequence >= ecu.validNum)		//当轮训的序号大于最后一台时，更换到第0台
 		{
 			ecu.curSequence = 0;
@@ -146,7 +144,6 @@ void process_HeartBeatEvent(void)
 		pre_heart_rate = inverterInfo[ecu.curSequence].heart_rate;
 		ret = RFM300_Heart_Beat(ecu.ECUID6,&inverterInfo[ecu.curSequence]);
 	
-
 		if(ret == 0)	//发送心跳包失败
 		{
 			//查看绑定标志位，如果绑定未成功，尝试绑定。
@@ -154,7 +151,6 @@ void process_HeartBeatEvent(void)
 			{
 				ret = RFM300_Bind_Uid(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,0,0,&ecu.ver);
 				
-				//SEGGER_RTT_printf(0, "RFM300_Bind_Uid %02x%02x%02x%02x%02x%02x\n",inverterInfo[curSequence].uid[0],inverterInfo[curSequence].uid[1],inverterInfo[curSequence].uid[2],inverterInfo[curSequence].uid[3],inverterInfo[curSequence].uid[4],inverterInfo[curSequence].uid[5]);
 				if(ret == 1)
 				{
 					if(Write_UID_Bind(0x01,(ecu.curSequence+1)) == 0)
@@ -168,8 +164,12 @@ void process_HeartBeatEvent(void)
 			inverterInfo[ecu.curSequence].status.heart_Failed_times++;
 			if(inverterInfo[ecu.curSequence].status.heart_Failed_times >= 3)
 			{
+				unsigned char last_mos_status;		//最后一次开关机状态
 				inverterInfo[ecu.curSequence].status.heart_Failed_times = 3;
+				last_mos_status = inverterInfo[ecu.curSequence].status.mos_status;
 				inverterInfo[ecu.curSequence].status.mos_status = 0;
+				//表示进入关机状态   需要生成告警报文
+				create_alarm_record(last_mos_status,inverterInfo[ecu.curSequence].status.function_status,inverterInfo[ecu.curSequence].status.pv1_low_voltage_pritection,inverterInfo[ecu.curSequence].status.pv2_low_voltage_pritection,&inverterInfo[ecu.curSequence]); 	
 			}
 				
 			//通信失败，失败次数++

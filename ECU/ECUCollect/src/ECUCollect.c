@@ -77,7 +77,7 @@ void Collect_Client_Record(void)
 				memcpy(&client_Data[length],"0000000000",10);
 				length += 10;
 				//温度 3字节
-				memcpy(&client_Data[length],"000",3);
+				memcpy(&client_Data[length],"100",3);
 				length += 3;
 				//Optimizer_pv1  1字节
 				client_Data[length++]  = '1';
@@ -243,7 +243,7 @@ void Collect_Control_Record(void)
 	{
 		control_Data = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 		//头信息
-		memcpy(control_Data,"APS13AAAAAA157AAA1",18);
+		memcpy(control_Data,"APS13AAAAAA158AAA1",18);
 		//ECU头信息
 		memcpy(&control_Data[18],ecu.ECUID12,12);
 		memset(&control_Data[30],'0',18);
