@@ -125,7 +125,7 @@ void ECUClient_thread_entry(void* parameter)
 	while(1)
 	{
 		if(compareTime(ClientDurabletime ,ClientThistime,ClientReportinterval)){
-			printmsg(ECU_DBG_CLIENT,"ECUClient_thread_entry Start-------------------------");
+			printmsg(ECU_DBG_CLIENT,"Client Start");
 	
 			ClientThistime = acquire_time();
 			//1点或者2点需要清标志位
@@ -140,8 +140,8 @@ void ECUClient_thread_entry(void* parameter)
 			
 			while(search_readflag(data,time,&flag,'1'))		//	获取一条resendflag为1的数据
 			{
-				if(1 == flag)		// 还存在需要上传的数据
-						data[78] = '1';
+				//if(1 == flag)		// 还存在需要上传的数据
+						//data[88] = '1';
 				printmsg(ECU_DBG_CLIENT,data);
 				res = send_record( data, time);
 				if(-1 == res)
@@ -152,7 +152,7 @@ void ECUClient_thread_entry(void* parameter)
 
 			delete_file_resendflag0();		//清空数据resend标志全部为0的目录
 		
-			printmsg(ECU_DBG_CLIENT,"ECUClient_thread_entry End-------------------------");
+			printmsg(ECU_DBG_CLIENT,"Client End");
 			
 		}
 		

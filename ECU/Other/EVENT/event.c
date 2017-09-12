@@ -23,6 +23,7 @@
 #include "rthw.h"
 #include "led.h"
 #include "serverfile.h"
+#include "version.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -264,6 +265,7 @@ void process_HeartBeatEvent(void)
 //WIFI事件处理
 void process_WIFI(unsigned char * ID)
 {
+	char sofewareVersion[50];
 	ResolveFlag =  Resolve_RecvData((char *)WIFI_RecvSocketAData,&Data_Len,&Command_Id);
 	if(ResolveFlag == 0)
 	{
@@ -274,7 +276,8 @@ void process_WIFI(unsigned char * ID)
 				//获取基本信息
 				//获取信号强度
 				ecu.Signal_Level = ReadRssiValue(1);
-				APP_Response_BaseInfo(ID,ecu.ECUID12,VERSION_ECU_RS,ecu.Signal_Level,ecu.Signal_Channel,SOFEWARE_VERSION_LENGTH,SOFEWARE_VERSION,inverterInfo,ecu.validNum);
+				sprintf(sofewareVersion,"%s_%s_%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
+				APP_Response_BaseInfo(ID,ecu.ECUID12,VERSION_ECU_RS,ecu.Signal_Level,ecu.Signal_Channel,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo,ecu.validNum);
 				break;
 					
 			case COMMAND_SYSTEMINFO:			//获取系统信息			APS11002602406000000009END
@@ -553,7 +556,7 @@ void baseInfo(void)
 	printf("ECU Channel :%s\n",ecu.Signal_Channel);
 	printf("ECU RSSI :%d\n",ecu.Signal_Level);
 	printf("RSD Type :%d\n",type);
-	printf("ECU software Version : %s\n",SOFEWARE_VERSION);
+	printf("ECU software Version : %s_%s_%s\n",ECU_VERSION,MAJORVERSION,MINORVERSION);
 	printf("************************************************************\n");
 }
 FINSH_FUNCTION_EXPORT(baseInfo, eg:baseInfo());
@@ -563,7 +566,7 @@ void systemInfo(void)
 	int i = 0;
 	inverter_info *curinverter = inverterInfo;
 	printf("\n");
-	printf("*****ID*******Type***OnOff**Function**PV1Flag**PV2Flag**HeartTime**Timeout**CloseTime*****PV1********PV2********PI*******P1*******P2*****\n");
+	printf("*****ID*******Type***OnOff**Function**PV1Flag**PV2Flag**HeartTime**Timeout**CloseTime*****PV1********PV2********PI*******P1*******P2********PV1EN*********PV2EN*****RSSI******MOSCL\n");
 	for(i=0; (i<MAXINVERTERCOUNT)&&(i < ecu.validNum); i++)	
 	{
 		printf("%02x%02x%02x%02x%02x%02x ",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5]);
@@ -579,8 +582,11 @@ void systemInfo(void)
 		printf("     %5d ",curinverter->PV2);
 		printf("    %5d ",curinverter->PI);
 		printf("    %5d ",curinverter->Power1);
-		printf("   %5d \n",curinverter->Power2);
-		
+		printf("   %5d ",curinverter->Power2);
+		printf(" %10d ",curinverter->PV1_Energy);
+		printf("   %10d ",curinverter->PV2_Energy);
+		printf("   %5d ",curinverter->RSSI);
+		printf("   %3d ",curinverter->Mos_CloseNum);
 	}
 	printf("*****************************************************************************************************************************************\n");
 }

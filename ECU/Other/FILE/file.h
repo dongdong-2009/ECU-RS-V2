@@ -20,8 +20,10 @@
 /*  Definitions                                                              */
 /*****************************************************************************/
 #define VERSION_ECU_RS    					"101"
-#define SOFEWARE_VERSION_LENGTH			5
+
+#define SOFEWARE_VERSION_LENGTH				5
 #define SOFEWARE_VERSION						"RS1.3"
+
 //地址
 #define  ADDRESS_Test 							0x000000			//用于板子收发测试    			10字节
 #define  ADDRESS_RebootNum					0x00000a			//用于记录重启次数					4个字节

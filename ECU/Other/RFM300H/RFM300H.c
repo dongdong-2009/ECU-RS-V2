@@ -170,6 +170,7 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 		SendMessage((unsigned char *)Senddata,28);
 
 		RF_leng = GetMessage((unsigned char *)Recvdata);
+		//printf("%d\n",RF_leng);
 		if((RF_leng==46)&&			
 			(Senddata[4]==Recvdata[4])&&
 			(Senddata[5]==Recvdata[5])&&
@@ -227,14 +228,14 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 			cur_inverter->RSSI = Recvdata[32];
 			
 			//PV1累计发电量
-			cur_inverter->PV1_Energy = Recvdata[33]+Recvdata[34]+Recvdata[35]+Recvdata[36];
+			cur_inverter->PV1_Energy = (Recvdata[33]*256*65536)+(Recvdata[34]*65536)+(Recvdata[35]*256)+Recvdata[36];
 			//PV2累计发电量
-			cur_inverter->PV2_Energy = Recvdata[37]+Recvdata[38]+Recvdata[39]+Recvdata[40];
+			cur_inverter->PV2_Energy = (Recvdata[37]*256*65536)+(Recvdata[38]*65536)+(Recvdata[39]*256)+Recvdata[40];
 			//MOS管关断次数
 			cur_inverter->Mos_CloseNum = Recvdata[41];
 	
-			SEGGER_RTT_printf(0, "RFM300_Heart_Beat %02x%02x%02x%02x%02x%02x  dt:%d pv1:%d pv2:%d pi:%d p1:%d p2:%d ot:%d hr:%d fs:%d pv1low:%d pv2low:%d\n",Senddata[10],Senddata[11],Senddata[12],Senddata[13],Senddata[14],Senddata[15],	
-							cur_inverter->status.device_Type,cur_inverter->PV1,cur_inverter->PV2,cur_inverter->PI,cur_inverter->Power1,cur_inverter->Power2,cur_inverter->off_times,cur_inverter->heart_rate,cur_inverter->status.function_status,cur_inverter->status.pv1_low_voltage_pritection,cur_inverter->status.pv2_low_voltage_pritection);
+			//SEGGER_RTT_printf(0, "RFM300_Heart_Beat %02x%02x%02x%02x%02x%02x  dt:%d pv1:%d pv2:%d pi:%d p1:%d p2:%d ot:%d hr:%d fs:%d pv1low:%d pv2low:%d\n",Senddata[10],Senddata[11],Senddata[12],Senddata[13],Senddata[14],Senddata[15],	
+			//				cur_inverter->status.device_Type,cur_inverter->PV1,cur_inverter->PV2,cur_inverter->PI,cur_inverter->Power1,cur_inverter->Power2,cur_inverter->off_times,cur_inverter->heart_rate,cur_inverter->status.function_status,cur_inverter->status.pv1_low_voltage_pritection,cur_inverter->status.pv2_low_voltage_pritection);
 
 			//生成相关的报警报文
 			

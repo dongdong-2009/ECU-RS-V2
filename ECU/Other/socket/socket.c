@@ -7,10 +7,12 @@
 #include "threadlist.h"
 #include "usart5.h"
 #include "debug.h"
+#include "string.h"
+#include "rthw.h"
 
 #define CLIENT_SERVER_DOMAIN	""
 #define CLIENT_SERVER_IP			"60.190.131.190"
-//#define CLIENT_SERVER_IP			"192.168.1.103"
+//#define CLIENT_SERVER_IP			"192.168.1.100"
 #define CLIENT_SERVER_PORT1	8982
 #define CLIENT_SERVER_PORT2	8982
 
@@ -139,14 +141,136 @@ void close_socket(int fd_sock)					//关闭socket连接
 	printmsg(ECU_DBG_OTHER,"Close socket");
 }
 
+int msg_is_complete(const char *s)
+{
+	int i, msg_length = 18;
+	char buffer[6] = {'\0'};
+
+	if(strlen(s) < 10)
+		return 0;
+
+	//从信息头获取信息长度
+	strncpy(buffer, &s[5], 5);
+	for(i=0; i<5; i++)
+		if('A' == buffer[i])
+			buffer[i] = '0';
+	msg_length = atoi(buffer);
+
+	//将实际收到的长度与信息中定义的长度作比较
+	if(strlen(s) < msg_length){
+		return 0;
+	}
+	return 1;
+}
+
+
+
+/* Socket 发送数据 */
+int send_socket(int sockfd, char *sendbuffer, int size)
+{
+	int i, send_count;
+	char msg_length[6] = {'\0'};
+
+	if(sendbuffer[strlen(sendbuffer)-1] == '\n'){
+		sprintf(msg_length, "%05d", strlen(sendbuffer)-1);
+	}
+	else{
+		sprintf(msg_length, "%05d", strlen(sendbuffer));
+		strcat(sendbuffer, "\n");
+		size++;
+	}
+	strncpy(&sendbuffer[5], msg_length, 5);
+	for(i=0; i<3; i++){
+		send_count = send(sockfd, sendbuffer, size, 0);
+		if(send_count >= 0){
+			sendbuffer[strlen(sendbuffer)-1] = '\0';
+			print2msg(ECU_DBG_CONTROL_CLIENT,"Sent", sendbuffer);
+			rt_hw_ms_delay(100);
+			return send_count;
+		}
+	}
+	printmsg(ECU_DBG_CONTROL_CLIENT,"Send failed:");
+	return -1;
+}
+
+/* 接收数据 */
+int recv_socket(int sockfd, char *recvbuffer, int size, int timeout_s)
+{
+	fd_set rd;
+	struct timeval timeout = {10,0};
+	int recv_each = 0, recv_count = 0,res = 0;
+	char *recv_buffer = NULL;
+	recv_buffer = malloc(4096);
+
+	memset(recvbuffer, '\0', size);
+	while(1)
+	{
+		FD_ZERO(&rd);
+		FD_SET(sockfd, &rd);
+		timeout.tv_sec = timeout_s;
+		res = select(sockfd+1, &rd, NULL, NULL, &timeout);
+		switch(res){
+			case -1:
+				printmsg(ECU_DBG_CONTROL_CLIENT,"select");
+			case 0:
+				printmsg(ECU_DBG_CONTROL_CLIENT,"Receive date from EMA timeout");
+				closesocket(sockfd);
+				printmsg(ECU_DBG_CONTROL_CLIENT,">>End");
+				free(recv_buffer);
+				recv_buffer = NULL;
+				return -1;
+			default:
+				if(FD_ISSET(sockfd, &rd)){
+					memset(recv_buffer, '\0', sizeof(recv_buffer));
+					recv_each = recv(sockfd, recv_buffer, sizeof(recv_buffer), 0);
+					strcat(recvbuffer, recv_buffer);
+					if(recv_each <= 0){
+						
+						printdecmsg(ECU_DBG_CONTROL_CLIENT,"Communication over", recv_each);
+						free(recv_buffer);
+						recv_buffer = NULL;
+						return -1;
+					}
+					printdecmsg(ECU_DBG_CONTROL_CLIENT,"Received each time", recv_each);
+					recv_count += recv_each;
+//					debug_msg("Received Total:%d", recv_count);
+					print2msg(ECU_DBG_CONTROL_CLIENT,"Received", recvbuffer);
+					if(msg_is_complete(recvbuffer)){
+						free(recv_buffer);
+						recv_buffer = NULL;
+						return recv_count;
+					}
+				}
+				break;
+		}
+	}
+
+}
+
+
+/* Socket客户端初始化 返回-1表示失败*/ 
+int Control_client_socket_init(void)
+{
+	int sockfd;
+	int ret;
+
+	sockfd = createsocket();
+	//创建SOCKET描述符
+	if(sockfd < 0) return sockfd;
+	ret = connect_control_socket(sockfd);
+	//小于0  表示创建失败
+	if(ret < 0) return ret;
+	return sockfd;
+}
+
 
 int wifi_socketb_format(char *data ,int length)
 {
 	char head[9] = {'\0'};
 	char *p = NULL;
 	int i = 0,retlength = 0;
-	/*
-	head[0] = 0x62;
+
+	head[0] = 'b';
 	head[1] = 0x00;
 	head[2] = 0x00;
 	head[3] = 0x00;
@@ -155,7 +279,7 @@ int wifi_socketb_format(char *data ,int length)
 	head[6] = 0x00;
 	head[7] = 0x00;
 	head[8] = 0x00;
-	*/
+	/*
 	head[0] = 'b';
 	head[1] = '0';
 	head[2] = '0';
@@ -165,6 +289,7 @@ int wifi_socketb_format(char *data ,int length)
 	head[6] = '0';
 	head[7] = '0';
 	head[8] = '0';
+	*/
 	for(p = data,i = 0;p <= (data+length-9);p++,i++)
 	{
 		if(!memcmp(p,head,9))
@@ -178,6 +303,7 @@ int wifi_socketb_format(char *data ,int length)
 
 	return retlength;
 }
+
 //与Client服务器通讯 
 //sendbuff[in]:发送数据的buff
 //sendLength[in]:发送字节长度
@@ -200,6 +326,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 		fd_set rd;
 		struct timeval timeout;
 		sendbytes = send(socketfd, sendbuff, sendLength, 0);
+		
 		if(-1 == sendbytes)
 		{
 			close_socket(socketfd);
@@ -373,8 +500,6 @@ int serverCommunication_Control(char *sendbuff,int sendLength,char *recvbuff,int
 	}
 	
 }
-
-
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>

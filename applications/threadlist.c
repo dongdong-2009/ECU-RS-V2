@@ -76,7 +76,14 @@ static struct rt_thread led_thread;
 ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t lan8720_rst_stack[400];
 static struct rt_thread lan8720_rst_thread;
-#endif 
+#endif
+
+#ifdef THREAD_PRIORITY_UPDATE
+#include "remoteUpdate.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t update_stack[2048];
+static struct rt_thread update_thread;
+#endif
 
 #ifdef THREAD_PRIORITY_EVENT
 #include "ECUEvent.h"
@@ -112,9 +119,6 @@ ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t control_stack[4096];
 static struct rt_thread control_thread;
 #endif 
-
-
-
 
 
 ecu_info ecu;	//ecu相关信息
@@ -319,7 +323,13 @@ void tasks_new(void)
   result = rt_thread_init(&lan8720_rst_thread,"lanrst",lan8720_rst_thread_entry,RT_NULL,(rt_uint8_t*)&lan8720_rst_stack[0],sizeof(lan8720_rst_stack),THREAD_PRIORITY_LAN8720_RST,5);
   if (result == RT_EOK)	rt_thread_startup(&lan8720_rst_thread);
 #endif
-	
+
+#ifdef THREAD_PRIORITY_UPDATE	
+  /* init update thread */
+	result = rt_thread_init(&update_thread,"update",remote_update_thread_entry,RT_NULL,(rt_uint8_t*)&update_stack[0],sizeof(update_stack),THREAD_PRIORITY_UPDATE,5);
+  if (result == RT_EOK) rt_thread_startup(&update_thread);
+#endif
+
 #ifdef THREAD_PRIORITY_EVENT
   /* init Event thread */
   result = rt_thread_init(&event_thread,"event",ECUEvent_thread_entry,RT_NULL,(rt_uint8_t*)&event_stack[0],sizeof(event_stack),THREAD_PRIORITY_EVENT,5);
@@ -385,7 +395,17 @@ void restartThread(threadType type)
 			result = rt_thread_init(&lan8720_rst_thread,"lanrst",lan8720_rst_thread_entry,RT_NULL,(rt_uint8_t*)&lan8720_rst_stack[0],sizeof(lan8720_rst_stack),THREAD_PRIORITY_LAN8720_RST,5);
 			if (result == RT_EOK)	rt_thread_startup(&lan8720_rst_thread);
 			break;
-#endif 			
+#endif 		
+
+#ifdef THREAD_PRIORITY_UPDATE
+		case TYPE_UPDATE:
+			rt_thread_detach(&update_thread);
+		  /* init update thread */
+			result = rt_thread_init(&update_thread,"update",remote_update_thread_entry,RT_NULL,(rt_uint8_t*)&update_stack[0],sizeof(update_stack),THREAD_PRIORITY_UPDATE,5);
+			if (result == RT_EOK)	rt_thread_startup(&update_thread);
+			break;
+#endif
+
 
 		default:
 			break;

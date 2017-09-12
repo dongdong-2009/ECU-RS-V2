@@ -175,7 +175,7 @@ void UART5_IRQHandler(void)                	//串口1中断服务程序
 	if(USART_GetITStatus(UART5, USART_IT_RXNE) != RESET)  //接收中断(接收到的数据必须是0x0d 0x0a结尾)
 	{
 		USART_RX_BUF[Cur] = USART_ReceiveData(UART5);//(UART5->DR);	//读取接收到的数据
-		//SEGGER_RTT_printf(0, "[%d] : %x %c\n",Cur,USART_RX_BUF[Cur],USART_RX_BUF[Cur]);
+		SEGGER_RTT_printf(0, "[%d] : %x %c\n",Cur,USART_RX_BUF[Cur],USART_RX_BUF[Cur]);
 		Cur +=1;
 		if(Cur >=USART_REC_LEN)
 		{
@@ -534,8 +534,9 @@ void WIFI_GetEvent(void)
 			WIFI_Recv_SocketB_LEN = PackLen-9;
 			
 			WIFI_RecvSocketBData[WIFI_Recv_SocketB_LEN] = '\0';
+		
 			WIFI_Recv_SocketB_Event = 1;
-			//SEGGER_RTT_printf(0, "WIFI_RecvData :%s\n",WIFI_RecvSocketBData);
+			SEGGER_RTT_printf(0, "WIFI_RecvData :%s\n",WIFI_RecvSocketBData);
 			eTypeMachine = EN_RECV_TYPE_UNKNOWN;
 			eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 			Cur = 0;
@@ -1281,7 +1282,7 @@ int InitTestMode(void)
 	//配置SOCKET B IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDB("192.168.1.103"))
+		if(0 == AT_TCPADDB("192.168.1.100"))
 		{
 			res = 0;
 			break;
@@ -1293,7 +1294,7 @@ int InitTestMode(void)
 	//配置SOCKET B端口
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPPTB(8093))
+		if(0 == AT_TCPPTB(8082))
 		{
 			res = 0;
 			break;
@@ -1356,6 +1357,132 @@ int InitTestMode(void)
 
 int InitWorkMode(void)
 {
+	int i = 0,res = 0;
+	//进入AT模式
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT())
+		{//进入AT成功
+			//printf("AT Successful\n");
+			res = 0;
+			break;
+		}else
+		{//进入AT失败,尝试退出AT模式
+			//printf("AT Failed,AT_ENTM\n");
+			res = -1;
+			AT_ENTM();
+		}
+	}
+	if(res == -1) return -1;
+	//进入AT模式成功后，执行后续操作
+
+	//选择 WMODE
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_WMODE("STA"))
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;	
+
+	//选择AP-STA共存
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_FAPSTA_ON())
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;	
+
+	//开启SOCKET B
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_TCPB_ON())
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;	
+	//配置SOCKET B IP地址
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_TCPADDB("60.190.131.190"))
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;
+	
+	//配置SOCKET B端口
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_TCPPTB(8982))
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;
+	
+	//开启SOCKET C
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_TCPC_ON())
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;
+	
+	//配置SOCKET C  IP地址
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_TCPADDC("192.168.1.103"))
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;
+	//配置SOCKET C端口
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_TCPPTC(8997))
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;
+	
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_ENTM())
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;
+	
+	printf("WIFI_InitWorkMode Over\n");
+
 	return 0;
 }
 

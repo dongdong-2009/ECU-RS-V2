@@ -18,6 +18,26 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 #define EPSILON 0.000000001
 int day_tab[2][12]={{31,28,31,30,31,30,31,31,30,31,30,31},{31,29,31,30,31,30,31,31,30,31,30,31}}; 
 
+int fileopen(const char *file, int flags, int mode)
+{
+	return open(file,flags,mode);
+}
+
+int fileclose(int fd)
+{
+	return close(fd);
+}
+
+int fileWrite(int fd,char* buf,int len)
+{
+	return write( fd, buf, len );
+}
+
+int fileRead(int fd,char* buf,int len)
+{
+	return read( fd, buf, len );
+}
+
 
 //将CSV文件中的一行转换为字符串
 int splitString(char *data,char splitdata[][32])
@@ -1773,6 +1793,7 @@ int update_control_send_flag(char *send_date_time)
 //创建报警信息
 void create_alarm_record(unsigned char last_mos_status,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter)
 {
+#if 0
 	int create_flag = 0;
 	char *alarm_data = 0;
 	char curTime[15] = {'\0'};
@@ -1837,6 +1858,7 @@ void create_alarm_record(unsigned char last_mos_status,unsigned char last_functi
 
 	free(alarm_data);
 	alarm_data = NULL;
+	#endif
 }
 
 void save_alarm_record(char sendbuff[], char *date_time)
@@ -1857,7 +1879,6 @@ void save_alarm_record(char sendbuff[], char *date_time)
 		if (fd >= 0)
 		{		
 			sprintf(sendbuff,"%s,%s,1\n",sendbuff,date_time);
-			//print2msg(ECU_DBG_FILE,"save_record",sendbuff);
 			write(fd,sendbuff,strlen(sendbuff));
 			close(fd);
 		}

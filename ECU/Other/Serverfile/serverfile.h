@@ -3,6 +3,11 @@
 #include "variation.h"
 #include <rtthread.h>
 
+int fileopen(const char *file, int flags, int mode);
+int fileclose(int fd);
+int fileWrite(int fd,char* buf,int len);
+int fileRead(int fd,char* buf,int len);
+
 void init_tmpdb(inverter_info *firstinverter);
 void init_RecordMutex(void);
 void echo(const char* filename,const char* string);
