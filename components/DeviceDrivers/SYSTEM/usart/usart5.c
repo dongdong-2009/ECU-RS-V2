@@ -366,8 +366,8 @@ void WIFI_GetEvent(void)
 					//SEGGER_RTT_printf(0, "LENGTH11111 : %d\n",PackLen);
 					//计算长度
 					eStateMachine = EN_RECV_ST_GET_A_DATA;
-					delayMS(10);
-					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+					delayMS(20);
+					TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
 				}
@@ -499,7 +499,7 @@ void WIFI_GetEvent(void)
 					//计算长度
 					eStateMachine = EN_RECV_ST_GET_B_DATA;
 					delayMS(10);
-					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+					TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
 				}
@@ -612,7 +612,7 @@ void WIFI_GetEvent(void)
 					//计算长度
 					eStateMachine = EN_RECV_ST_GET_C_DATA;
 					delayMS(10);
-					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+					TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
 				}
@@ -1282,7 +1282,7 @@ int InitTestMode(void)
 	//配置SOCKET B IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDB("192.168.1.100"))
+		if(0 == AT_TCPADDB("192.168.1.102"))
 		{
 			res = 0;
 			break;
@@ -1318,7 +1318,7 @@ int InitTestMode(void)
 	//配置SOCKET C  IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDC("192.168.1.103"))
+		if(0 == AT_TCPADDC("192.168.1.102"))
 		{
 			res = 0;
 			break;

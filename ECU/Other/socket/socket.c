@@ -11,14 +11,14 @@
 #include "rthw.h"
 
 #define CLIENT_SERVER_DOMAIN	""
-#define CLIENT_SERVER_IP			"60.190.131.190"
-//#define CLIENT_SERVER_IP			"192.168.1.100"
+//#define CLIENT_SERVER_IP			"60.190.131.190"
+#define CLIENT_SERVER_IP			"192.168.1.102"
 #define CLIENT_SERVER_PORT1	8982
 #define CLIENT_SERVER_PORT2	8982
 
 #define CONTROL_SERVER_DOMAIN	""
 //#define CONTROL_SERVER_IP			"139.168.200.158"
-#define CONTROL_SERVER_IP			"192.168.1.103"
+#define CONTROL_SERVER_IP			"139.168.200.158"
 #define CONTROL_SERVER_PORT1	8997
 #define CONTROL_SERVER_PORT2	8997
 
@@ -222,10 +222,10 @@ int recv_socket(int sockfd, char *recvbuffer, int size, int timeout_s)
 			default:
 				if(FD_ISSET(sockfd, &rd)){
 					memset(recv_buffer, '\0', sizeof(recv_buffer));
-					recv_each = recv(sockfd, recv_buffer, sizeof(recv_buffer), 0);
+					recv_each = recv(sockfd, recv_buffer, 4096, 0);
+					recv_buffer[recv_each] = '\0';
 					strcat(recvbuffer, recv_buffer);
-					if(recv_each <= 0){
-						
+					if(recv_each <= 0){	
 						printdecmsg(ECU_DBG_CONTROL_CLIENT,"Communication over", recv_each);
 						free(recv_buffer);
 						recv_buffer = NULL;
@@ -233,7 +233,6 @@ int recv_socket(int sockfd, char *recvbuffer, int size, int timeout_s)
 					}
 					printdecmsg(ECU_DBG_CONTROL_CLIENT,"Received each time", recv_each);
 					recv_count += recv_each;
-//					debug_msg("Received Total:%d", recv_count);
 					print2msg(ECU_DBG_CONTROL_CLIENT,"Received", recvbuffer);
 					if(msg_is_complete(recvbuffer)){
 						free(recv_buffer);

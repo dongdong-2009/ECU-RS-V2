@@ -61,8 +61,8 @@ void Collect_Client_Record(void)
 		{
 			char UID[13] = {'\0'};
 			//采集每一轮优化器的数据
-			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传
-			if(!memcmp(curinverter->LastCollectTime,"00000000000000",14) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
+			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传   只有最新一轮通讯打野上一次采集，才会进入
+			if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
 			{
 				commNum++;		
 				curinverter->status.comm_status = 1;
@@ -166,7 +166,7 @@ void Collect_Client_Record(void)
 				client_Data[length++] = 'E';
 				client_Data[length++] = 'N';
 				client_Data[length++] = 'D';
-				
+				//打印相关信息
 				inverter_Info(curinverter);
 						
 				memcpy(curinverter->LastCollectTime,curinverter->CurCollectTime,15);
@@ -372,7 +372,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect DATA End");
 
 		}
-		/*
+		
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
 			//采集心跳相关远程控制数据
@@ -383,7 +383,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
 
 		}
-		*/	
+		
 		rt_thread_delay(RT_TICK_PER_SECOND);
 		CollectClientDurabletime = acquire_time();		
 		CollectControlDurabletime = acquire_time();			

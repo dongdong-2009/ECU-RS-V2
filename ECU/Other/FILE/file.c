@@ -21,7 +21,7 @@ int Write_Test(char *Data_Ptr,unsigned char Counter)
 	char test[10] = {'\0'};
 	//先写入然后再读取  如果相同表示成功
 	Write_24L512_nByte(ADDRESS_Test,Counter,(unsigned char *)Data_Ptr);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte(ADDRESS_Test,Counter, (unsigned char *)test);
 	if(!memcmp(Data_Ptr,test,Counter))
 		return 0;
@@ -42,7 +42,7 @@ int Write_ECUID(char *ECUID)             //ECU id
 	char id[6] = {'\0'};
 	//先写入然后再读取  如果相同表示成功
 	Write_24L512_nByte(ADDRESS_ECUID,6,(unsigned char *)ECUID);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte(ADDRESS_ECUID,6, (unsigned char *)id);
 	if(!memcmp(ECUID,id,6))
 		return 0;
@@ -79,7 +79,7 @@ int Write_CHANNEL(char *Channel)       //信道
 	char channel[2] = {'\0'};
 	//先写入然后再读取  如果相同表示成功
 	Write_24L512_nByte(ADDRESS_CHANNEL,2,(unsigned char *)Channel);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte(ADDRESS_CHANNEL,2, (unsigned char *)channel);
 	if(!memcmp(Channel,channel,2))
 		return 0;
@@ -100,7 +100,7 @@ int Write_IO_INIT_STATU(char *IO_InitStatus)       //IO上电状态
 	char io_init_status[1] = {'\0'};
 	//先写入然后再读取  如果相同表示成功
 	Write_24L512_nByte(ADDRESS_IO_INIT_STATUS,1,(unsigned char *)IO_InitStatus);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte(ADDRESS_IO_INIT_STATUS,1, (unsigned char *)io_init_status);
 	if(!memcmp(IO_InitStatus,io_init_status,1))
 		return 0;
@@ -121,7 +121,7 @@ int Write_WIFI_PW(char *WIFIPasswd,unsigned char Counter)       //WIFI密码
 	char wifi_pw[12] = {'\0'};
 	//先写入然后再读取  如果相同表示成功
 	Write_24L512_nByte(ADDRESS_WIFI_PW,Counter,(unsigned char *)WIFIPasswd);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte(ADDRESS_WIFI_PW,Counter, (unsigned char *)wifi_pw);
 	if(!memcmp(WIFIPasswd,wifi_pw,Counter))
 		return 0;
@@ -143,7 +143,7 @@ int Write_UID_NUM(char *UID_NUM)						//UID_NUM
 
 	//先写入然后再读取  如果相同表示成功
 	Write_24L512_nByte(ADDRESS_UID_NUM,2,(unsigned char *)UID_NUM);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte(ADDRESS_UID_NUM,2, (unsigned char *)uid_num);
 	if(!memcmp(UID_NUM,uid_num,2))
 		return 0;
@@ -165,7 +165,7 @@ int Write_UID(char *UID,int n)      //UID
 
 	//先写入然后再读取  如果相同表示成功
 	Write_24L512_nByte(ADDRESS_UID+0x08*(n-1),6,(unsigned char *)UID);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte(ADDRESS_UID+0x08*(n-1),6, (unsigned char *)uid);
 	if(!memcmp(UID,uid,6))
 		return 0;
@@ -187,7 +187,7 @@ int Write_UID_Bind(char BindFlag,int n)
 {
 	char bindFlag = '\0';
 	Write_24L512_nByte((ADDRESS_UID_BIND+0x08*(n-1)+6),1,(unsigned char *)&BindFlag);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte((ADDRESS_UID_BIND+0x08*(n-1)+6),1, (unsigned char *)&bindFlag);
 	if(!memcmp(&BindFlag,&bindFlag,1))
 		return 0;
@@ -210,7 +210,7 @@ int Write_UID_Channel(char channel,int n)
 {
 	char Channel = '\0';
 	Write_24L512_nByte((ADDRESS_UID_CHANNEL+0x08*(n-1)+7),1,(unsigned char *)&channel);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	Read_24L512_nByte((ADDRESS_UID_CHANNEL+0x08*(n-1)+7),1, (unsigned char *)&Channel);
 	if(!memcmp(&channel,&Channel,1))
 		return 0;
@@ -235,7 +235,7 @@ int Write_rebootNum(unsigned int num)
 	count[2] = (num/256)%256;
 	count[3] = num%256;
 	Write_24L512_nByte(ADDRESS_RebootNum,4,count);
-	rt_hw_us_delay(1500);
+	rt_hw_us_delay(2000);
 	return 0;
 }
 

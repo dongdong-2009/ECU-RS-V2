@@ -50,7 +50,6 @@ int communication_with_EMA(int next_cmd_id)
 		sockfd = Control_client_socket_init();
 		if(sockfd < 0) 
 		{
-		/*
 #ifdef WIFI_USE	
 
 			//有线连接失败，使用wifi传输 
@@ -88,7 +87,6 @@ int communication_with_EMA(int next_cmd_id)
 						return -1;
 					}
 
-
 					//去掉usr WIFI报文的头部
 					memcpy(recv_buffer,WIFI_RecvSocketCData,WIFI_Recv_SocketC_LEN);
 					recv_buffer[WIFI_Recv_SocketC_LEN] = '\0';
@@ -109,22 +107,9 @@ int communication_with_EMA(int next_cmd_id)
 					snprintf(recv_buffer, 51+1, "APS13AAA51A101AAA0%.12sA%3d%.14sEND",
 							ecuid, cmd_id, timestamp);
 				}
-				//ECU注册后初次和EMA通讯
-				if(cmd_id == 118){
-					if(one_a118==0){
-						one_a118=1;
-						//system("rm /etc/yuneng/fill_up_data.conf");
-						//system("echo '1'>>/etc/yuneng/fill_up_data.conf");
-						//system("killall main.exe");
-					}
-					strncpy(timestamp, &recv_buffer[34], 14);
-					next_cmd_id = first_time_info(recv_buffer, send_buffer);
-					if(next_cmd_id == 0){
-						strncpy(timestamp, "00000000000000", 14);
-					}
-				}
+		
 				//根据命令号调用函数
-				else if(pfun[cmd_id%100]){
+				if(pfun[cmd_id%100]){
 					//若设置函数调用完毕后需要执行上报,则会返回上报函数的命令号,否则返回0
 					next_cmd_id = (*pfun[cmd_id%100])(recv_buffer, send_buffer);
 				}
@@ -153,7 +138,7 @@ int communication_with_EMA(int next_cmd_id)
 #ifndef WIFI_USE
 		break;
 #endif
-*/
+
 		}
 		else
 		{
