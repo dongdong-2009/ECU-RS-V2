@@ -75,12 +75,16 @@ int WIFI_SendData(char *data, int num)
 {      
 	int index = 0;
 	char ch = 0;
+	//禁止线程调度
+	rt_enter_critical();
 	for(index = 0;index < num;index++)
 	{
 		ch = data[index];
 		while(USART_GetFlagStatus(UART5,USART_FLAG_TC)==RESET); 
     USART_SendData(UART5,(uint16_t)ch);
 	}
+	//取消线程调度限制
+	rt_exit_critical();
 	return index;
 }
  

@@ -50,6 +50,7 @@ int communication_with_EMA(int next_cmd_id)
 		sockfd = Control_client_socket_init();
 		if(sockfd < 0) 
 		{
+		/*
 #ifdef WIFI_USE	
 
 			//有线连接失败，使用wifi传输 
@@ -138,6 +139,7 @@ int communication_with_EMA(int next_cmd_id)
 #ifndef WIFI_USE
 		break;
 #endif
+	*/
 
 		}
 		else

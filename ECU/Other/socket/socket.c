@@ -22,6 +22,13 @@
 #define CONTROL_SERVER_PORT1	8997
 #define CONTROL_SERVER_PORT2	8997
 
+
+//初始化USR锁
+void initUSRLock(void)
+{
+
+}
+
 int createsocket(void)					//创建SOCKET连接
 {
 	int fd_sock;
