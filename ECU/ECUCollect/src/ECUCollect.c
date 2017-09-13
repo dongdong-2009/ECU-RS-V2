@@ -10,6 +10,8 @@
 #include "rtc.h"
 #include "serverfile.h"
 #include "threadlist.h"
+#include <dfs_posix.h>
+
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -45,6 +47,7 @@ void Collect_Client_Record(void)
 	int commNum = 0; 	//通讯上的逆变器数量
 	char curTime[15] = {'\0'};
 	char str[150] = {'\0'};
+	int fd;
 	apstime(curTime);
 	if(ecu.validNum > 0)
 	{
@@ -63,6 +66,7 @@ void Collect_Client_Record(void)
 			//采集每一轮优化器的数据
 			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传   只有最新一轮通讯打野上一次采集，才会进入
 			if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
+			//if(1)
 			{
 				commNum++;		
 				curinverter->status.comm_status = 1;
@@ -167,19 +171,11 @@ void Collect_Client_Record(void)
 				client_Data[length++] = 'N';
 				client_Data[length++] = 'D';
 				//打印相关信息
-				inverter_Info(curinverter);
+				//inverter_Info(curinverter);
 						
 				memcpy(curinverter->LastCollectTime,curinverter->CurCollectTime,15);
 				curinverter->Last_PV1_Energy = curinverter->PV1_Energy;
-				curinverter->Last_PV2_Energy = curinverter->PV2_Energy;
-				//保存数据到文件中
-				
-				delete_line("/home/data/collect.con","/home/data/collect.t",UID,12);
-				//UID,最后一次采集时间，pv1发电量，pv2发电量
-				sprintf(str,"%s,%s,%d,%d\n",UID,curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
-				//鎻掑叆鏁版嵁
-				insert_line("/home/data/collect.con",str);
-			
+				curinverter->Last_PV2_Energy = curinverter->PV2_Energy;			
 			}
 			else
 			{
@@ -241,9 +237,19 @@ void Collect_Client_Record(void)
 			
 			save_record(client_Data,curTime);
 			print2msg(ECU_DBG_COLLECT,"client Data:",client_Data);
+
+			//保存数据到文件中
+			curinverter = inverterInfo;
+			fd = fileopen("/home/data/collect.con",O_WRONLY | O_APPEND | O_CREAT|O_TRUNC,0);
+			for(i = 0;i< ecu.validNum; i++)
+			{
+				sprintf(str,"%02x%02x%02x%02x%02x%02x,%s,%d,%d\n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
+				fileWrite(fd,str,strlen(str));
+				curinverter++;
+			}
+			fileclose(fd);
 			
 		}
-		
 		
 		free(client_Data);
 		client_Data = NULL;
@@ -342,7 +348,6 @@ void Collect_Control_Record(void)
 			
 		}
 		
-		
 		free(control_Data);
 		control_Data = NULL;
 	}
@@ -372,7 +377,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect DATA End");
 
 		}
-		
+		/*
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
 			//采集心跳相关远程控制数据
@@ -383,7 +388,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
 
 		}
-		
+		*/
 		rt_thread_delay(RT_TICK_PER_SECOND);
 		CollectClientDurabletime = acquire_time();		
 		CollectControlDurabletime = acquire_time();			

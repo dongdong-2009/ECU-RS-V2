@@ -86,6 +86,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->Last_PV1_Energy = 0;
 		curinverter->Last_PV2_Energy = 0;
 		memset(curinverter->LastCommTime,'0',15);
+		curinverter->LastCommTime[14] = '\0';
 		memset(curinverter->CurCollectTime,'0',15);
 		memset(curinverter->LastCollectTime,'0',15);
 		curinverter->AveragePower1 = 0;

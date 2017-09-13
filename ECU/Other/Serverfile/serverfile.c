@@ -1213,7 +1213,6 @@ int search_readflag(char *data,char * time, int *flag,char sendflag)
 					{
 						while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))  //读取一行数据
 						{
-							
 							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 							{
 								if(buff[strlen(buff)-2] == sendflag)			//检测最后一个字节的resendflag是否为1

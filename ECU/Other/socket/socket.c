@@ -11,8 +11,8 @@
 #include "rthw.h"
 
 #define CLIENT_SERVER_DOMAIN	""
-//#define CLIENT_SERVER_IP			"60.190.131.190"
-#define CLIENT_SERVER_IP			"192.168.1.102"
+#define CLIENT_SERVER_IP			"60.190.131.190"
+//#define CLIENT_SERVER_IP			"192.168.1.102"
 #define CLIENT_SERVER_PORT1	8982
 #define CLIENT_SERVER_PORT2	8982
 
@@ -331,6 +331,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 		int res = 0;
 		fd_set rd;
 		struct timeval timeout;
+		
 		sendbytes = send(socketfd, sendbuff, sendLength, 0);
 		
 		if(-1 == sendbytes)
