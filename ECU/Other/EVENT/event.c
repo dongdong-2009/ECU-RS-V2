@@ -586,7 +586,8 @@ void systemInfo(void)
 		printf(" %10d ",curinverter->PV1_Energy);
 		printf("   %10d ",curinverter->PV2_Energy);
 		printf("   %5d ",curinverter->RSSI);
-		printf("   %3d ",curinverter->Mos_CloseNum);
+		printf("   %3d \n",curinverter->Mos_CloseNum);
+		curinverter++;
 	}
 	printf("*****************************************************************************************************************************************\n");
 }

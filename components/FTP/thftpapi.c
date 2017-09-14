@@ -30,6 +30,7 @@
 #include "datetime.h"
 #include "debug.h"
 #include "lan8720rst.h"
+#include "serverfile.h"
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -391,7 +392,7 @@ int ftp_retrfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
     memset(buf,0x00, sizeof(buf));
 		FD_ZERO(&rd);
 		FD_SET(d_sock, &rd);
-		timeout.tv_sec = 5;
+		timeout.tv_sec = 8;
 		timeout.tv_usec = 0;
 
 		while (1) {
