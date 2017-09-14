@@ -1141,6 +1141,11 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUControl\src\remote_control_protocol.c</FilePath>
             </File>
+            <File>
+              <FileName>set_rsd_function_switch.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUControl\src\set_rsd_function_switch.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
