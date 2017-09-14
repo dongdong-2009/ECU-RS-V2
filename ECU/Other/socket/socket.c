@@ -9,23 +9,46 @@
 #include "debug.h"
 #include "string.h"
 #include "rthw.h"
+#include "rtthread.h"
 
+
+#if 0
 #define CLIENT_SERVER_DOMAIN	""
 #define CLIENT_SERVER_IP			"60.190.131.190"
-//#define CLIENT_SERVER_IP			"192.168.1.102"
 #define CLIENT_SERVER_PORT1	8982
 #define CLIENT_SERVER_PORT2	8982
 
 #define CONTROL_SERVER_DOMAIN	""
-//#define CONTROL_SERVER_IP			"139.168.200.158"
-#define CONTROL_SERVER_IP			"139.168.200.158"
+#define CLIENT_SERVER_IP		"60.190.131.190"
 #define CONTROL_SERVER_PORT1	8997
 #define CONTROL_SERVER_PORT2	8997
+
+#else
+
+#define CLIENT_SERVER_DOMAIN	""
+//#define CLIENT_SERVER_IP			"139.168.200.158"
+#define CLIENT_SERVER_IP			"192.168.1.110"
+
+#define CLIENT_SERVER_PORT1	8096
+#define CLIENT_SERVER_PORT2	8096
+
+#define CONTROL_SERVER_DOMAIN	""
+//#define CONTROL_SERVER_IP			"139.168.200.158"
+#define CONTROL_SERVER_IP			"192.168.1.110"
+
+#define CONTROL_SERVER_PORT1	8981
+#define CONTROL_SERVER_PORT2	8981
+
+#endif
+
+
+rt_mutex_t usr_wifi_lock = RT_NULL;
 
 
 //³õÊ¼»¯USRËø
 void initUSRLock(void)
 {
+	usr_wifi_lock = rt_mutex_create("usr_wifi_lock", RT_IPC_FLAG_FIFO);
 
 }
 
@@ -296,17 +319,24 @@ int wifi_socketb_format(char *data ,int length)
 	head[7] = '0';
 	head[8] = '0';
 	*/
-	for(p = data,i = 0;p <= (data+length-9);p++,i++)
-	{
-		if(!memcmp(p,head,9))
-		{
-			memcpy(p,p+9,(length-9-i));
-			length -= 9;
-			data[length] = '\0';
-			retlength = length;
-		}
-	}
 
+	if(((length -3)%14) != 0)
+	{
+		for(p = data,i = 0;p <= (data+length-9);p++,i++)
+		{
+			if(!memcmp(p,head,9))
+			{
+				memcpy(p,p+9,(length-9-i));
+				length -= 9;
+				data[length] = '\0';
+				retlength = length;
+			}
+		}
+	}else
+	{
+		retlength = length;
+	}
+	
 	return retlength;
 }
 

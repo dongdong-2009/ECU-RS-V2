@@ -38,6 +38,7 @@
 #include "watchdog.h"
 #include "file.h"
 #include "serverfile.h"
+#include "socket.h"
 
 #ifdef RT_USING_DFS
 #include <dfs_fs.h>
@@ -213,6 +214,7 @@ void rt_init_thread_entry(void* parameter)
 	rt_hw_watchdog_init();
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
+	initUSRLock();
 	init_ecu();										//初始化ECU
 	init_inverter(inverterInfo);	//初始化逆变器
 	init_tmpdb(inverterInfo);

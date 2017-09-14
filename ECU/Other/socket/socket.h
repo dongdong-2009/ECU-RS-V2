@@ -1,6 +1,7 @@
 #ifndef __SOCKET_H__
 #define __SOCKET_H__
 
+void initUSRLock(void);
 int createsocket(void);					//创建SOCKET连接
 int connect_client_socket(int fd_sock);				//通过有线的方式连接服务器
 int connect_control_socket(int fd_sock);				//通过有线的方式连接服务器

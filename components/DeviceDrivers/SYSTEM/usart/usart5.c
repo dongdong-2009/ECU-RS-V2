@@ -494,6 +494,18 @@ void WIFI_GetEvent(void)
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_B_LEN\n");
 			while(pos < Cur)
       {
+      			if(10 == pos)
+      			{
+      				if('b' != USART_RX_BUF[10])
+      				{
+      					PackLen = packetlen_B(&USART_RX_BUF[10]);
+						eStateMachine = EN_RECV_ST_GET_B_DATA;
+						delayMS(10);
+						TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+
+					break;
+      				}
+      			}
 				//判断是否有a出现  如果出现了判断后面8个字节
 				if(19 == pos)   //接收数据长度结束
 				{
@@ -538,9 +550,8 @@ void WIFI_GetEvent(void)
 			WIFI_Recv_SocketB_LEN = PackLen-9;
 			
 			WIFI_RecvSocketBData[WIFI_Recv_SocketB_LEN] = '\0';
-		
+			printf("WIFI_Recv_SocketB_LEN:%d   %s \n",WIFI_Recv_SocketB_LEN,WIFI_RecvSocketBData);
 			WIFI_Recv_SocketB_Event = 1;
-			SEGGER_RTT_printf(0, "WIFI_RecvData :%s\n",WIFI_RecvSocketBData);
 			eTypeMachine = EN_RECV_TYPE_UNKNOWN;
 			eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 			Cur = 0;
@@ -1286,7 +1297,7 @@ int InitTestMode(void)
 	//配置SOCKET B IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDB("192.168.1.102"))
+		if(0 == AT_TCPADDB("192.168.1.110"))
 		{
 			res = 0;
 			break;
@@ -1298,7 +1309,7 @@ int InitTestMode(void)
 	//配置SOCKET B端口
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPPTB(8082))
+		if(0 == AT_TCPPTB(8096))
 		{
 			res = 0;
 			break;
@@ -1322,7 +1333,7 @@ int InitTestMode(void)
 	//配置SOCKET C  IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDC("192.168.1.102"))
+		if(0 == AT_TCPADDC("192.168.1.110"))
 		{
 			res = 0;
 			break;
@@ -1333,7 +1344,7 @@ int InitTestMode(void)
 	//配置SOCKET C端口
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPPTC(8997))
+		if(0 == AT_TCPPTC(8981))
 		{
 			res = 0;
 			break;

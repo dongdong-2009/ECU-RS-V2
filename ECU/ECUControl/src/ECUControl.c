@@ -1,4 +1,5 @@
 #include "ECUControl.h"
+#include "usart5.h"
 #include "rtthread.h"
 #include "datetime.h"
 #include "inverter.h"
@@ -12,9 +13,16 @@
 #include "stdlib.h"
 #include "rtc.h"
 #include "socket.h"
+#include "set_rsd_function_switch.h"
+
+
+
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
+
+extern rt_mutex_t usr_wifi_lock;
+
 
 enum CommandID{
 	A100, A101, A102, A103, A104, A105, A106, A107, A108, A109, //0-9
@@ -23,12 +31,13 @@ enum CommandID{
 	A130, A131, A132, A133, A134, A135, A136, A137, A138, A139, //30-39
 	A140, A141, A142, A143, A144, A145, A146, A147, A148, A149,
 	A150, A151, A152, A153, A154, A155, A156, A157, A158, A159,
+	A160, A161, A162, A163, A164, A165, A166, A167, A168, A169,
 };
-int (*pfun[100])(const char *recvbuffer, char *sendbuffer);
+int (*pfun[200])(const char *recvbuffer, char *sendbuffer);
 
 void add_functions()
 {
-  //pfun[A102] = response_inverter_id; 			//上报逆变器ID  										OK
+  pfun[A160] = set_rsd_function_switch; 			//上报逆变器ID  										OK
 
 }
 
@@ -50,7 +59,7 @@ int communication_with_EMA(int next_cmd_id)
 		sockfd = Control_client_socket_init();
 		if(sockfd < 0) 
 		{
-		/*
+		
 #ifdef WIFI_USE	
 
 			//有线连接失败，使用wifi传输 
@@ -94,7 +103,6 @@ int communication_with_EMA(int next_cmd_id)
 					print2msg(ECU_DBG_CONTROL_CLIENT,"communication_with_EMA recv",recv_buffer);
 					//校验命令
 					if(msg_format_check(recv_buffer) < 0){
-						//closesocket(sockfd);
 						continue;
 					}
 					//解析命令号
@@ -106,9 +114,9 @@ int communication_with_EMA(int next_cmd_id)
 					next_cmd_id = 0;
 					memset(recv_buffer, 0, sizeof(recv_buffer));
 					snprintf(recv_buffer, 51+1, "APS13AAA51A101AAA0%.12sA%3d%.14sEND",
-							ecuid, cmd_id, timestamp);
+							ecu.ECUID12, cmd_id, timestamp);
 				}
-		
+
 				//根据命令号调用函数
 				if(pfun[cmd_id%100]){
 					//若设置函数调用完毕后需要执行上报,则会返回上报函数的命令号,否则返回0
@@ -122,7 +130,7 @@ int communication_with_EMA(int next_cmd_id)
 					//若命令号不存在,则发送设置失败应答(每条设置协议的时间戳位置不统一,返回时间戳是个问题...)
 					memset(send_buffer, 0, sizeof(send_buffer));
 					snprintf(send_buffer, 52+1, "APS13AAA52A100AAA0%sA%3d000000000000002END\n",
-							ecuid, cmd_id);
+							ecu.ECUID12, cmd_id);
 				}
 				//将消息发送给EMA(自动计算长度,补上回车)
 				SendToSocketC(send_buffer, strlen(send_buffer));
@@ -139,8 +147,7 @@ int communication_with_EMA(int next_cmd_id)
 #ifndef WIFI_USE
 		break;
 #endif
-	*/
-
+	
 		}
 		else
 		{
@@ -240,7 +247,7 @@ int prealarmprocess(void)
 	}
 	if(readbytes > 54)
 	{
-		clear_alarm_send_flag(&readbuff[48]);
+		clear_alarm_send_flag(&readbuff[49]);
 		
 	}else
 	{
@@ -333,7 +340,7 @@ int precontrolprocess(void)
 	}
 	if(readbytes > 54)
 	{
-		clear_control_send_flag(&readbuff[48]);
+		clear_control_send_flag(&readbuff[49]);
 		
 	}else
 	{
@@ -405,13 +412,14 @@ void ECUControl_thread_entry(void* parameter)
 	char *data = NULL;
 	int res,flag;
 	char time[15] = {'\0'};
-	
+	//添加功能函数
+  	add_functions();
+	printmsg(ECU_DBG_CONTROL_CLIENT,"add functions Over");
 	rt_thread_delay(RT_TICK_PER_SECOND*START_TIME_CONTROL_CLIENT);
 	
 	data = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(data,0x00,CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
-	//添加功能函数
-  	add_functions();
+
 	
 	while(1)
 	{
@@ -423,7 +431,7 @@ void ECUControl_thread_entry(void* parameter)
 
 			ControlThistime = acquire_time();
 
-			if((2 == get_hour())||(1 == get_hour()))
+			if(10 == get_hour())
 			{
 				precontrolprocess();
 				resend_control_record();
@@ -452,7 +460,7 @@ void ECUControl_thread_entry(void* parameter)
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Alarm DATA Start");
 			AlarmThistime = acquire_time();
 
-			if((2 == get_hour())||(1 == get_hour()))
+			if(11 == get_hour())
 			{
 				//发送A157 情况异常标志命令
 				prealarmprocess();
