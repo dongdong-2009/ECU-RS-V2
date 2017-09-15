@@ -37,8 +37,8 @@ int (*pfun[200])(const char *recvbuffer, char *sendbuffer);
 
 void add_functions()
 {
-	//pfun[A102] = response_inverter_id; 			//上报逆变器ID  										OK
-	//pfun[A103] = set_inverter_id; 				//设置逆变器ID												OK
+	pfun[A102] = response_inverter_id; 			//上报逆变器ID  										OK
+	pfun[A103] = set_inverter_id; 				//设置逆变器ID												OK
 	pfun[A108] = custom_command;				//向ECU发送自定义命令
 	pfun[A160] = set_rsd_function_switch; 			//RSD功能开关									OK
 
@@ -451,8 +451,8 @@ void ECUControl_thread_entry(void* parameter)
 				memset(time,0,15);
 			}
 
+			communication_with_EMA(0);
 
-			
 			printmsg(ECU_DBG_COLLECT,"Control DATA End");
 
 		}

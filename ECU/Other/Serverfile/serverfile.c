@@ -1792,7 +1792,7 @@ int update_control_send_flag(char *send_date_time)
 //创建报警信息
 void create_alarm_record(unsigned char last_mos_status,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter)
 {
-#if 0
+#if 1
 	int create_flag = 0;
 	char *alarm_data = 0;
 	char curTime[15] = {'\0'};
@@ -1814,7 +1814,7 @@ void create_alarm_record(unsigned char last_mos_status,unsigned char last_functi
 		//ECU头信息
 		memcpy(&alarm_data[18],ecu.ECUID12,12);
 		memcpy(&alarm_data[30],"0001",4);
-		memcpy(&alarm_data[34],curTime,14);
+		memcpy(&alarm_data[34],"00000000000000",14);
 		memcpy(&alarm_data[48],"END",3);
 		
 		length = 51;

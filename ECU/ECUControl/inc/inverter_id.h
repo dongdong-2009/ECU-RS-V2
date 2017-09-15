@@ -14,7 +14,7 @@
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-int clear_id(void);
+
 int response_inverter_id(const char *recvbuffer, char *sendbuffer);
 int set_inverter_id(const char *recvbuffer, char *sendbuffer);
 

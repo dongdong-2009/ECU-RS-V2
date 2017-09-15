@@ -47,7 +47,7 @@ typedef enum THREADTYPE {
 //Client thread priority
 #define THREAD_PRIORITY_CLIENT       			19			//OPT700-RS数据上报
 //Control Client thread priority
-//#define THREAD_PRIORITY_CONTROL_CLIENT  	18			//OPT700-RS远程控制
+#define THREAD_PRIORITY_CONTROL_CLIENT  	18			//OPT700-RS远程控制
 
 
 //thread start time

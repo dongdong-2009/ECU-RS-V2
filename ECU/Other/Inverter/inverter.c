@@ -63,7 +63,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->off_times = 0;
 		curinverter->status.bind_status = 0;
 		curinverter->status.mos_status = 0;
-		curinverter->status.function_status = 0;
+		curinverter->status.function_status = 1;
 		curinverter->status.heart_Failed_times = 0;
 		curinverter->status.pv1_low_voltage_pritection = 0;
 		curinverter->status.pv2_low_voltage_pritection = 0;
@@ -82,7 +82,6 @@ int init_inverter(inverter_info *inverter)
 		curinverter->PV1_Energy = 0;
 		curinverter->PV2_Energy = 0;
 		curinverter->Mos_CloseNum = 0;
-		//memset(curinverter->CurCommTime,0x00,15);
 		curinverter->Last_PV1_Energy = 0;
 		curinverter->Last_PV2_Energy = 0;
 		memset(curinverter->LastCommTime,'0',15);

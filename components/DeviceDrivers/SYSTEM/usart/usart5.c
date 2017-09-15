@@ -1297,8 +1297,8 @@ int InitTestMode(void)
 	//≈‰÷√SOCKET B IPµÿ÷∑
 	for(i = 0;i<3;i++)
 	{
-		//if(0 == AT_TCPADDB("192.168.1.110"))
-		if(0 == AT_TCPADDB("139.168.200.158"))
+		if(0 == AT_TCPADDB("192.168.1.110"))
+		//if(0 == AT_TCPADDB("139.168.200.158"))
 		{
 			res = 0;
 			break;
@@ -1334,8 +1334,8 @@ int InitTestMode(void)
 	//≈‰÷√SOCKET C  IPµÿ÷∑
 	for(i = 0;i<3;i++)
 	{
-		//if(0 == AT_TCPADDC("192.168.1.110"))
-		if(0 == AT_TCPADDC("139.168.200.158"))
+		if(0 == AT_TCPADDC("192.168.1.110"))
+		//if(0 == AT_TCPADDC("139.168.200.158"))
 		{
 			res = 0;
 			break;

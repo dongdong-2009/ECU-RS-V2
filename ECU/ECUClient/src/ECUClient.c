@@ -137,18 +137,24 @@ void ECUClient_thread_entry(void* parameter)
 			}
 			get_time(broadcast_time, broadcast_hour_minute);
 			print2msg(ECU_DBG_CLIENT,"time",broadcast_time);
-			
+
 			while(search_readflag(data,time,&flag,'1'))		//	获取一条resendflag为1的数据
 			{
+				if(compareTime(ClientDurabletime ,ClientThistime,ClientReportinterval))
+				{
+					break;
+				}
 				//if(1 == flag)		// 还存在需要上传的数据
 						//data[88] = '1';
 				printmsg(ECU_DBG_CLIENT,data);
 				res = send_record( data, time);
 				if(-1 == res)
 					break;
+				ClientThistime = acquire_time();
 				memset(data,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
 				memset(time,0,15);
 			}
+
 
 			delete_file_resendflag0();		//清空数据resend标志全部为0的目录
 		

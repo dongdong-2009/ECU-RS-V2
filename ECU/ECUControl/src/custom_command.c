@@ -21,28 +21,28 @@
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
-/* ã€A108ã€‘EMAå‘ECUå‘é€è‡ªå®šä¹‰å‘½ä»¤ */
+/* A108 EMA ÏòECU·¢ËÍ×Ô¶¨ÒåÃüÁî */
 int custom_command(const char *recvbuffer, char *sendbuffer)
 {
 	int ack_flag = SUCCESS;
 	char command[256] = {'\0'};
 	char timestamp[15] = {'\0'};
 
-	//æ—¶é—´æˆ³
+	//»ñÈ¡·¢ËÍÊ±¼ä´Á
 	strncpy(timestamp, &recvbuffer[30], 14);
 
-	//è‡ªå®šä¹‰å‘½ä»¤
+	//×Ô¶¨ÒåÃüÁî
 	if(msg_get_one_section(command, &recvbuffer[47]) <= 0){
 		ack_flag = FORMAT_ERROR;
 	}
 	else{
-		//ç»“æŸç¨‹åºå‘½ä»¤
+		//½áÊø³ÌĞòÃüÁî
 		if(!strncmp(command, "quit", 4)){
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Ready to quit");
 			msg_ACK(sendbuffer, "A108", timestamp, ack_flag);
 			return -1;
 		}
-		//æ‰§è¡Œè‡ªå®šä¹‰å‘½ä»¤
+		//Ö´ĞĞ×Ô¶¨ÒåÃüÁî
 		ack_flag = mysystem(command);
 	}
 	msg_ACK(sendbuffer, "A108", timestamp, ack_flag);
