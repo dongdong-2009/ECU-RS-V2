@@ -37,7 +37,7 @@ typedef enum THREADTYPE {
 //LED thread priority
 #define THREAD_PRIORITY_LED               12
 //Update thread priority
-//#define THREAD_PRIORITY_UPDATE						14
+#define THREAD_PRIORITY_UPDATE						14
 //LED thread priority
 #define THREAD_PRIORITY_EVENT            	13			//其他相关事件线程
 //LED thread priority
@@ -47,7 +47,7 @@ typedef enum THREADTYPE {
 //Client thread priority
 #define THREAD_PRIORITY_CLIENT       			19			//OPT700-RS数据上报
 //Control Client thread priority
-#define THREAD_PRIORITY_CONTROL_CLIENT  	18			//OPT700-RS远程控制
+//#define THREAD_PRIORITY_CONTROL_CLIENT  	18			//OPT700-RS远程控制
 
 
 //thread start time

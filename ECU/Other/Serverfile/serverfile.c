@@ -1792,7 +1792,7 @@ int update_control_send_flag(char *send_date_time)
 //创建报警信息
 void create_alarm_record(unsigned char last_mos_status,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter)
 {
-#if 1
+#if 0
 	int create_flag = 0;
 	char *alarm_data = 0;
 	char curTime[15] = {'\0'};

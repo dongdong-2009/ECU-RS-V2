@@ -378,6 +378,7 @@ void ECUCollect_thread_entry(void* parameter)
 
 		}
 		
+		/*
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
 			//采集心跳相关远程控制数据
@@ -388,7 +389,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
 
 		}
-		
+		*/
 		rt_thread_delay(RT_TICK_PER_SECOND);
 		CollectClientDurabletime = acquire_time();		
 		CollectControlDurabletime = acquire_time();			

@@ -24,6 +24,7 @@
 #include "led.h"
 #include "serverfile.h"
 #include "version.h"
+#include "debug.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -191,21 +192,6 @@ void process_HeartBeatEvent(void)
 					}
 			}
 
-			//心跳成功 判断是否需要关闭或者打开心跳功能
-			if(inverterInfo[ecu.curSequence].status.function_status == 1)	//心跳功能打开
-			{
-				if(ecu.IO_Init_Status == 0)		//需要关闭心跳功能
-				{
-					RFM300_Status_Init(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,0x02,0x00,&inverterInfo[ecu.curSequence].status);
-				}
-			}else					//心跳功能关闭
-			{
-				if(ecu.IO_Init_Status == 1)		//需要打开心跳功能
-				{
-					RFM300_Status_Init(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,0x01,0x00,&inverterInfo[ecu.curSequence].status);
-				}
-			}
-
 			//如果当前一轮心跳小于上一轮心跳,表示重启
 			if(inverterInfo[ecu.curSequence].heart_rate < pre_heart_rate)
 			{
@@ -239,7 +225,24 @@ void process_HeartBeatEvent(void)
 				
 				//更改到系统信道
 				setChannel(ecu.Channel_char);
-			}		
+			}	
+
+			//心跳成功 判断是否需要关闭或者打开心跳功能
+			if(inverterInfo[ecu.curSequence].status.function_status == 1)	//心跳功能打开
+			{
+				if(ecu.IO_Init_Status == '0')		//需要关闭心跳功能
+				{
+					printf("ID: %02x%02x%02x%02x%02x%02x   IO_Init_Status 0\n",inverterInfo[ecu.curSequence].uid[0],inverterInfo[ecu.curSequence].uid[1],inverterInfo[ecu.curSequence].uid[2],inverterInfo[ecu.curSequence].uid[3],inverterInfo[ecu.curSequence].uid[4],inverterInfo[ecu.curSequence].uid[5]);
+					RFM300_Status_Init(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,0x02,0x00,&inverterInfo[ecu.curSequence].status);
+				}
+			}else					//心跳功能关闭
+			{
+				if(ecu.IO_Init_Status == '1')		//需要打开心跳功能
+				{
+					printf("ID: %02x%02x%02x%02x%02x%02x   IO_Init_Status 1\n",inverterInfo[ecu.curSequence].uid[0],inverterInfo[ecu.curSequence].uid[1],inverterInfo[ecu.curSequence].uid[2],inverterInfo[ecu.curSequence].uid[3],inverterInfo[ecu.curSequence].uid[4],inverterInfo[ecu.curSequence].uid[5]);
+					RFM300_Status_Init(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,0x01,0x00,&inverterInfo[ecu.curSequence].status);
+				}
+			}
 		}
 		
 		ecu.curSequence++;
@@ -458,7 +461,7 @@ int setECUID(char *ECUID)
 	}
 	Write_CHANNEL(Channel);
 	Write_rebootNum(0);
-	ecu.IO_Init_Status= 1;
+	ecu.IO_Init_Status= '1';
 	Write_IO_INIT_STATU(&ecu.IO_Init_Status);
 	//设置WIFI密码
 	USART1_ECUID12[12] = '\0';

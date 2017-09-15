@@ -392,7 +392,7 @@ int ftp_retrfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
     memset(buf,0x00, sizeof(buf));
 		FD_ZERO(&rd);
 		FD_SET(d_sock, &rd);
-		timeout.tv_sec = 8;
+		timeout.tv_sec = 20;
 		timeout.tv_usec = 0;
 
 		while (1) {

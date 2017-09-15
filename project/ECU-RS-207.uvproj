@@ -1146,6 +1146,16 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUControl\src\set_rsd_function_switch.c</FilePath>
             </File>
+            <File>
+              <FileName>custom_command.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUControl\src\custom_command.c</FilePath>
+            </File>
+            <File>
+              <FileName>mycommand.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUControl\src\mycommand.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

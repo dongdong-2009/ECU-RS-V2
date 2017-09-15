@@ -39,7 +39,7 @@ int init_ecu(void)
 
 	Read_IO_INIT_STATU(&ecu.IO_Init_Status);
 	ecu.life_energy = get_lifetime_power();
-	printf("ECU ID :%s        Signal_Channel:   %s    %d   IO_Init_Status:%x\n",ecu.ECUID12,ecu.Signal_Channel,ecu.Channel_char,ecu.IO_Init_Status);
+	printf("ECU ID :%s        Signal_Channel:   %s    %d   IO_Init_Status:%c\n",ecu.ECUID12,ecu.Signal_Channel,ecu.Channel_char,ecu.IO_Init_Status);
 	return 0;
 }
 

@@ -13,10 +13,10 @@
 #include "stdlib.h"
 #include "rtc.h"
 #include "socket.h"
+
 #include "set_rsd_function_switch.h"
-
-
-
+#include "inverter_id.h"
+#include "custom_command.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -37,7 +37,10 @@ int (*pfun[200])(const char *recvbuffer, char *sendbuffer);
 
 void add_functions()
 {
-  pfun[A160] = set_rsd_function_switch; 			//上报逆变器ID  										OK
+	//pfun[A102] = response_inverter_id; 			//上报逆变器ID  										OK
+	//pfun[A103] = set_inverter_id; 				//设置逆变器ID												OK
+	pfun[A108] = custom_command;				//向ECU发送自定义命令
+	pfun[A160] = set_rsd_function_switch; 			//RSD功能开关									OK
 
 }
 

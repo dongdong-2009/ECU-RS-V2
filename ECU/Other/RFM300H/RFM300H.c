@@ -18,6 +18,7 @@
 #include "string.h"
 #include "rtc.h"
 #include "serverfile.h"
+#include "debug.h"
 
 
 volatile unsigned int Heart_times = 0;
@@ -437,4 +438,17 @@ int RFM300_Set_Uid(char *ECUID,char *UID,int channel,int rate,char *NewUid,char 
 	return 0;
 }
 
+
+
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+void commInfo(void)
+{
+	printdecmsg(ECU_DBG_COMM,"Heart_times",Heart_times);
+	printdecmsg(ECU_DBG_COMM,"TimeOut_times",TimeOut_times);
+}
+FINSH_FUNCTION_EXPORT(commInfo, eg:commInfo());
+
+
+#endif
 

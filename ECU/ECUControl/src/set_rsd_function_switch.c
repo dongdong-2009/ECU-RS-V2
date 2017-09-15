@@ -8,7 +8,10 @@
 #include "rtthread.h"
 #include "version.h"
 #include "set_rsd_function_switch.h"
+#include "debug.h"
 
+extern ecu_info ecu;
+extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
@@ -19,7 +22,7 @@
 //A160设置RSD功能开关
 int set_rsd_function_switch(const char *recvbuffer, char *sendbuffer)
 {
-	int flag, num;
+	int flag;
 	int ack_flag = SUCCESS;
 	char timestamp[15] = {'\0'};
 	
@@ -39,11 +42,15 @@ int set_rsd_function_switch(const char *recvbuffer, char *sendbuffer)
 	{
 		case 0:
 			//RSD功能关闭
-			
+			printmsg(ECU_DBG_CONTROL_CLIENT,"Write_IO_INIT_STATU(0)");
+			Write_IO_INIT_STATU("0");
+			ecu.IO_Init_Status = '0';
 			break;
 		case 1:
 			//RSD功能打开
-			
+			printmsg(ECU_DBG_CONTROL_CLIENT,"Write_IO_INIT_STATU(1)");
+			Write_IO_INIT_STATU("1");
+			ecu.IO_Init_Status = '1';
 			break;
 		default:
 			ack_flag = FORMAT_ERROR; //格式错误
