@@ -1156,6 +1156,11 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUControl\src\mycommand.c</FilePath>
             </File>
+            <File>
+              <FileName>inverter_id.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUControl\src\inverter_id.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
