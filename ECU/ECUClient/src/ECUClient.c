@@ -126,7 +126,7 @@ void ECUClient_thread_entry(void* parameter)
 	{
 		if(compareTime(ClientDurabletime ,ClientThistime,ClientReportinterval)){
 			printmsg(ECU_DBG_CLIENT,"Client Start");
-	
+			ClientDurabletime = acquire_time();
 			ClientThistime = acquire_time();
 			//1点或者2点需要清标志位
 			if((2 == get_hour())||(1 == get_hour()))

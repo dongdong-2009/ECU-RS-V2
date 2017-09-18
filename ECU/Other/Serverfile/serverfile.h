@@ -16,6 +16,9 @@ int initsystem(char *mac);
 int delete_line(char* filename,char* temfilename,char* compareData,int len);
 int search_line(char* filename,char* compareData,int len);
 int insert_line(char * filename,char *str);
+void splitSpace(char *data,char *sourcePath,char *destPath);
+void save_dbg(char sendbuff[]);
+
 //保存Client数据,以及其他相关Client的操作
 float get_lifetime_power(void);
 void update_life_energy(float lifetime_power);

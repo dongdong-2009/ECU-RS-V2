@@ -22,7 +22,6 @@ void inverter_Info(inverter_info *curinverter)
 	printf("\n");
 
 	printf("ID:%02x%02x%02x%02x%02x%02x\n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5]);
-	printf("CurCollectTime:  %s\n",curinverter->CurCollectTime);
 	printf("LastCollectTime: %s\n",curinverter->LastCollectTime);
 	printf("LastCommTime:    %s\n",curinverter->LastCommTime);
 	printf("PV1_Energy:%d \n",curinverter->PV1_Energy);
@@ -70,9 +69,7 @@ void Collect_Client_Record(void)
 			{
 				commNum++;		
 				curinverter->status.comm_status = 1;
-				//获取当前时间 更新当前一轮采集时间
-				apstime(curinverter->CurCollectTime);
-				curinverter->CurCollectTime[14] = '\0';
+
 				//内部数据有更新
 				//ID	12字节
 				UID[0] = (curinverter->uid[0]/16) + '0';
@@ -87,10 +84,11 @@ void Collect_Client_Record(void)
 				UID[9] = (curinverter->uid[4]%16) + '0';
 				UID[10] = (curinverter->uid[5]/16) + '0';
 				UID[11] = (curinverter->uid[5]%16) + '0';
+				UID[12] = '\0';
 				memcpy(&client_Data[length],UID,12);
 				length+=12;
 				//输出电压 6字节
-				sprintf(&client_Data[length],"%06d",curinverter->PV_Output);
+				sprintf(&client_Data[length],"%06d",curinverter->PV_Output*100);
 				length += 6;
 				//输出电流 6字节
 				memcpy(&client_Data[length],"000000",6);
@@ -123,7 +121,7 @@ void Collect_Client_Record(void)
 				{
 					unsigned short Power1;
 					//功率=(当前一轮电量-上一轮电量)/时间的差值
-					Power1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy)/Time_difference(curinverter->CurCollectTime,curinverter->LastCollectTime);
+					Power1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
 					curinverter->AveragePower1 = Power1;
 					//pv1输入功率(计算得到平均功率)
 					sprintf(&client_Data[length],"%06d",((unsigned short)curinverter->AveragePower1*1000));
@@ -132,7 +130,7 @@ void Collect_Client_Record(void)
 					curinverter->EnergyPV1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy);
 					//pv1输入电量(两轮计算差值)
 					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV1*10/36));
-					length += 10;
+					length += 10;	
 				}
 										
 				//Optimizer_pv2  1字节
@@ -154,7 +152,7 @@ void Collect_Client_Record(void)
 				{
 					unsigned short Power2;
 					//功率=(当前一轮电量-上一轮电量)/时间的差值
-					Power2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)/Time_difference(curinverter->CurCollectTime,curinverter->LastCollectTime);
+					Power2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
 					curinverter->AveragePower2 = Power2;
 					//pv2输入功率(计算得到平均功率)
 					sprintf(&client_Data[length],"%06d",((unsigned short)curinverter->AveragePower2*1000));
@@ -172,8 +170,22 @@ void Collect_Client_Record(void)
 				client_Data[length++] = 'D';
 				//打印相关信息
 				//inverter_Info(curinverter);
-						
-				memcpy(curinverter->LastCollectTime,curinverter->CurCollectTime,15);
+
+#if 1
+				if((curinverter->EnergyPV1 > 3600000) || (curinverter->EnergyPV2 > 3600000))  //如果发电量大于 1 度  表示异常数据   存储
+				{
+					char *data = NULL;
+					data = malloc(4096);
+					sprintf(data,"%s uid:%s PV1:%d PV2:%d PI:%d PV_output:%d Power1:%d Power2:%d off_time:%d heart_rate:%d pv1_energy:%d pv2_energy:%d mos_close:%d Last_PV1_Energy:%d Last_PV2_Energy:%d",curinverter->LastCommTime,UID,
+							curinverter->PV1,curinverter->PV2,curinverter->PI,curinverter->PV_Output,curinverter->Power1,curinverter->Power2,curinverter->off_times,curinverter->heart_rate,curinverter->PV1_Energy,curinverter->PV2_Energy,curinverter->Mos_CloseNum,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
+					save_dbg(data);
+					free(data);
+					data = NULL;
+				}
+#endif 				
+				
+				memcpy(curinverter->LastCollectTime,curinverter->LastCommTime,15);
+				curinverter->LastCollectTime[14] = '\0';
 				curinverter->Last_PV1_Energy = curinverter->PV1_Energy;
 				curinverter->Last_PV2_Energy = curinverter->PV2_Energy;			
 			}
@@ -377,7 +389,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect DATA End");
 
 		}
-		
+		/*
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
 			//采集心跳相关远程控制数据
@@ -388,6 +400,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
 
 		}
+		*/
 
 		rt_thread_delay(RT_TICK_PER_SECOND);
 		CollectClientDurabletime = acquire_time();		

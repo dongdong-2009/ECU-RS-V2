@@ -59,26 +59,25 @@ typedef struct inverter_info_t{
 	unsigned char channel;		//信道状态
 	unsigned char find_channel; //查找的信道
 	unsigned char restartNum;	//一天内的重启次数
-	unsigned short PV1;		//PV1输入电压  精度1V
-	unsigned short PV2;		//PV2输入电压  精度 1V
+	unsigned short PV1;		//PV1输入电压  精度 0.1V
+	unsigned short PV2;		//PV2输入电压  精度 0.1V
 	unsigned char PI;		//输入电流 	精度0.1A
-	unsigned short PV_Output; //输出电压
+	unsigned short PV_Output; //输出电压 精度0.1V
 	unsigned short Power1;	//PV1输入功率  精度1W
 	unsigned short Power2;	//PV2输入功率  精度1W 
 	unsigned char RSSI;	//信号强度
-	unsigned int PV1_Energy;//当前一轮PV1发电量
-	unsigned int PV2_Energy;//当前一轮PV2发电量
+	unsigned int PV1_Energy;//当前一轮PV1发电量	精度 1焦耳
+	unsigned int PV2_Energy;//当前一轮PV2发电量	精度 1焦耳
 	unsigned char Mos_CloseNum;//设备上电后MOS管关断次数
-	char LastCommTime[15];	//RSD最后一次通讯上的时间
+	char LastCommTime[15];	//RSD最后一次通讯上的时间		
 	//上一轮相关的数据，这里的上一轮指的是5分钟一轮
-	char LastCollectTime[15];	//ECU上一轮采集时间	5分钟采集一轮
+	char LastCollectTime[15];	//上一轮采集时，最后一次通讯时间
 	unsigned int Last_PV1_Energy;//上一轮PV1发电量 指的是5分钟前的一轮
 	unsigned int Last_PV2_Energy;//上一轮PV2发电量 指的是5分钟前的一轮
-	char CurCollectTime[15];	//ECU本轮采集时间   	5分钟采集一轮
 	double AveragePower1; //5分钟平均功率1
 	double AveragePower2; //5分钟平均功率2
-	unsigned int EnergyPV1;		//当前一轮电量
-	unsigned int EnergyPV2;		//当前一轮电量
+	unsigned int EnergyPV1;		//当前一轮电量	精度 1焦耳
+	unsigned int EnergyPV2;		//当前一轮电量	精度 1焦耳
 	
 }inverter_info;
 

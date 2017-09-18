@@ -11,37 +11,6 @@
 #include "rthw.h"
 #include "rtthread.h"
 
-
-#if 0
-#define CLIENT_SERVER_DOMAIN	""
-#define CLIENT_SERVER_IP			"60.190.131.190"
-#define CLIENT_SERVER_PORT1	8982
-#define CLIENT_SERVER_PORT2	8982
-
-#define CONTROL_SERVER_DOMAIN	""
-#define CLIENT_SERVER_IP		"60.190.131.190"
-#define CONTROL_SERVER_PORT1	8997
-#define CONTROL_SERVER_PORT2	8997
-
-#else
-
-#define CLIENT_SERVER_DOMAIN	""
-//#define CLIENT_SERVER_IP			"139.168.200.158"
-#define CLIENT_SERVER_IP			"192.168.1.110"
-
-#define CLIENT_SERVER_PORT1	8096
-#define CLIENT_SERVER_PORT2	8096
-
-#define CONTROL_SERVER_DOMAIN	""
-//#define CONTROL_SERVER_IP			"139.168.200.158"
-#define CONTROL_SERVER_IP			"192.168.1.110"
-
-#define CONTROL_SERVER_PORT1	8981
-#define CONTROL_SERVER_PORT2	8981
-
-#endif
-
-
 rt_mutex_t usr_wifi_lock = RT_NULL;
 
 
@@ -308,18 +277,7 @@ int wifi_socketb_format(char *data ,int length)
 	head[6] = 0x00;
 	head[7] = 0x00;
 	head[8] = 0x00;
-	/*
-	head[0] = 'b';
-	head[1] = '0';
-	head[2] = '0';
-	head[3] = '0';
-	head[4] = '0';
-	head[5] = '0';
-	head[6] = '0';
-	head[7] = '0';
-	head[8] = '0';
-	*/
-
+	
 	if(((length -3)%14) != 0)
 	{
 		for(p = data,i = 0;p <= (data+length-9);p++,i++)
@@ -338,6 +296,56 @@ int wifi_socketb_format(char *data ,int length)
 	}
 	
 	return retlength;
+}
+
+int recv_response(int fd_sock, char *readbuff)
+{
+	fd_set rd;
+	struct timeval timeout;
+	int recvbytes, res, count=0, readbytes = 0;
+	char *recvbuff = NULL;
+	char temp[16];
+	recvbuff = malloc((4+99*14));
+	memset(recvbuff,'\0',(4+99*14));
+	while(1)
+	{
+		FD_ZERO(&rd);
+		FD_SET(fd_sock, &rd);
+		timeout.tv_sec = 120;
+		timeout.tv_usec = 0;
+
+		res = select(fd_sock+1, &rd, NULL, NULL, &timeout);
+		if(res <= 0){
+			//printerrmsg("select");
+			printmsg(ECU_DBG_CLIENT,"Receive data reply from EMA timeout");
+			free(recvbuff);
+			recvbuff = NULL;
+			return -1;
+		}
+		else{
+			memset(recvbuff, '\0', sizeof(recvbuff));
+			memset(temp, '\0', sizeof(temp));
+			recvbytes = recv(fd_sock, recvbuff, sizeof(recvbuff), 0);
+			if(0 == recvbytes)
+			{
+				free(recvbuff);
+				recvbuff = NULL;
+				return -1;
+			}	
+			strcat(readbuff, recvbuff);
+			readbytes += recvbytes;
+			if(readbytes >= 3)
+			{
+				count = (readbuff[1]-0x30)*10 + (readbuff[2]-0x30);
+				if(count==((strlen(readbuff)-3)/14))
+				{
+					free(recvbuff);
+					recvbuff = NULL;
+					return readbytes;
+				}		
+			}
+		}
+	}
 }
 
 //与Client服务器通讯 

@@ -20,6 +20,7 @@
 #include "string.h"
 #include "rthw.h"
 #include <rtthread.h>
+#include "socket.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -1297,8 +1298,7 @@ int InitTestMode(void)
 	//≈‰÷√SOCKET B IPµÿ÷∑
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDB("192.168.1.110"))
-		//if(0 == AT_TCPADDB("139.168.200.158"))
+		if(0 == AT_TCPADDB(CLIENT_SERVER_IP))
 		{
 			res = 0;
 			break;
@@ -1310,7 +1310,7 @@ int InitTestMode(void)
 	//≈‰÷√SOCKET B∂Àø⁄
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPPTB(8096))
+		if(0 == AT_TCPPTB(CLIENT_SERVER_PORT1))
 		{
 			res = 0;
 			break;
@@ -1334,8 +1334,7 @@ int InitTestMode(void)
 	//≈‰÷√SOCKET C  IPµÿ÷∑
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDC("192.168.1.110"))
-		//if(0 == AT_TCPADDC("139.168.200.158"))
+		if(0 == AT_TCPADDC(CONTROL_SERVER_IP))
 		{
 			res = 0;
 			break;
@@ -1346,7 +1345,7 @@ int InitTestMode(void)
 	//≈‰÷√SOCKET C∂Àø⁄
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPPTC(8981))
+		if(0 == AT_TCPPTC(CONTROL_SERVER_PORT1))
 		{
 			res = 0;
 			break;
@@ -1467,7 +1466,7 @@ int InitWorkMode(void)
 	//≈‰÷√SOCKET C  IPµÿ÷∑
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDC("192.168.1.103"))
+		if(0 == AT_TCPADDC("60.190.131.190"))
 		{
 			res = 0;
 			break;

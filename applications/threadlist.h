@@ -55,7 +55,7 @@ typedef enum THREADTYPE {
 
 #define START_TIME_COLLECT								120			
 #define START_TIME_CONTROL_CLIENT					20 	//150
-#define START_TIME_CLIENT									10			//180
+#define START_TIME_CLIENT									30			//180
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */

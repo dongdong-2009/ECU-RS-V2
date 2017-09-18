@@ -423,7 +423,6 @@ void ECUControl_thread_entry(void* parameter)
 	data = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(data,0x00,CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 
-	
 	while(1)
 	{
 		//远程控制上报
@@ -433,7 +432,7 @@ void ECUControl_thread_entry(void* parameter)
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Control DATA Start");
 
 			ControlThistime = acquire_time();
-
+			/*
 			if(10 == get_hour())
 			{
 				precontrolprocess();
@@ -443,6 +442,10 @@ void ECUControl_thread_entry(void* parameter)
 
 			while(search_control_readflag(data,time,&flag,'1'))		//	获取一条resendflag为1的数据
 			{
+				if(compareTime(ControlDurabletime ,ControlThistime,ControlReportinterval))
+				{
+						break;
+				}
 				printmsg(ECU_DBG_CONTROL_CLIENT,data);
 				res = send_control_record( data, time);
 				if(-1 == res)
@@ -450,13 +453,14 @@ void ECUControl_thread_entry(void* parameter)
 				memset(data,0,CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 				memset(time,0,15);
 			}
-
+			*/
 			communication_with_EMA(0);
 
 			printmsg(ECU_DBG_COLLECT,"Control DATA End");
 
 		}
 		
+		/*
 		//上报告警标志
 		if(compareTime(AlarmDurabletime ,AlarmThistime,AlarmReportinterval))
 		{			
@@ -474,6 +478,10 @@ void ECUControl_thread_entry(void* parameter)
 
 			while(search_alarm_readflag(data,time,&flag,'1'))		//	获取一条resendflag为1的数据
 			{
+				if(compareTime(AlarmDurabletime ,AlarmThistime,AlarmReportinterval))
+				{
+						break;
+				}
 				printmsg(ECU_DBG_CONTROL_CLIENT,data);
 				res = send_alarm_record( data, time);
 				if(-1 == res)
@@ -484,12 +492,13 @@ void ECUControl_thread_entry(void* parameter)
 			
 			printmsg(ECU_DBG_COLLECT,"Alarm DATA End");
 		}
-		
+		*/
 		rt_thread_delay(RT_TICK_PER_SECOND);	
 		ControlDurabletime = acquire_time();		
 		AlarmDurabletime = acquire_time();
 
 	}
+	
 }
 
 

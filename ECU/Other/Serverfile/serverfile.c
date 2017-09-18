@@ -60,6 +60,29 @@ int splitString(char *data,char splitdata[][32])
 
 }
 
+//分割空格
+void splitSpace(char *data,char *sourcePath,char *destPath)
+{
+	int i,j = 0,k = 0;
+	char splitdata[3][50];
+	for(i=0;i<strlen(data);++i){
+		if(data[i] == ' ') {
+			splitdata[j][k] = 0;
+			++j;
+			k = 0; 
+		}
+		else{
+			splitdata[j][k] = data[i];
+			++k;
+		}
+	}
+
+	memcpy(sourcePath,splitdata[1],strlen(splitdata[1]));
+	sourcePath[strlen(splitdata[1])] = '\0';
+	memcpy(destPath,splitdata[2],strlen(splitdata[2]));
+	destPath[strlen(splitdata[2])-2] = '\0';
+}
+
 //初始化
 void init_tmpdb(inverter_info *firstinverter)
 {
@@ -1008,6 +1031,27 @@ void update_monthly_energy(float current_energy, char *date_time)
 	
 }
 
+void save_dbg(char sendbuff[])
+{
+	char file[20] = "/dbg/dbg.dat";
+	rt_err_t result;
+	int fd;
+	
+	result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	if(result == RT_EOK)
+	{
+		fd = open(file, O_WRONLY | O_APPEND | O_CREAT,0);
+		if (fd >= 0)
+		{		
+			sprintf(sendbuff,"%s\n",sendbuff);
+			print2msg(ECU_DBG_OTHER,"save_dbg",sendbuff);
+			write(fd,sendbuff,strlen(sendbuff));
+			close(fd);
+		}
+	}
+	rt_mutex_release(record_data_lock);
+	
+}
 
 
 void save_record(char sendbuff[], char *date_time)
@@ -1792,7 +1836,7 @@ int update_control_send_flag(char *send_date_time)
 //创建报警信息
 void create_alarm_record(unsigned char last_mos_status,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter)
 {
-#if 1
+#if 0
 	int create_flag = 0;
 	char *alarm_data = 0;
 	char curTime[15] = {'\0'};

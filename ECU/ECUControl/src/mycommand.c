@@ -19,7 +19,9 @@
 #include "rthw.h"
 #include "threadlist.h"
 #include <rtthread.h>
-
+#include "serverfile.h"
+#include "thftpapi.h"
+#include <dfs_posix.h>
 
 //定时器
 rt_timer_t readtimer;
@@ -58,12 +60,30 @@ int mysystem(const char *command)
 	{
 		restartThread(TYPE_UPDATE);
 		res = 0;
-	}else if(!memcmp(command,"ftpput",6))
+	}else if(!memcmp(command,"ftpput",6))	//上传数据
 	{
+		char sourcePath[50],destPath[50];
+		//分割字符串为  命令 [本地源路径] [远程目标路径]
+		splitSpace((char *)command,sourcePath,destPath);
+		printf("cmd:%s\n",command);
+		printf("%s,%s,%s\n","ftpput",sourcePath,destPath);
 		//上传数据
-	}else if(!memcmp(command,"ftpget",6))
+		res = putfile(destPath,sourcePath);
+
+	}else if(!memcmp(command,"ftpget",6))	//下载数据
 	{
+		char sourcePath[50],destPath[50];
+		//分割字符串为  命令 [本地源路径] [远程目标路径]
+		printf("cmd:%s\n",command);
+		splitSpace((char *)command,sourcePath,destPath);
+		printf("%s,%s,%s\n","ftpget",sourcePath,destPath);
 		//下载数据
+		res = getfile(destPath,sourcePath);
+	}else if(!memcmp(command,"rm",2))
+	{
+		char path[50];
+		memcpy(path,&command[3],(strlen(command)-3));
+		unlink(path);
 	}
 		
 	printdecmsg(ECU_DBG_CONTROL_CLIENT,"res",res);
