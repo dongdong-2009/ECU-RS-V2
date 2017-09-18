@@ -83,7 +83,9 @@ int mysystem(const char *command)
 	{
 		char path[50];
 		memcpy(path,&command[3],(strlen(command)-3));
-		unlink(path);
+		path[strlen(command)-3] = '\0';
+		printf("cmd:%s %s\n","rm",path);
+		res = unlink(path);
 	}
 		
 	printdecmsg(ECU_DBG_CONTROL_CLIENT,"res",res);
