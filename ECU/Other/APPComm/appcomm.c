@@ -124,7 +124,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 				memcpy(&inverter_data[0],curinverter->uid,6);
 				inverter_data[6] = curinverter->status.device_Type;
 				
-				inverter_data[7] |=  curinverter->status.mos_status;
+				inverter_data[7] |=  curinverter->status.comm_failed3_status;
 				inverter_data[7] |=  (curinverter->status.function_status << 1);
 
 				inverter_data[8] = curinverter->heart_rate /256;
@@ -142,7 +142,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 				memcpy(&inverter_data[0],curinverter->uid,6);
 				inverter_data[6] = curinverter->status.device_Type;
 				
-				inverter_data[7] |=  curinverter->status.mos_status;
+				inverter_data[7] |=  curinverter->status.comm_failed3_status;
 				inverter_data[7] |=  (curinverter->status.function_status << 1);
 				inverter_data[7] |=  (curinverter->status.pv1_low_voltage_pritection<< 2);
 				inverter_data[7] |=  (curinverter->status.pv2_low_voltage_pritection << 3);

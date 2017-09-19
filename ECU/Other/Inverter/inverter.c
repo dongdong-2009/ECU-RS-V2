@@ -62,7 +62,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->heart_rate = 0;
 		curinverter->off_times = 0;
 		curinverter->status.bind_status = 0;
-		curinverter->status.mos_status = 0;
+		curinverter->status.comm_failed3_status = 0;
 		curinverter->status.function_status = 1;
 		curinverter->status.heart_Failed_times = 0;
 		curinverter->status.pv1_low_voltage_pritection = 0;

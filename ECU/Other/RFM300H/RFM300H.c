@@ -210,12 +210,12 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 			cur_inverter->heart_rate = Recvdata[29]*256+Recvdata[30];
 
 			//保存上一轮报警状态数据
-			last_mos_status = cur_inverter->status.mos_status;
+			last_mos_status = cur_inverter->status.comm_failed3_status;
 			last_function_status = cur_inverter->status.function_status;
 			last_pv1_low_voltage_pritection = cur_inverter->status.pv1_low_voltage_pritection;
 			last_pv2_low_voltage_pritection = cur_inverter->status.pv2_low_voltage_pritection;
 			
-			cur_inverter->status.mos_status = 1;	//设置为开机状态	
+			cur_inverter->status.comm_failed3_status = 1;	//设置为开机状态	
 			//采集功能状态
 			status = (Recvdata[31] & 1);
 			cur_inverter->status.function_status = status;
@@ -334,13 +334,13 @@ int RFM300_Status_Init(char *ECUID,char *UID,char Heart_Function,char Device_Typ
 				last_function_status = status->function_status;
 				status->function_status = 1;
 				cur_inverter.status.function_status = 1;
-				create_alarm_record(cur_inverter.status.mos_status,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 		
+				create_alarm_record(cur_inverter.status.comm_failed3_status,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 		
 			}else
 			{
 				last_function_status = status->function_status;
 				status->function_status = 0;
 				cur_inverter.status.function_status = 0;
-				create_alarm_record(cur_inverter.status.mos_status,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 
+				create_alarm_record(cur_inverter.status.comm_failed3_status,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 
 			}
 			Status = Recvdata[17];
 			if(Status == 1)

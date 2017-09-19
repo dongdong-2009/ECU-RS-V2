@@ -39,14 +39,14 @@
 typedef struct
 {
     unsigned short bind_status:1;		// 绑定状态  
-    unsigned short mos_status:1;			//开关机状态 :  1 开    0 关
+    unsigned short comm_failed3_status:1;			//通讯状态 :  1 正常通讯   0 连续三次通讯不上
 	unsigned short function_status:1;	//功能开关状态: 1 开    0 关
 	unsigned short heart_Failed_times:3; // 连续通信失败次数  ，当大于3的时候默认该RSD2为关机状态
 	unsigned short pv1_low_voltage_pritection:1;	// PV1欠压保护
 	unsigned short pv2_low_voltage_pritection:1;	// PV2欠压保护
 	unsigned short device_Type:4;					//设备类型  0:开关设备 1；监控设备
 	unsigned short channel_failed:1;				//修改信道失败标志
-	unsigned short comm_status:1;					//采集数据通讯状态
+	unsigned short comm_status:1;					//采集数据通讯状态 用于采集发电量相关
 	unsigned short unused:3;						//未使用变量  备用
 }status_t;
 

@@ -235,7 +235,7 @@ int prealarmprocess(void)
 	readbytes = (CONTROL_RECORD_HEAD+CONTROL_RECORD_ALARM_ECU_HEAD+CONTROL_RECORD_OTHER);
 	
 	apstime(nowtime);
-	memcpy(sendbuff,"APS1600047A157AAA1",18);
+	memcpy(sendbuff,"APS1300047A157AAA1",18);
 	memcpy(&sendbuff[18],ecu.ECUID12,12);
 	memcpy(&sendbuff[30],nowtime,14);
 	memcpy(&sendbuff[44],"END\n",4);
@@ -328,7 +328,7 @@ int precontrolprocess(void)
 	readbytes = (CONTROL_RECORD_HEAD+CONTROL_RECORD_ALARM_ECU_HEAD+CONTROL_RECORD_OTHER);
 	
 	apstime(nowtime);
-	memcpy(sendbuff,"APS1600047A159AAA1",18);
+	memcpy(sendbuff,"APS1300047A159AAA1",18);
 	memcpy(&sendbuff[18],ecu.ECUID12,12);
 	memcpy(&sendbuff[30],nowtime,14);
 	memcpy(&sendbuff[44],"END\n",4);
@@ -433,7 +433,7 @@ void ECUControl_thread_entry(void* parameter)
 			ControlDurabletime = acquire_time();
 			ControlThistime = acquire_time();
 			
-			//if(22 == get_hour())
+			if(22 == get_hour())
 			{
 				precontrolprocess();
 				resend_control_record();
@@ -469,7 +469,7 @@ void ECUControl_thread_entry(void* parameter)
 			AlarmDurabletime = acquire_time();
 			AlarmThistime = acquire_time();
 
-			//if(23 == get_hour())
+			if(23 == get_hour())
 			{
 				//发送A157 情况异常标志命令
 				prealarmprocess();

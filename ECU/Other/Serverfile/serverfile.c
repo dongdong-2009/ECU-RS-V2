@@ -1843,7 +1843,7 @@ void create_alarm_record(unsigned char last_mos_status,unsigned char last_functi
 	int length = 0;
 	alarm_data = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	
-	if((last_mos_status != curinverter->status.mos_status) || (last_function_status != curinverter->status.function_status) || (last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection)))
+	if((last_mos_status != curinverter->status.comm_failed3_status) || (last_function_status != curinverter->status.function_status) || (last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection)))
 	{
 		//存在与最后一轮不同的状态，需要生成状态告警信息
 		create_flag = 1;
@@ -1875,7 +1875,7 @@ void create_alarm_record(unsigned char last_mos_status,unsigned char last_functi
 		alarm_data[length++] = (curinverter->uid[4]%16) + '0';
 		alarm_data[length++] = (curinverter->uid[5]/16) + '0';
 		alarm_data[length++] = (curinverter->uid[5]%16) + '0';
-		alarm_data[length++] = curinverter->status.mos_status + '0';
+		alarm_data[length++] = curinverter->status.comm_failed3_status + '0';
 		alarm_data[length++] = curinverter->status.function_status + '0';
 		alarm_data[length++] = curinverter->status.pv1_low_voltage_pritection+ '0';
 		alarm_data[length++] = curinverter->status.pv2_low_voltage_pritection+ '0';

@@ -166,10 +166,8 @@ void process_HeartBeatEvent(void)
 			inverterInfo[ecu.curSequence].status.heart_Failed_times++;
 			if(inverterInfo[ecu.curSequence].status.heart_Failed_times >= 3)
 			{
-				unsigned char last_mos_status;		//最后一次开关机状态
-				inverterInfo[ecu.curSequence].status.heart_Failed_times = 3;
-				last_mos_status = inverterInfo[ecu.curSequence].status.mos_status;
-				inverterInfo[ecu.curSequence].status.mos_status = 0;
+				inverterInfo[ecu.curSequence].status.heart_Failed_times = 3;		
+				inverterInfo[ecu.curSequence].status.comm_failed3_status = 0;
 			}
 				
 			//通信失败，失败次数++
@@ -574,7 +572,7 @@ void systemInfo(void)
 	{
 		printf("%02x%02x%02x%02x%02x%02x ",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5]);
 		printf("  %1d ",curinverter->status.device_Type);
-		printf("      %1d ",curinverter->status.mos_status);
+		printf("      %1d ",curinverter->status.comm_failed3_status);
 		printf("      %1d ",curinverter->status.function_status);
 		printf("       %1d ",curinverter->status.pv1_low_voltage_pritection);
 		printf("       %1d ",curinverter->status.pv2_low_voltage_pritection);

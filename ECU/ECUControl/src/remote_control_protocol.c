@@ -48,9 +48,14 @@ int msg_Header(char *sendbuffer, const char *cmd_id)
  * */
 int msg_REQ(char *sendbuffer)
 {
+	char msg_length[6] = {'\0'};
 	msg_Header(sendbuffer, "A101");
 	strcat(sendbuffer, ecu.ECUID12);
 	strcat(sendbuffer, "A10100000000000000END\n");
+	
+	sprintf(msg_length, "%05d", strlen(sendbuffer)-1);
+	strncpy(&sendbuffer[5], msg_length, 5);
+		
 	return 0;
 }
 
@@ -67,11 +72,14 @@ int msg_ACK(char *sendbuffer,
 		const char *cmd_id, const char *timestamp, int ack_flag)
 {
 	char msg_body[35] = {'\0'};
-
+	char msg_length[6] = {'\0'};
 
 	msg_Header(sendbuffer, "A100");
 	sprintf(msg_body, "%.12s%.4s%.14s%1dEND\n", ecu.ECUID12, cmd_id, timestamp, ack_flag);
 	strcat(sendbuffer, msg_body);
+	sprintf(msg_length, "%05d", strlen(sendbuffer)-1);
+	strncpy(&sendbuffer[5], msg_length, 5);
+	
 	return 0;
 }
 
