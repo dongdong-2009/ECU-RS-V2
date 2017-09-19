@@ -176,7 +176,7 @@ void Collect_Client_Record(void)
 				{
 					char *data = NULL;
 					data = malloc(4096);
-					sprintf(data,"%s uid:%s PV1:%d PV2:%d PI:%d PV_output:%d Power1:%d Power2:%d off_time:%d heart_rate:%d pv1_energy:%d pv2_energy:%d mos_close:%d Last_PV1_Energy:%d Last_PV2_Energy:%d",curinverter->LastCommTime,UID,
+					sprintf(data,"LastCommTime:%s LastCollectTime:%s uid:%s PV1:%d PV2:%d PI:%d PV_output:%d Power1:%d Power2:%d off_time:%d heart_rate:%d pv1_energy:%d pv2_energy:%d mos_close:%d Last_PV1_Energy:%d Last_PV2_Energy:%d",curinverter->LastCommTime,curinverter->LastCollectTime,UID,
 							curinverter->PV1,curinverter->PV2,curinverter->PI,curinverter->PV_Output,curinverter->Power1,curinverter->Power2,curinverter->off_times,curinverter->heart_rate,curinverter->PV1_Energy,curinverter->PV2_Energy,curinverter->Mos_CloseNum,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
 					save_dbg(data);
 					free(data);
