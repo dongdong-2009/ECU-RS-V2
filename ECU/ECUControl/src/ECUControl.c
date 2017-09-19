@@ -235,7 +235,7 @@ int prealarmprocess(void)
 	readbytes = (CONTROL_RECORD_HEAD+CONTROL_RECORD_ALARM_ECU_HEAD+CONTROL_RECORD_OTHER);
 	
 	apstime(nowtime);
-	memcpy(sendbuff,"APS16AAAAAA157AAA1",18);
+	memcpy(sendbuff,"APS1600047A157AAA1",18);
 	memcpy(&sendbuff[18],ecu.ECUID12,12);
 	memcpy(&sendbuff[30],nowtime,14);
 	memcpy(&sendbuff[44],"END\n",4);
@@ -281,9 +281,9 @@ int send_alarm_record(char *sendbuff, char *send_date_time)			//·¢ËÍÊý¾Ýµ½EMA  ×
 	}
 	else
 	{
-		if('3' == readbuff[48])
+		if('1' == readbuff[49])
 			update_alarm_send_flag(send_date_time);
-		clear_alarm_send_flag(&readbuff[48]);
+		clear_alarm_send_flag(&readbuff[49]);
 		free(readbuff);
 		readbuff = NULL;
 		return 0;
@@ -328,7 +328,7 @@ int precontrolprocess(void)
 	readbytes = (CONTROL_RECORD_HEAD+CONTROL_RECORD_ALARM_ECU_HEAD+CONTROL_RECORD_OTHER);
 	
 	apstime(nowtime);
-	memcpy(sendbuff,"APS16AAAAAA159AAA1",18);
+	memcpy(sendbuff,"APS1600047A159AAA1",18);
 	memcpy(&sendbuff[18],ecu.ECUID12,12);
 	memcpy(&sendbuff[30],nowtime,14);
 	memcpy(&sendbuff[44],"END\n",4);
@@ -374,9 +374,9 @@ int send_control_record(char *sendbuff, char *send_date_time)			//·¢ËÍÊý¾Ýµ½EMA 
 	}
 	else
 	{
-		if('3' == readbuff[48])
+		if('1' == readbuff[49])
 			update_control_send_flag(send_date_time);
-		clear_control_send_flag(&readbuff[48]);
+		clear_control_send_flag(&readbuff[49]);
 		free(readbuff);
 		readbuff = NULL;
 		return 0;
@@ -410,8 +410,8 @@ int resend_control_record()
 //¸ÃÏß³ÌÖ÷ÒªÓÃÓÚÊý¾ÝÉÏ´«ÒÔ¼°Ô¶³Ì¿ØÖÆ
 void ECUControl_thread_entry(void* parameter)
 {
-	int ControlThistime=0, ControlDurabletime=65535, ControlReportinterval=900;
-	int AlarmThistime=0, AlarmDurabletime=65535, AlarmReportinterval=120;
+	int ControlThistime=0, ControlDurabletime=65535, ControlReportinterval=60;
+	int AlarmThistime=0, AlarmDurabletime=65535, AlarmReportinterval=60;
 	char *data = NULL;
 	int res,flag;
 	char time[15] = {'\0'};
@@ -430,10 +430,10 @@ void ECUControl_thread_entry(void* parameter)
 		{	
 			//Ô¶³Ì¿ØÖÆ 15·ÖÖÓÉÏ±¨	
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Control DATA Start");
-
+			ControlDurabletime = acquire_time();
 			ControlThistime = acquire_time();
-			/*
-			if(10 == get_hour())
+			
+			//if(22 == get_hour())
 			{
 				precontrolprocess();
 				resend_control_record();
@@ -453,21 +453,23 @@ void ECUControl_thread_entry(void* parameter)
 				memset(data,0,CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 				memset(time,0,15);
 			}
-			*/
+			delete_control_file_resendflag0();		//Çå¿ÕÊý¾Ýresend±êÖ¾È«²¿Îª0µÄÄ¿Â¼
+			
 			communication_with_EMA(0);
 
 			printmsg(ECU_DBG_COLLECT,"Control DATA End");
 
 		}
 		
-		/*
+		
 		//ÉÏ±¨¸æ¾¯±êÖ¾
 		if(compareTime(AlarmDurabletime ,AlarmThistime,AlarmReportinterval))
 		{			
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Alarm DATA Start");
+			AlarmDurabletime = acquire_time();
 			AlarmThistime = acquire_time();
 
-			if(11 == get_hour())
+			//if(23 == get_hour())
 			{
 				//·¢ËÍA157 Çé¿öÒì³£±êÖ¾ÃüÁî
 				prealarmprocess();
@@ -489,10 +491,10 @@ void ECUControl_thread_entry(void* parameter)
 				memset(data,0,CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 				memset(time,0,15);
 			}
-			
+			delete_alarm_file_resendflag0();		//Çå¿ÕÊý¾Ýresend±êÖ¾È«²¿Îª0µÄÄ¿Â¼
 			printmsg(ECU_DBG_COLLECT,"Alarm DATA End");
 		}
-		*/
+		
 		rt_thread_delay(RT_TICK_PER_SECOND);	
 		ControlDurabletime = acquire_time();		
 		AlarmDurabletime = acquire_time();

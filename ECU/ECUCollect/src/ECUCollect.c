@@ -337,7 +337,7 @@ void Collect_Control_Record(void)
 			char commNum_str[5] = {'\0'};
 
 
-			memcpy(&control_Data[34],"00000000000000",14);
+			memcpy(&control_Data[34],curTime,14);
 			//最后一次通讯上的次数
 			ecu.lastCommNum = commNum;
 			sprintf(commNum_str,"%04d",commNum);
@@ -372,7 +372,7 @@ void ECUCollect_thread_entry(void* parameter)
 {
 
 	int CollectClientThistime=0, CollectClientDurabletime=65535, CollectClientReportinterval=300;			//采集数据相关时间参数
-	int CollectControlThistime=0, CollectControlDurabletime=65535, CollectControlReportinterval=900;	//采集远程控制数据时间参数
+	int CollectControlThistime=0, CollectControlDurabletime=65535, CollectControlReportinterval=60;	//采集远程控制数据时间参数
 	
 	rt_thread_delay(RT_TICK_PER_SECOND * START_TIME_COLLECT);
 	while(1)
@@ -389,7 +389,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect DATA End");
 
 		}
-		/*
+		
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
 			//采集心跳相关远程控制数据
@@ -400,7 +400,7 @@ void ECUCollect_thread_entry(void* parameter)
 			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
 
 		}
-		*/
+		
 
 		rt_thread_delay(RT_TICK_PER_SECOND);
 		CollectClientDurabletime = acquire_time();		

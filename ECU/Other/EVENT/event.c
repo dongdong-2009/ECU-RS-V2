@@ -170,8 +170,6 @@ void process_HeartBeatEvent(void)
 				inverterInfo[ecu.curSequence].status.heart_Failed_times = 3;
 				last_mos_status = inverterInfo[ecu.curSequence].status.mos_status;
 				inverterInfo[ecu.curSequence].status.mos_status = 0;
-				//表示进入关机状态   需要生成告警报文
-				create_alarm_record(last_mos_status,inverterInfo[ecu.curSequence].status.function_status,inverterInfo[ecu.curSequence].status.pv1_low_voltage_pritection,inverterInfo[ecu.curSequence].status.pv2_low_voltage_pritection,&inverterInfo[ecu.curSequence]); 	
 			}
 				
 			//通信失败，失败次数++
