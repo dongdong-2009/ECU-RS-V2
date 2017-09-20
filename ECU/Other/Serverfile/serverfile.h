@@ -57,7 +57,7 @@ int update_control_send_flag(char *send_date_time);
 
 //远程控制告警信息
 //生成告警标志
-void create_alarm_record(unsigned char last_mos_status,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter); 
+void create_alarm_record(unsigned short last_PV_output,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter);
 void save_alarm_record(char sendbuff[], char *date_time);
 int detection_alarm_resendflag2(void);
 int change_alarm_resendflag(char *time,char flag);

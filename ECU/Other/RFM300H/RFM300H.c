@@ -119,7 +119,7 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 	char status = 0;
 	int i,check = 0;
 	unsigned char RF_leng = 0;
-	unsigned char last_mos_status;		//最后一次开关机状态
+	unsigned short last_PV_output;		//最后一次开关机状态
 	unsigned char last_function_status;	//最后一次功能状态
 	unsigned char last_pv1_low_voltage_pritection;	//最后一次PV1欠压状态
 	unsigned char last_pv2_low_voltage_pritection;	//最后一次PV2欠压状态
@@ -210,7 +210,7 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 			cur_inverter->heart_rate = Recvdata[29]*256+Recvdata[30];
 
 			//保存上一轮报警状态数据
-			last_mos_status = cur_inverter->status.comm_failed3_status;
+			last_PV_output = cur_inverter->PV_Output;
 			last_function_status = cur_inverter->status.function_status;
 			last_pv1_low_voltage_pritection = cur_inverter->status.pv1_low_voltage_pritection;
 			last_pv2_low_voltage_pritection = cur_inverter->status.pv2_low_voltage_pritection;
@@ -240,7 +240,7 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 
 			//生成相关的报警报文
 			
-			create_alarm_record(last_mos_status,last_function_status,last_pv1_low_voltage_pritection,last_pv2_low_voltage_pritection,cur_inverter); 
+			create_alarm_record(last_PV_output,last_function_status,last_pv1_low_voltage_pritection,last_pv2_low_voltage_pritection,cur_inverter); 
 			return 1;
 		}
 		else
@@ -334,13 +334,13 @@ int RFM300_Status_Init(char *ECUID,char *UID,char Heart_Function,char Device_Typ
 				last_function_status = status->function_status;
 				status->function_status = 1;
 				cur_inverter.status.function_status = 1;
-				create_alarm_record(cur_inverter.status.comm_failed3_status,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 		
+				create_alarm_record(cur_inverter.PV_Output,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 		
 			}else
 			{
 				last_function_status = status->function_status;
 				status->function_status = 0;
 				cur_inverter.status.function_status = 0;
-				create_alarm_record(cur_inverter.status.comm_failed3_status,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 
+				create_alarm_record(cur_inverter.PV_Output,last_function_status,cur_inverter.status.pv1_low_voltage_pritection,cur_inverter.status.pv2_low_voltage_pritection,&cur_inverter); 
 			}
 			Status = Recvdata[17];
 			if(Status == 1)

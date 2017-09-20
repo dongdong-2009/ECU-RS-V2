@@ -29,6 +29,7 @@
 #define WIFI_GPIO                   GPIOB
 #define WIFI_PIN                    (GPIO_Pin_15)
 
+#define SIZE_PER_SEND		3800
 rt_mutex_t wifi_uart_lock = RT_NULL;
 
 /*****************************************************************************/
@@ -1298,7 +1299,7 @@ int InitTestMode(void)
 	//配置SOCKET B IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDB(CLIENT_SERVER_IP))
+		if(0 == AT_TCPADDB("10.10.100.100"))
 		{
 			res = 0;
 			break;
@@ -1334,7 +1335,7 @@ int InitTestMode(void)
 	//配置SOCKET C  IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDC(CONTROL_SERVER_IP))
+		if(0 == AT_TCPADDC("10.10.100.100"))
 		{
 			res = 0;
 			break;
@@ -1430,7 +1431,7 @@ int InitWorkMode(void)
 	//配置SOCKET B IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDB("60.190.131.190"))
+		if(0 == AT_TCPADDB(CLIENT_SERVER_IP))
 		{
 			res = 0;
 			break;
@@ -1442,7 +1443,7 @@ int InitWorkMode(void)
 	//配置SOCKET B端口
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPPTB(8982))
+		if(0 == AT_TCPPTB(CLIENT_SERVER_PORT1))
 		{
 			res = 0;
 			break;
@@ -1466,7 +1467,7 @@ int InitWorkMode(void)
 	//配置SOCKET C  IP地址
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPADDC("60.190.131.190"))
+		if(0 == AT_TCPADDC(CLIENT_SERVER_IP))
 		{
 			res = 0;
 			break;
@@ -1477,7 +1478,7 @@ int InitWorkMode(void)
 	//配置SOCKET C端口
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_TCPPTC(8997))
+		if(0 == AT_TCPPTC(CONTROL_SERVER_PORT1))
 		{
 			res = 0;
 			break;
@@ -1957,39 +1958,93 @@ char sendbuff[4096] = {'\0'};
 //SOCKET B 发送数据
 int SendToSocketB(char *data ,int length)
 {
+	//每次最多发送4000个字节
+	int send_length = 0;	//需要发送的字节位置
+	clear_WIFI();
 	if((1 == WIFI_QueryStatus(SOCKET_B)) || (0 == WIFI_Create(SOCKET_B)))
 	{
-		memset(sendbuff,0x00,4096);
-		sprintf(sendbuff,"b00000000");
-		memcpy(&sendbuff[9],data,length);
+		while(length > 0)
+		{
+			memset(sendbuff,0x00,4096);
+			sprintf(sendbuff,"b00000000");
+			//printf("length:%d  send_length:%d\n",length,send_length);
+			if(length > SIZE_PER_SEND)
+			{
+				memcpy(&sendbuff[9],&data[send_length],SIZE_PER_SEND);
+				
+				WIFI_SendData(sendbuff, (SIZE_PER_SEND+9));
+				send_length += SIZE_PER_SEND;
+				length -= SIZE_PER_SEND;
+			}else
+			{	
+				memcpy(&sendbuff[9],&data[send_length],length);
+				
+				
+				WIFI_SendData(sendbuff, (length+9));
+				length -= length;
+				return 0;
+			}
+			
+			rt_hw_ms_delay(300);
+		}
 		
-		clear_WIFI();
-		WIFI_SendData(sendbuff, (length+9));
-
-		return 0;
+	
 	}
+	
 	return -1;
 }
 
 //SOCKET C 发送数据
 int SendToSocketC(char *data ,int length)
 {
+	//每次最多发送4000个字节
+	int send_length = 0;
+	clear_WIFI();
 	if((1 == WIFI_QueryStatus(SOCKET_C)) || (0 == WIFI_Create(SOCKET_C)))
 	{
-		memset(sendbuff,0x00,4096);
-		sprintf(sendbuff,"c00000000");
-		memcpy(&sendbuff[9],data,length);
+		while(length > 0)
+		{
+			memset(sendbuff,0x00,4096);
+			sprintf(sendbuff,"c00000000");
+			//printf("length:%d  send_length:%d\n",length,send_length);
+			if(length > SIZE_PER_SEND)
+			{
+				memcpy(&sendbuff[9],&data[send_length],SIZE_PER_SEND);
+				
+				WIFI_SendData(sendbuff, (SIZE_PER_SEND+9));
+				send_length += SIZE_PER_SEND;
+				length -= SIZE_PER_SEND;
+			}else
+			{	
+				memcpy(&sendbuff[9],&data[send_length],length);
+			
+				WIFI_SendData(sendbuff, (length+9));
+				length -= length;
+				return 0;
+			}
+			
+			rt_hw_ms_delay(300);
+		}
 		
-		clear_WIFI();
-		WIFI_SendData(sendbuff, (length+9));
-
-		return 0;
 	}
+
 	return -1;
 }
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
+void Send(char *data, int num)
+{
+	memset(sendbuff,0x00,4096);
+	sprintf(sendbuff,"b00000000");
+
+	memcpy(&sendbuff[9],data,num);
+	
+	WIFI_SendData(sendbuff,(num+9));
+}
+
+FINSH_FUNCTION_EXPORT(Send ,WIFI send)
+
 FINSH_FUNCTION_EXPORT(AT, eg:AT)
 FINSH_FUNCTION_EXPORT(AT_ENTM, eg:AT_ENTM)
 FINSH_FUNCTION_EXPORT(InitTestMode , Init Test Mode.)
@@ -1997,4 +2052,9 @@ FINSH_FUNCTION_EXPORT(InitWorkMode , Init Work Mode.)
 FINSH_FUNCTION_EXPORT(WIFI_Factory , Set WIFI ID .)
 FINSH_FUNCTION_EXPORT(SendToSocketB , Send SOCKET B.)
 FINSH_FUNCTION_EXPORT(SendToSocketC , Send SOCKET C.)
+
+FINSH_FUNCTION_EXPORT(WIFI_Create ,WIFI Create Socket)
+
+
+
 #endif

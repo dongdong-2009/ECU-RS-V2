@@ -410,8 +410,8 @@ int resend_control_record()
 //该线程主要用于数据上传以及远程控制
 void ECUControl_thread_entry(void* parameter)
 {
-	int ControlThistime=0, ControlDurabletime=65535, ControlReportinterval=60;
-	int AlarmThistime=0, AlarmDurabletime=65535, AlarmReportinterval=60;
+	int ControlThistime=0, ControlDurabletime=65535, ControlReportinterval=900;
+	int AlarmThistime=0, AlarmDurabletime=65535, AlarmReportinterval=120;
 	char *data = NULL;
 	int res,flag;
 	char time[15] = {'\0'};
