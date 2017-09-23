@@ -15,6 +15,8 @@
 /*****************************************************************************/
 #include "usart.h"
 #include "variation.h"
+#include "arch/sys_arch.h"
+
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
@@ -23,15 +25,6 @@
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
 
-typedef enum
-{ 
-    COMMAND_BASEINFO         	= 1,		//接收数据头
-    COMMAND_SYSTEMINFO       	= 2,	//接收数据长度   其中数据部分的长度为接收到长度减去12个字节
-    COMMAND_SETNETWORK      	= 3,	//接收数据部分数据
-    COMMAND_SETCHANNEL       	= 4,		//接收END结尾标志
-		COMMAND_SETWIFIPASSWORD 	= 5,
-		COMMAND_IOINITSTATUS 			= 6,
-} eCommandID;// receive state machin
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
@@ -50,4 +43,17 @@ void APP_Response_SetChannel(unsigned char *ID,unsigned char mapflag,char *SIGNA
 void APP_Response_SetWifiPassword(unsigned char *ID,unsigned char result);
 //06 命令回应
 void APP_Response_IOInitStatus(unsigned char *ID,unsigned char result);
+//07 命令回应
+void APP_Response_GetRSDHistoryInfo(char mapping,unsigned char *ID,char *date_time ,char * UID);
+//08 命令回应
+void APP_Response_GenerationCurve(char mapping,unsigned char *ID,char *date_time ,char request_type);
+//09 命令回应
+void APP_Response_SetWiredNetwork(char mapping,unsigned char *ID);
+//10 命令回应
+void APP_Response_GetWiredNetwork(char mapping,unsigned char *ID,char dhcpStatus,IP_t IPAddr,IP_t MSKAddr,IP_t GWAddr,IP_t DNS1Addr,IP_t DNS2Addr,char *MacAddress);
+//11 命令回应
+void APP_Response_FlashSize(char mapping,unsigned char *ID,unsigned int Flashsize);
+//12 命令回应
+void APP_Response_PowerCurve(char mapping,unsigned char *ID,char * date);
+
 #endif /*__APPCOMM_H__*/

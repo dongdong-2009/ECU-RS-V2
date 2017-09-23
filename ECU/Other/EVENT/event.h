@@ -25,6 +25,8 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
+void add_APP_functions(void);
+
 void process_WIFIEvent(void);
 void process_HeartBeatEvent(void);
 void process_WIFI(unsigned char * ID);

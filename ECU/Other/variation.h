@@ -15,7 +15,7 @@
 /*  Definitions                                                              */
 /*****************************************************************************/
 #define MAXINVERTERCOUNT 								100	//最大的逆变器数
-#define INVERTERLENGTH 									22	//最大的逆变器数  //与手机通讯
+#define INVERTERLENGTH 									56	//最大的逆变器数  //与手机通讯
 //Client 相关通信参数
 #define CLIENT_RECORD_HEAD							20
 #define CLIENT_RECORD_ECU_HEAD					78
@@ -91,7 +91,7 @@ typedef struct ecu_info_t{
 	char ver;				//优化器版本号
 	int validNum;			//当前有效台数
 	int curSequence;		//心跳轮训机器号
-	
+	char MacAddress[7];			//ECU  MAC地址
 	float life_energy;			//系统历史总电量
 	float current_energy;		//系统当前一轮电量
 	float today_energy;			//当天的发电量

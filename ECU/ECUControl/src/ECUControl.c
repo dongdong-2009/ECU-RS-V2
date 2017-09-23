@@ -457,7 +457,7 @@ void ECUControl_thread_entry(void* parameter)
 			
 			communication_with_EMA(0);
 
-			printmsg(ECU_DBG_COLLECT,"Control DATA End");
+			printmsg(ECU_DBG_CONTROL_CLIENT,"Control DATA End");
 
 		}
 		
@@ -492,7 +492,7 @@ void ECUControl_thread_entry(void* parameter)
 				memset(time,0,15);
 			}
 			delete_alarm_file_resendflag0();		//清空数据resend标志全部为0的目录
-			printmsg(ECU_DBG_COLLECT,"Alarm DATA End");
+			printmsg(ECU_DBG_CONTROL_CLIENT,"Alarm DATA End");
 		}
 		
 		rt_thread_delay(RT_TICK_PER_SECOND);	

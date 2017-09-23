@@ -29,6 +29,10 @@ typedef enum THREADTYPE {
 }threadType;
 
 
+//socket每次发送的字节数
+#define SIZE_PER_SEND		3800
+
+
 //Thread Priority
 //Init device thread priority
 #define THREAD_PRIORITY_INIT							9

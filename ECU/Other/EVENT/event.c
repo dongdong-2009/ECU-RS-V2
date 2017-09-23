@@ -25,6 +25,7 @@
 #include "serverfile.h"
 #include "version.h"
 #include "debug.h"
+#include "AppFunction.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -40,6 +41,8 @@ extern rt_mutex_t wifi_uart_lock;
 int Data_Len = 0,Command_Id = 0;
 int ResolveFlag = 0;
 
+
+//测试枚举
 typedef enum
 { 
     HARDTEST_TEST_ALL    	= 0,		//接收数据头
@@ -48,17 +51,54 @@ typedef enum
     HARDTEST_TEST_433  		= 3
 } eHardWareID;// receive state machin
 
+enum CommandID{
+	P00, P01, P02, P03, P04, P05, P06, P07, P08, P09, //0-9
+	P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, //10-19
+	P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, //20-29
+	P30, P31, P32, P33, P34, P35, P36, P37, P38, P39, //30-39
+	P40, P41, P42, P43, P44, P45, P46, P47, P48, P49, //40-49
+	P50, P51, P52, P53, P54, P55, P56, P57, P58, P59, //50-59
+};
+
+void (*pfun_Phone[100])(unsigned char * id,int DataLen,const char *recvbuffer);
+
+void add_APP_functions(void)
+{
+	pfun_Phone[P01] = App_GetBaseInfo; 				//获取基本信息请求
+	pfun_Phone[P02] = App_GetSystemInfo; 				//获取系统信息
+	pfun_Phone[P03] = App_SetNetwork; 				//设置组网
+	pfun_Phone[P04] = App_SetChannel; 				//设置信道
+	pfun_Phone[P05] = App_SetWIFIPasswd; 			//设置WIFI密码
+	pfun_Phone[P06] = App_SetIOInitStatus; 			//设置IO初始状态
+	pfun_Phone[P07] = APP_GetRSDHistoryInfo; 		//功率电流电压曲线
+	pfun_Phone[P08] = App_GetGenerationCurve; 				//发电量曲线请求
+	pfun_Phone[P09] = App_SetWiredNetwork; 	//有线网络设置
+	pfun_Phone[P10] = App_GetWiredNetwork; 		//获取有线网络设置
+	pfun_Phone[P11] = App_GetFlashSize; 			//获取Flash剩余空间
+	pfun_Phone[P12] = App_GetPowerCurve; 			//获取Flash剩余空间
+
+
+}
+
+
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
-int ResolveWifiPasswd(char *oldPasswd,int *oldLen,char *newPasswd,int *newLen,char *passwdstring)
+//WIFI事件处理
+void process_WIFI(unsigned char * ID)
 {
-	*oldLen = (passwdstring[0]-'0')*10+(passwdstring[1]-'0');
-	memcpy(oldPasswd,&passwdstring[2],*oldLen);
-	*newLen = (passwdstring[2+(*oldLen)]-'0')*10+(passwdstring[3+(*oldLen)]-'0');
-	memcpy(newPasswd,&passwdstring[4+*oldLen],*newLen);
-	
-	return 0;
+	ResolveFlag =  Resolve_RecvData((char *)WIFI_RecvSocketAData,&Data_Len,&Command_Id);
+	if(ResolveFlag == 0)
+	{
+		
+		if(pfun_Phone[Command_Id%100])
+		{
+			printf("pfun_Phone ID:%d\n",Command_Id);
+			(*pfun_Phone[Command_Id%100])(ID,Data_Len,(char *)WIFI_RecvSocketAData);
+		}
+		
+	}
+
 }
 
 //硬件测试   返回值是测试的错误码
@@ -257,139 +297,6 @@ void process_HeartBeatEvent(void)
 		}
 		
 				
-	}
-}
-
-
-
-
-//WIFI事件处理
-void process_WIFI(unsigned char * ID)
-{
-	char sofewareVersion[50];
-	ResolveFlag =  Resolve_RecvData((char *)WIFI_RecvSocketAData,&Data_Len,&Command_Id);
-	if(ResolveFlag == 0)
-	{
-		switch(Command_Id)
-		{
-			case COMMAND_BASEINFO:				//获取基本信息			APS11001401END
-				printf("WIFI_Recv_Event%d %s\n",COMMAND_BASEINFO,WIFI_RecvSocketAData);
-				//获取基本信息
-				//获取信号强度
-				ecu.Signal_Level = ReadRssiValue(1);
-				sprintf(sofewareVersion,"%s_%s_%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
-				APP_Response_BaseInfo(ID,ecu.ECUID12,VERSION_ECU_RS,ecu.Signal_Level,ecu.Signal_Channel,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo,ecu.validNum);
-				break;
-					
-			case COMMAND_SYSTEMINFO:			//获取系统信息			APS11002602406000000009END
-				printf("WIFI_Recv_Event%d %s\n",COMMAND_SYSTEMINFO,WIFI_RecvSocketAData);
-				//先对比ECUID是否匹配
-				if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-				{	//匹配成功进行相应的操作
-					SEGGER_RTT_printf(0, "COMMAND_SYSTEMINFO  Mapping\n");
-					APP_Response_SystemInfo(ID,0x00,inverterInfo,ecu.validNum);
-				}	else
-				{	//不匹配
-					SEGGER_RTT_printf(0, "COMMAND_SYSTEMINFO   Not Mapping");
-					APP_Response_SystemInfo(ID,0x01,inverterInfo,0);
-				}
-				break;
-					
-			case COMMAND_SETNETWORK:			//设置组网					APS11003503406000000009END111111END
-				printf("WIFI_Recv_Event%d %s\n",COMMAND_SETNETWORK,WIFI_RecvSocketAData);
-				//先对比ECUID是否匹配
-				if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-				{	//匹配成功进行相应的操作
-					int AddNum = 0;
-					printf("WIFI_Recv_SocketA_LEN:%d\n",WIFI_Recv_SocketA_LEN);
-					AddNum = (WIFI_Recv_SocketA_LEN - 29)/6;
-					printf("COMMAND_SETNETWORK   Mapping   %d\n",AddNum);
-					APP_Response_SetNetwork(ID,0x00);
-					//将数据写入EEPROM
-					add_inverter(inverterInfo,AddNum,(char *)&WIFI_RecvSocketAData[26]);	
-					init_inverter(inverterInfo);
-					//进行一些绑定操作
-					//LED_off();
-				}	else
-				{	//不匹配
-					APP_Response_SetNetwork(ID,0x01);
-					SEGGER_RTT_printf(0, "COMMAND_SETNETWORK   Not Mapping");
-				}
-				break;
-						
-			case COMMAND_SETCHANNEL:			//设置信道					APS11003104406000000009END22END
-				printf("WIFI_Recv_Event%d %s\n",COMMAND_SETCHANNEL,WIFI_RecvSocketAData);
-				if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-				{	//匹配成功进行相应的操作
-					//获取新的信道
-					memcpy(ecu.Signal_Channel,&WIFI_RecvSocketAData[26],2);
-					Write_CHANNEL(ecu.Signal_Channel);		//写入信道
-					//获取信号强度
-					ecu.Signal_Level = ReadRssiValue(1);
-					APP_Response_SetChannel(ID,0x00,ecu.Signal_Channel,ecu.Signal_Level);
-					//将其转换为1个字节
-					ecu.Channel_char = (ecu.Signal_Channel[0]-'0')*10+(ecu.Signal_Channel[1]-'0');
-					//改变自己的信道
-					setChannel(ecu.Channel_char);
-					SEGGER_RTT_printf(0, "COMMAND_SETCHANNEL  Signal_Channel:%s Channel_char%d\n",ecu.Signal_Channel,ecu.Channel_char);
-					
-				}	else
-				{	//不匹配
-					APP_Response_SetChannel(ID,0x01,NULL,NULL);
-				}
-				break;
-						
-			case COMMAND_SETWIFIPASSWORD:	//设置WIFI密码	OK		APS11004905406000000009END08123456780887654321END
-				printf("WIFI_Recv_Event%d %s\n",COMMAND_SETWIFIPASSWORD,WIFI_RecvSocketAData);
-				//先对比ECUID是否匹配
-				if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-				{	//匹配成功进行相应的操作
-					char OldPassword[100] = {'\0'};
-					char NewPassword[100] = {'\0'};
-					char EEPROMPasswd[100] = {'\0'};
-					int oldLen,newLen;
-							
-					ResolveWifiPasswd(OldPassword,&oldLen,NewPassword,&newLen,(char *)&WIFI_RecvSocketAData[26]);
-							
-					SEGGER_RTT_printf(0, "COMMAND_SETWIFIPASSWORD %d %s %d %s\n",oldLen,OldPassword,newLen,NewPassword);
-							
-					//读取旧密码，如果旧密码相同，设置新密码
-					Read_WIFI_PW(EEPROMPasswd,100);
-							
-					if(!memcmp(EEPROMPasswd,OldPassword,oldLen))
-					{
-						APP_Response_SetWifiPassword(ID,0x00);
-						WIFI_ChangePasswd(NewPassword);
-						Write_WIFI_PW(NewPassword,newLen);
-					}else
-					{
-						APP_Response_SetWifiPassword(ID,0x02);
-					}
-							
-				}	else
-				{	//不匹配
-					APP_Response_SetWifiPassword(ID,0x01);
-				}					
-				break;
-				
-			case COMMAND_IOINITSTATUS:	//设置IO初始化状态	OK		
-				printf("WIFI_Recv_Event%d %s\n",COMMAND_IOINITSTATUS,WIFI_RecvSocketAData);
-				//先对比ECUID是否匹配
-				if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-				{//匹配成功进行相应的操作
-					//获取IO初始状态
-					ecu.IO_Init_Status = WIFI_RecvSocketAData[23];
-					APP_Response_IOInitStatus(ID,0x00);
-
-					//保存新IO初始化状态到Flash
-					//0：低电平（关闭心跳功能）1：高电平（打开心跳功能）
-					Write_IO_INIT_STATU(&ecu.IO_Init_Status); 
-					
-				}else
-				{
-					APP_Response_IOInitStatus(ID,0x01);
-				}
-		}
 	}
 }
 

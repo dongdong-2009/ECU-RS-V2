@@ -45,9 +45,8 @@ void Collect_Client_Record(void)
 	inverter_info *curinverter = inverterInfo;
 	int commNum = 0; 	//通讯上的逆变器数量
 	char curTime[15] = {'\0'};
-	char str[150] = {'\0'};
-	int fd;
 	apstime(curTime);
+	curTime[14] = '\0';
 	if(ecu.validNum > 0)
 	{
 		client_Data = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
@@ -64,8 +63,8 @@ void Collect_Client_Record(void)
 			char UID[13] = {'\0'};
 			//采集每一轮优化器的数据
 			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传   只有最新一轮通讯打野上一次采集，才会进入
-			if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
-			//if(1)
+			//if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
+			if(1)
 			{
 				commNum++;		
 				curinverter->status.comm_status = 1;
@@ -113,8 +112,10 @@ void Collect_Client_Record(void)
 				//如果当前一轮电量小于上一轮的电量  我们默认为重启过了，电量直接获取，功率为当时的瞬时功率
 				if(curinverter->Last_PV1_Energy > curinverter->PV1_Energy)
 				{
+					curinverter->AveragePower1 = curinverter->Power1;
 					sprintf(&client_Data[length],"%06d",(curinverter->Power1*1000));
 					length += 6;
+					curinverter->EnergyPV1 = curinverter->PV1_Energy;
 					sprintf(&client_Data[length],"%010d",(curinverter->PV1_Energy*10/36));
 					length += 10;
 				}else
@@ -144,8 +145,10 @@ void Collect_Client_Record(void)
 				//如果当前一轮电量小于上一轮的电量  我们默认为重启过了，电量直接获取，功率为当时的瞬时功率
 				if(curinverter->Last_PV2_Energy > curinverter->PV2_Energy)
 				{
+					curinverter->AveragePower2 = curinverter->Power2;
 					sprintf(&client_Data[length],"%06d",(curinverter->Power2*1000));
 					length += 6;
+					curinverter->EnergyPV2 = curinverter->PV2_Energy;
 					sprintf(&client_Data[length],"%010d",(curinverter->PV2_Energy*10/36));
 					length += 10;
 				}else
@@ -234,32 +237,33 @@ void Collect_Client_Record(void)
 			
 		}
 		client_Data[length++] = '\0';	//存入文件的时候不添加换行符，上传数据的时候再添加换行符
+		ecu.current_energy = ecu.current_energy/3600000;		//将发电量转换为千瓦时
 		
-		ecu.life_energy = ecu.life_energy + ecu.current_energy/3600000;
+		ecu.system_power = 280;
+		ecu.current_energy = 0.01;
+		ecu.life_energy = ecu.life_energy + ecu.current_energy;
+
 		printfloatmsg(ECU_DBG_COLLECT,"ecu.life_energy",ecu.life_energy);
 		update_life_energy(ecu.life_energy);								//设置系统历史发电量
 		//保存报文数据
 		if(commNum > 0)
 		{
-			save_system_power(ecu.system_power,curTime);			//保存系统功率
-			update_daily_energy(ecu.current_energy,curTime);		//保存每日发电量
-			update_monthly_energy(ecu.current_energy,curTime);	//保存每月的发电量
-			//最多保存两个月的数据
-			delete_system_power_2_month_ago(curTime);
 			
-			save_record(client_Data,curTime);
+			save_system_power(ecu.system_power,curTime);			//保存系统功率    	按照月存放
+			update_daily_energy(ecu.current_energy,curTime);		//保存每日发电量  	按照天存放
+			update_monthly_energy(ecu.current_energy,curTime);		//保存每月的发电量	按照月存放
+			update_yearly_energy(ecu.current_energy,curTime);  		//保存每年的发电量
+			//最多保存两个月的数据
+			delete_system_power_2_month_ago(curTime);		//删除两个月前的数据
+			save_record(client_Data,curTime);				//保存需要发送给服务器的报文
 			print2msg(ECU_DBG_COLLECT,"client Data:",client_Data);
 
-			//保存数据到文件中
-			curinverter = inverterInfo;
-			fd = fileopen("/home/data/collect.con",O_WRONLY | O_APPEND | O_CREAT|O_TRUNC,0);
-			for(i = 0;i< ecu.validNum; i++)
-			{
-				sprintf(str,"%02x%02x%02x%02x%02x%02x,%s,%d,%d\n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
-				fileWrite(fd,str,strlen(str));
-				curinverter++;
-			}
-			fileclose(fd);
+			//保存数据到文件中 该数据为最后一次的发电量
+			save_last_collect_info();
+			//保存07命令相关数据到文件中  
+			save_collect_info(curTime);	
+			//最多保存2天的数据
+			delete_collect_info_2_day_ago(curTime);//删除两天前的数据
 			
 		}
 		
@@ -381,6 +385,7 @@ void ECUCollect_thread_entry(void* parameter)
 		if(compareTime(CollectClientDurabletime ,CollectClientThistime,CollectClientReportinterval))
 		//if(compareTime(CollectClientDurabletime ,CollectClientThistime,30))
 		{
+			optimizeFileSystem();
 			printmsg(ECU_DBG_COLLECT,"Collect DATA Start");
 			//5分钟采集相关的发电量数据
 			CollectClientThistime = acquire_time();
@@ -392,6 +397,7 @@ void ECUCollect_thread_entry(void* parameter)
 		
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
+			optimizeFileSystem();
 			//采集心跳相关远程控制数据
 			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  Start");
 			CollectControlThistime = acquire_time();

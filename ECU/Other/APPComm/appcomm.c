@@ -16,6 +16,8 @@
 #include "string.h"
 #include "SEGGER_RTT.h"
 #include "usart5.h"
+#include "stdio.h"
+#include "serverfile.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -59,17 +61,9 @@ void APP_Response_BaseInfo(unsigned char *ID,char *ECU_NO,char *TYPE,char SIGNAL
 	
 	
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
-	sprintf(SendData,"a00000000APS11%04d01%s%03d%03d%s%1d%02d%sEND\n",(37+Length),ECU_NO,101,SIGNAL_LEVEL,SIGNAL_CHANNEL,type,Length,Version);
-	SendData[1] = ID[0];
-	SendData[2] = ID[1];
-	SendData[3] = ID[2];
-	SendData[4] = ID[3];
-	SendData[5] = ID[4];
-	SendData[6] = ID[5];
-	SendData[7] = ID[6];
-	SendData[8] = ID[7];
-	SEGGER_RTT_printf(0, "APP_Response_BaseInfo %s\n",&SendData[9]);
-	WIFI_SendData(SendData, (47+Length));
+	sprintf(SendData,"APS11%04d01%s%03d%03d%s%1d%02d%sEND\n",(37+Length),ECU_NO,101,SIGNAL_LEVEL,SIGNAL_CHANNEL,type,Length,Version);
+	SEGGER_RTT_printf(0, "APP_Response_BaseInfo %s\n",SendData);
+	SendToSocketA(SendData ,(38+Length),ID);
 }
 
 //ECU-RS系统信息回应   mapflag   0表示匹配成功  1 表示匹配不成功
@@ -77,8 +71,8 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 {
 	inverter_info *curinverter = inverter;
 	unsigned short inverter_length = 0;
-	
-	unsigned char inverter_data[23] = {'\0'};
+	unsigned int Energy;
+	unsigned char inverter_data[57] = {'\0'};
 	int i = 0;
 	int length = 0;
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
@@ -87,86 +81,65 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 
 	if(mapflag == 1)	//匹配失败，发送失败命令
 	{
-		sprintf(SendData,"a00000000APS1100130201\n");
-		SendData[1] = ID[0];
-		SendData[2] = ID[1];
-		SendData[3] = ID[2];
-		SendData[4] = ID[3];
-		SendData[5] = ID[4];
-		SendData[6] = ID[5];
-		SendData[7] = ID[6];
-		SendData[8] = ID[7];
-		WIFI_SendData(SendData, 23);
+		sprintf(SendData,"APS1100130201\n");
+		SendToSocketA(SendData ,14,ID);
 		return;
 	}else{				//匹配成功，发送成功命令
 		
-		sprintf(SendData,"a00000000APS1100131200");   //13字节
-		SendData[1] = ID[0];
-		SendData[2] = ID[1];
-		SendData[3] = ID[2];
-		SendData[4] = ID[3];
-		SendData[5] = ID[4];
-		SendData[6] = ID[5];
-		SendData[7] = ID[6];
-		SendData[8] = ID[7];
+		sprintf(SendData,"APS1100130200");   //13字节
 
-		SendData[22] = validNum/256;	
-		SendData[23] = validNum%256;
+		SendData[13] = validNum/256;	
+		SendData[14] = validNum%256;
 
-		length = 24;
+		length = 15;
 		for(i=0; (i<MAXINVERTERCOUNT)&&(i < validNum); i++)			
 		{
-			memset(inverter_data,0x00,23);
-			if(curinverter->status.device_Type == 0)		//开关设备
-			{
-				inverter_length = 13;
-				//拼接13字节数据包
-				memcpy(&inverter_data[0],curinverter->uid,6);
-				inverter_data[6] = curinverter->status.device_Type;
+			memset(inverter_data,0x00,57);
+
+			inverter_length = 56;
+			//拼接20字节数据包
+			memcpy(&inverter_data[0],curinverter->uid,6);
+			inverter_data[6] = curinverter->status.device_Type;
 				
-				inverter_data[7] |=  curinverter->status.comm_failed3_status;
-				inverter_data[7] |=  (curinverter->status.function_status << 1);
+			inverter_data[7] |=  curinverter->status.comm_failed3_status;
+			inverter_data[7] |=  (curinverter->status.function_status << 1);
+			inverter_data[7] |=  (curinverter->status.pv1_low_voltage_pritection << 2);
+			inverter_data[7] |=  (curinverter->status.pv2_low_voltage_pritection << 3);
 
-				inverter_data[8] = curinverter->heart_rate /256;
-				inverter_data[9] = curinverter->heart_rate %256;
-
-				inverter_data[10] = curinverter->off_times/256;
-				inverter_data[11] = curinverter->off_times%256;
-
-				inverter_data[12] = curinverter->restartNum;
-				
-			}else if(curinverter->status.device_Type == 1) 	//监控设备
-			{
-				inverter_length = 22;
-				//拼接20字节数据包
-				memcpy(&inverter_data[0],curinverter->uid,6);
-				inverter_data[6] = curinverter->status.device_Type;
-				
-				inverter_data[7] |=  curinverter->status.comm_failed3_status;
-				inverter_data[7] |=  (curinverter->status.function_status << 1);
-				inverter_data[7] |=  (curinverter->status.pv1_low_voltage_pritection<< 2);
-				inverter_data[7] |=  (curinverter->status.pv2_low_voltage_pritection << 3);
-
-				inverter_data[8] = curinverter->heart_rate /256;
-				inverter_data[9] = curinverter->heart_rate %256;
-
-				inverter_data[10] = curinverter->off_times/256;
-				inverter_data[11] = curinverter->off_times%256;
-				
-				inverter_data[12] = curinverter->restartNum;
-
-				inverter_data[13] = curinverter->PV1/256;
-				inverter_data[14] = curinverter->PV1%256;
-				inverter_data[15] = curinverter->PV2/256;
-				inverter_data[16] = curinverter->PV2%256;
-				inverter_data[17] = curinverter->PI;
-				inverter_data[18] = curinverter->Power1/256;
-				inverter_data[19] = curinverter->Power1%256;
-				inverter_data[20] = curinverter->Power2/256;
-				inverter_data[21] = curinverter->Power2%256;
-				
-			}
+			inverter_data[8] = curinverter->heart_rate /256;
+			inverter_data[9] = curinverter->heart_rate %256;
+			inverter_data[10] = curinverter->off_times/256;
+			inverter_data[11] = curinverter->off_times%256;
 			
+			inverter_data[12] = curinverter->restartNum;
+
+			inverter_data[13] = curinverter->PV1/256;
+			inverter_data[14] = curinverter->PV1%256;
+			inverter_data[15] = curinverter->PV2/256;
+			inverter_data[16] = curinverter->PV2%256;
+			inverter_data[17] = curinverter->PI;
+			inverter_data[18] = curinverter->Power1/256;
+			inverter_data[19] = curinverter->Power1%256;
+			inverter_data[20] = curinverter->Power2/256;
+			inverter_data[21] = curinverter->Power2%256;
+			inverter_data[22] = curinverter->PV_Output/256;
+			inverter_data[23] = curinverter->PV_Output%256;
+
+			inverter_data[24] = curinverter->RSSI/256;
+			
+			Energy = curinverter->EnergyPV1*10/36;
+			inverter_data[25] = (Energy/16777216)%256;
+			inverter_data[26] = (Energy/65536)%256;
+			inverter_data[27] = (Energy/256)%256;
+			inverter_data[28] = Energy%256;
+			
+			Energy = curinverter->EnergyPV2*10/36;
+			inverter_data[29] = (Energy/16777216)%256;
+			inverter_data[30] = (Energy/65536)%256;
+			inverter_data[31] = (Energy/256)%256;
+			inverter_data[32] = Energy%256;
+
+			inverter_data[33] = curinverter->Mos_CloseNum;
 
 			memcpy(&SendData[length],inverter_data,inverter_length);
 			length += inverter_length;
@@ -179,10 +152,10 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 			length = length - 9 + 3;
 			
 			//改变报文字节长度
-			SendData[14] = (length/1000) + '0';
-			SendData[15] =	((length/100)%10) + '0';
-			SendData[16] = ((length/10)%10) + '0';
-			SendData[17] = ((length)%10) + '0';
+			SendData[5] = (length/1000) + '0';
+			SendData[6] =	((length/100)%10) + '0';
+			SendData[7] = ((length/10)%10) + '0';
+			SendData[8] = ((length)%10) + '0';
 			SendData[length-3+9] = 'E';
 			SendData[length-2+9] = 'N';
 			SendData[length-1+9] = 'D';
@@ -190,7 +163,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 		}else
 		{
 			length = 13;
-			SendData[length+9] = '\n';
+			SendData[length] = '\n';
 			
 		}
 		
@@ -201,8 +174,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 	}
 	SEGGER_RTT_printf(0, "\n");
 #endif	
-		
-		WIFI_SendData(SendData, (length+10));
+		SendToSocketA(SendData ,length+1,ID);
 	}
 
 
@@ -213,16 +185,8 @@ void APP_Response_SetNetwork(unsigned char *ID,unsigned char result)
 {
 	//char SendData[20] = {'\0'};
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
-	sprintf(SendData,"a00000000APS11001303%02d\n",result);
-	SendData[1] = ID[0];
-	SendData[2] = ID[1];
-	SendData[3] = ID[2];
-	SendData[4] = ID[3];
-	SendData[5] = ID[4];
-	SendData[6] = ID[5];
-	SendData[7] = ID[6];
-	SendData[8] = ID[7];	
-	WIFI_SendData(SendData, 23);
+	sprintf(SendData,"APS11001303%02d\n",result);
+	SendToSocketA(SendData ,14,ID);
 }
 
 //ECU-RS设置信道回应
@@ -232,27 +196,11 @@ void APP_Response_SetChannel(unsigned char *ID,unsigned char mapflag,char *SIGNA
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
 	if(mapflag == 1)
 	{
-		sprintf(SendData,"a00000000APS1100130401\n");
-		SendData[1] = ID[0];
-		SendData[2] = ID[1];
-		SendData[3] = ID[2];
-		SendData[4] = ID[3];
-		SendData[5] = ID[4];
-		SendData[6] = ID[5];
-		SendData[7] = ID[6];
-		SendData[8] = ID[7];		
-		WIFI_SendData(SendData, 23);
+		sprintf(SendData,"APS1100130401\n");
+		SendToSocketA(SendData ,14,ID);
 	}else{
-		sprintf(SendData,"a00000000APS1100210400%s%03dEND\n",SIGNAL_CHANNEL,SIGNAL_LEVEL);
-		SendData[1] = ID[0];
-		SendData[2] = ID[1];
-		SendData[3] = ID[2];
-		SendData[4] = ID[3];
-		SendData[5] = ID[4];
-		SendData[6] = ID[5];
-		SendData[7] = ID[6];
-		SendData[8] = ID[7];		
-		WIFI_SendData(SendData, 31);
+		sprintf(SendData,"APS1100210400%s%03dEND\n",SIGNAL_CHANNEL,SIGNAL_LEVEL);		
+		SendToSocketA(SendData ,22,ID);
 	}
 }
 
@@ -261,16 +209,8 @@ void APP_Response_SetWifiPassword(unsigned char *ID,unsigned char result)
 {
 	//char SendData[20] = {'\0'};
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
-	sprintf(SendData,"a00000000APS11001305%02d\n",result);
-	SendData[1] = ID[0];
-	SendData[2] = ID[1];
-	SendData[3] = ID[2];
-	SendData[4] = ID[3];
-	SendData[5] = ID[4];
-	SendData[6] = ID[5];
-	SendData[7] = ID[6];
-	SendData[8] = ID[7];		
-	WIFI_SendData(SendData, 23);
+	sprintf(SendData,"APS11001305%02d\n",result);
+	SendToSocketA(SendData ,14,ID);
 }
 
 
@@ -278,15 +218,285 @@ void APP_Response_IOInitStatus(unsigned char *ID,unsigned char result)
 {
 	//char SendData[20] = {'\0'};
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
-	sprintf(SendData,"a00000000APS11001306%02d\n",result);
-	SendData[1] = ID[0];
-	SendData[2] = ID[1];
-	SendData[3] = ID[2];
-	SendData[4] = ID[3];
-	SendData[5] = ID[4];
-	SendData[6] = ID[5];
-	SendData[7] = ID[6];
-	SendData[8] = ID[7];		
-	WIFI_SendData(SendData, 23);
+	sprintf(SendData,"APS11001306%02d\n",result);
+	SendToSocketA(SendData ,14,ID);	
 }
+
+void APP_Response_GetRSDHistoryInfo(char mapping,unsigned char *ID,char *date_time ,char * UID)
+{
+	int packlength = 0,len_body = 0;
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+	//匹配不成功
+	if(mapping == 0x01)
+	{
+		sprintf(SendData,"APS1100130701\n");
+		packlength = 14;
+		SendToSocketA(SendData ,packlength,ID);
+		return ;
+	}
+
+	//匹配成功
+	sprintf(SendData,"APS1100150700%s",date_time);
+	packlength = 21;
+	memcpy(&SendData[packlength],UID,6);
+	packlength += 6;
+	read_RSD_info(date_time,UID,&SendData[packlength],&len_body);
+	packlength += len_body;
+	
+	//没有Body部分数据
+	if(len_body == 0)
+	{
+		sprintf(SendData,"APS1100130702\n");
+		packlength = 14;
+		SendToSocketA(SendData ,packlength,ID);
+		return ;
+	}
+
+	SendData[packlength++] = 'E';
+	SendData[packlength++] = 'N';
+	SendData[packlength++] = 'D';
+	
+	SendData[5] = (packlength/1000) + '0';
+	SendData[6] = ((packlength/100)%10) + '0';
+	SendData[7] = ((packlength/10)%10) + '0';
+	SendData[8] = ((packlength)%10) + '0';
+	SendData[packlength++] = '\n';
+	
+	SendToSocketA(SendData ,packlength,ID);
+	
+
+}
+
+
+//08 COMMAND_GENERATIONCURVE		//发电量曲线请求    mapping :: 0x00 匹配  0x01 不匹配  
+void APP_Response_GenerationCurve(char mapping,unsigned char *ID,char *date_time ,char request_type)
+{
+	int packlength = 0,len_body = 0;
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+	//匹配不成功
+	if(mapping == 0x01)
+	{
+		sprintf(SendData,"APS1100130801\n");
+		packlength = 14;
+		SendToSocketA(SendData ,packlength,ID);
+		return ;
+	}
+	//匹配成功
+
+	sprintf(SendData,"APS1100150800%s",date_time);
+	packlength = 21;
+	//拼接需要发送的报文
+	if(request_type == '0')
+	{
+		//收到日期去获取当月和上一个月各天的发电量
+		SendData[packlength++] = '0';
+		SendData[packlength++] = '0';
+		
+		read_monthly_energy(date_time, &SendData[packlength],&len_body);
+		packlength += len_body;
+		
+	}else if(request_type == '1')
+	{
+		//收到日期去获取当年和前一年的各月的发电量
+		SendData[packlength++] = '0';
+		SendData[packlength++] = '1';
+		read_yearly_energy(date_time, &SendData[packlength],&len_body);
+		packlength += len_body;
+		
+	}else if(request_type == '2')
+	{
+		//历史上各年发电量
+		SendData[packlength++] = '0';
+		SendData[packlength++] = '2';
+		read_history_energy(date_time, &SendData[packlength],&len_body);
+		packlength += len_body;
+		
+	}
+
+	//时间点不存在时直接返回02
+	if(len_body == 0)
+	{
+		sprintf(SendData,"APS1100130802\n");
+		packlength = 14;
+		SendToSocketA(SendData ,packlength,ID);
+		return ;
+	}
+
+	SendData[packlength++] = 'E';
+	SendData[packlength++] = 'N';
+	SendData[packlength++] = 'D';
+	
+	SendData[5] = (packlength/1000) + '0';
+	SendData[6] = ((packlength/100)%10) + '0';
+	SendData[7] = ((packlength/10)%10) + '0';
+	SendData[8] = ((packlength)%10) + '0';
+	SendData[packlength++] = '\n';
+	
+	SendToSocketA(SendData ,packlength,ID);
+}
+
+
+
+//09 COMMAND_SETWIREDNETWORK		//有线网络设置请求			mapping :: 0x00 匹配  0x01 不匹配  
+void APP_Response_SetWiredNetwork(char mapping,unsigned char *ID)
+{
+	int packlength = 0;
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
+	
+	//拼接需要发送的报文
+	sprintf(SendData,"APS11001309%02d\n",mapping);
+	packlength = 14;
+	
+	SendToSocketA(SendData ,packlength,ID);
+}
+
+//10 COMMAND_SETWIREDNETWORK		//有线网络设置请求			mapping :: 0x00 匹配  0x01 不匹配  
+void APP_Response_GetWiredNetwork(char mapping,unsigned char *ID,char dhcpStatus,IP_t IPAddr,IP_t MSKAddr,IP_t GWAddr,IP_t DNS1Addr,IP_t DNS2Addr,char *MacAddress)
+{
+	int packlength = 0;
+	char MAC[13] = {'\0'};
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+	
+	//拼接需要发送的报文
+	
+	if(mapping == 0x01)
+	{
+		sprintf(SendData,"APS11001510%02d\n",mapping);
+		packlength = 14;
+		SendToSocketA(SendData ,packlength,ID);
+	}else
+	{
+		sprintf(SendData,"APS11001510%02d\n",mapping);
+		packlength = 13;
+		if(dhcpStatus == 0)
+		{
+			SendData[packlength++] = '0';
+			SendData[packlength++] = '0';
+		}else
+		{
+			SendData[packlength++] = '0';
+			SendData[packlength++] = '1';
+		}
+		SendData[packlength++] = IPAddr.IP1;
+		SendData[packlength++] = IPAddr.IP2;
+		SendData[packlength++] = IPAddr.IP3;
+		SendData[packlength++] = IPAddr.IP4;
+				
+		SendData[packlength++] = MSKAddr.IP1;
+		SendData[packlength++] = MSKAddr.IP2;
+		SendData[packlength++] = MSKAddr.IP3;
+		SendData[packlength++] = MSKAddr.IP4;
+		
+		SendData[packlength++] = GWAddr.IP1;
+		SendData[packlength++] = GWAddr.IP2;
+		SendData[packlength++] = GWAddr.IP3;
+		SendData[packlength++] = GWAddr.IP4;
+
+		SendData[packlength++] = DNS1Addr.IP1;
+		SendData[packlength++] = DNS1Addr.IP2;
+		SendData[packlength++] = DNS1Addr.IP3;
+		SendData[packlength++] = DNS1Addr.IP4;
+
+		SendData[packlength++] = DNS2Addr.IP1;
+		SendData[packlength++] = DNS2Addr.IP2;
+		SendData[packlength++] = DNS2Addr.IP3;
+		SendData[packlength++] = DNS2Addr.IP4;
+
+		sprintf(MAC,"%02x%02x%02x%02x%02x%02x",MacAddress[0],MacAddress[1],MacAddress[2],MacAddress[3],MacAddress[4],MacAddress[5]);
+		memcpy(&SendData[packlength],MAC,12);
+		packlength += 12;
+
+		SendData[packlength++] = 'E';
+		SendData[packlength++] = 'N';
+		SendData[packlength++] = 'D';
+		
+		SendData[5] = (packlength/1000) + '0';
+		SendData[6] = ((packlength/100)%10) + '0';
+		SendData[7] = ((packlength/10)%10) + '0';
+		SendData[8] = ((packlength)%10) + '0';
+		SendData[packlength++] = '\n';
+
+		
+		SendToSocketA(SendData ,packlength,ID);
+	}
+	
+	
+}
+
+
+
+//ECU-RS剩余存储空间
+void APP_Response_FlashSize(char mapping,unsigned char *ID,unsigned int Flashsize)
+{
+	int packlength = 0;
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+	if(mapping == 0x00)
+	{
+		sprintf(SendData,"APS1100001100");
+		packlength = 13;
+		SendData[packlength++] = (Flashsize/16777216)%256;
+		SendData[packlength++] = (Flashsize/65536)%256;
+		SendData[packlength++] = (Flashsize/256)%256;
+		SendData[packlength++] = Flashsize%256;
+		
+		SendData[packlength++] = 'E';
+		SendData[packlength++] = 'N';
+		SendData[packlength++] = 'D';
+		
+		SendData[5] = (packlength/1000) + '0';
+		SendData[6] = ((packlength/100)%10) + '0';
+		SendData[7] = ((packlength/10)%10) + '0';
+		SendData[8] = ((packlength)%10) + '0';
+		SendData[packlength++] = '\n';
+		SendToSocketA(SendData ,packlength,ID);
+	}else
+	{
+		sprintf(SendData,"APS1100131101\n");
+		packlength = 14;
+	}	
+	
+
+}
+
+void APP_Response_PowerCurve(char mapping,unsigned char *ID,char * date)
+{
+	int packlength = 0,length = 0;
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
+	
+	//匹配不成功
+	if(mapping == 0x01)
+	{
+		sprintf(SendData,"APS1100131201\n");
+		packlength = 14;
+		SendToSocketA(SendData ,packlength,ID);
+		return ;
+	}
+
+	//拼接需要发送的报文
+	sprintf(SendData,"APS1100131200");
+	packlength = 13;
+	
+	read_system_power(date,&SendData[13],&length);
+	packlength += length;
+	if(length == 8)
+	{	//无需上传数据  设置为02
+		sprintf(SendData,"APS1100131202\n");
+		packlength = 14;
+		SendToSocketA(SendData ,packlength,ID);
+	}
+	
+	SendData[packlength++] = 'E';
+	SendData[packlength++] = 'N';
+	SendData[packlength++] = 'D';
+	
+	SendData[5] = (packlength/1000) + '0';
+	SendData[6] = ((packlength/100)%10) + '0';
+	SendData[7] = ((packlength/10)%10) + '0';
+	SendData[8] = ((packlength)%10) + '0';
+	SendData[packlength++] = '\n';
+	
+	SendToSocketA(SendData ,packlength,ID);
+
+}
+
 

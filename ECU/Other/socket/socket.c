@@ -169,6 +169,8 @@ int send_socket(int sockfd, char *sendbuffer, int size)
 {
 	int i, send_count;
 	char msg_length[6] = {'\0'};
+	int length = 0,send_length = 0;
+	
 
 	if(sendbuffer[strlen(sendbuffer)-1] == '\n'){
 		sprintf(msg_length, "%05d", strlen(sendbuffer)-1);
@@ -178,9 +180,33 @@ int send_socket(int sockfd, char *sendbuffer, int size)
 		strcat(sendbuffer, "\n");
 		size++;
 	}
+	length = size;
 	strncpy(&sendbuffer[5], msg_length, 5);
 	for(i=0; i<3; i++){
-		send_count = send(sockfd, sendbuffer, size, 0);
+
+		while(length > 0)
+		{
+			if(length > SIZE_PER_SEND)
+			{
+				send_count = send(sockfd, &sendbuffer[send_length], SIZE_PER_SEND, 0);
+				send_length += SIZE_PER_SEND;
+				length -= SIZE_PER_SEND;
+			}else
+			{	
+				send_count = send(sockfd, &sendbuffer[send_length], length, 0);
+
+				length -= length;
+			}
+
+			if(-1 == send_count)
+			{
+				close_socket(sockfd);
+				return -1;
+			}
+			
+			rt_hw_ms_delay(500);
+		}
+
 		if(send_count >= 0){
 			sendbuffer[strlen(sendbuffer)-1] = '\0';
 			print2msg(ECU_DBG_CONTROL_CLIENT,"Sent", sendbuffer);
@@ -311,7 +337,7 @@ int recv_response(int fd_sock, char *readbuff)
 	{
 		FD_ZERO(&rd);
 		FD_SET(fd_sock, &rd);
-		timeout.tv_sec = 120;
+		timeout.tv_sec = 20;
 		timeout.tv_usec = 0;
 
 		res = select(fd_sock+1, &rd, NULL, NULL, &timeout);
@@ -359,6 +385,8 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 	int socketfd = 0;
 	int readbytes = 0,count =0,recvlen =0;
 	char *readbuff = NULL;
+	int length = 0,send_length = 0;
+	length = sendLength;
 	socketfd = createsocket();
 	if(socketfd == -1) 	//创建socket失败
 		return -1;
@@ -369,14 +397,32 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 		int res = 0;
 		fd_set rd;
 		struct timeval timeout;
-		
-		sendbytes = send(socketfd, sendbuff, sendLength, 0);
-		
-		if(-1 == sendbytes)
+
+		while(length > 0)
 		{
-			close_socket(socketfd);
-			return -1;
+			if(length > SIZE_PER_SEND)
+			{
+				sendbytes = send(socketfd, &sendbuff[send_length], SIZE_PER_SEND, 0);
+				send_length += SIZE_PER_SEND;
+				length -= SIZE_PER_SEND;
+			}else
+			{	
+				sendbytes = send(socketfd, &sendbuff[send_length], length, 0);
+
+				length -= length;
+			}
+
+			if(-1 == sendbytes)
+			{
+				close_socket(socketfd);
+				return -1;
+			}
+			
+			rt_hw_ms_delay(500);
 		}
+
+		
+
 		readbuff = malloc((4+99*14));
 		memset(readbuff,'\0',(4+99*14));
 		
@@ -471,8 +517,10 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 int serverCommunication_Control(char *sendbuff,int sendLength,char *recvbuff,int *recvLength,int Timeout)
 {
 	int socketfd = 0;
-	
+	int length = 0,send_length = 0;
 	socketfd = createsocket();
+	length = sendLength;
+	
 	if(socketfd == -1) 	//创建socket失败
 		return -1;
 	//创建socket成功
@@ -482,12 +530,29 @@ int serverCommunication_Control(char *sendbuff,int sendLength,char *recvbuff,int
 		int res = 0;
 		fd_set rd;
 		struct timeval timeout;
-		sendbytes = send(socketfd, sendbuff, sendLength, 0);
-		if(-1 == sendbytes)
+		while(length > 0)
 		{
-			close_socket(socketfd);
-			return -1;
+			if(length > SIZE_PER_SEND)
+			{
+				sendbytes = send(socketfd, &sendbuff[send_length], SIZE_PER_SEND, 0);
+				send_length += SIZE_PER_SEND;
+				length -= SIZE_PER_SEND;
+			}else
+			{	
+				sendbytes = send(socketfd, &sendbuff[send_length], length, 0);
+
+				length -= length;
+			}
+
+			if(-1 == sendbytes)
+			{
+				close_socket(socketfd);
+				return -1;
+			}
+			
+			rt_hw_ms_delay(500);
 		}
+
 		FD_ZERO(&rd);
 		FD_SET(socketfd, &rd);
 		timeout.tv_sec = Timeout/1000;

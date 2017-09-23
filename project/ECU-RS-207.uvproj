@@ -1106,6 +1106,11 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUEvent\src\ECUEvent.c</FilePath>
             </File>
+            <File>
+              <FileName>AppFunction.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUEvent\src\AppFunction.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

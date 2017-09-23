@@ -12,11 +12,23 @@
 #include "string.h"
 #include "rtc.h"
 
+
+extern ecu_info ecu;
+extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 rt_mutex_t record_data_lock = RT_NULL;
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 #define EPSILON 0.000000001
 int day_tab[2][12]={{31,28,31,30,31,30,31,31,30,31,30,31},{31,29,31,30,31,30,31,31,30,31,30,31}}; 
+
+
+int leap(int year) 
+{ 
+    if(year%4==0 && year%100!=0 || year%400==0) 
+        return 1; 
+    else 
+        return 0; 
+} 
 
 int fileopen(const char *file, int flags, int mode)
 {
@@ -168,8 +180,8 @@ void echo(const char* filename,const char* string)
 	close(fd);
 }
 
-//初始化文件系统
-int initsystem(char *mac)
+
+int initPath(void)
 {
 	mkdir("/home",0x777);
 	rt_hw_ms_delay(20);
@@ -185,8 +197,6 @@ int initsystem(char *mac)
 	rt_hw_ms_delay(20);
 	mkdir("/home/record/power",0x777);
 	mkdir("/home/record/energy",0x777);
-	echo("/config/ecumac.con",mac);
-	rt_hw_ms_delay(20);
 	echo("/config/ftpadd.con", "IP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
 	rt_hw_ms_delay(20);
 	mkdir("/ftp",0x777);
@@ -194,6 +204,18 @@ int initsystem(char *mac)
 	mkdir("/home/record/ctldata/",0x777);
 	rt_hw_ms_delay(20);
 	mkdir("/home/record/almdata/",0x777);
+	rt_hw_ms_delay(20);
+	mkdir("/home/record/rsdinfo/",0x777);	
+	
+	return 0;
+}
+
+//初始化文件系统
+int initsystem(char *mac)
+{
+	initPath();
+	rt_hw_ms_delay(20);
+	echo("/config/ecumac.con",mac);
 	
 	return 0;
 }
@@ -314,6 +336,157 @@ int insert_line(char * filename,char *str)
 	
 }
 
+//检查目录中时间最早的文件,存在返回1，不存在返回0
+//dir为目录的名称（传入参数）    oldfile为最早文件的文件名（传出参数）
+static int checkOldFile(char *dir,char *oldFile)
+{
+	DIR *dirp;
+	struct dirent *d;
+	char path[100] , fullpath[100] = {'\0'};
+	int fileDate = 0,temp = 0;
+	char tempDate[9] = {'\0'};
+	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	if(result == RT_EOK)
+	{
+		/* 打开dir目录*/
+		dirp = opendir(dir);
+		
+		if(dirp == RT_NULL)
+		{
+			printmsg(ECU_DBG_OTHER,"check Old File open directory error");
+		}
+		else
+		{
+			/* 读取dir目录*/
+			while ((d = readdir(dirp)) != RT_NULL)
+			{
+				
+				memcpy(tempDate,d->d_name,8);
+				tempDate[8] = '\0';
+				if(((temp = atoi(tempDate)) < fileDate) || (fileDate == 0))
+				{
+					fileDate = temp;
+					memset(path,0,100);
+					strcpy(path,d->d_name);
+				}
+				
+			}
+			if(fileDate != 0)
+			{
+				sprintf(fullpath,"%s/%s",dir,path);
+				strcpy(oldFile,fullpath);
+				closedir(dirp);
+				return 1;
+			}
+			/* 关闭目录 */
+			closedir(dirp);
+		}
+	}
+	rt_mutex_release(record_data_lock);
+	return 0;
+}
+
+
+//检索整个文件系统，判断剩余空间存储量，如果剩余可存储空间过小，则检索相应的目录，并进行相应的删除操作
+int optimizeFileSystem(void)
+{
+  int result;
+  long long cap;
+  struct statfs buffer;
+	char oldFile[100] = {'\0'};
+
+  result = dfs_statfs("/", &buffer);
+  if (result != 0)
+  {
+      printmsg(ECU_DBG_OTHER,"dfs_statfs failed.\n");
+      return -1;
+  }
+  cap = buffer.f_bsize * buffer.f_bfree / 1024;
+	
+	printdecmsg(ECU_DBG_FILE,"disk free size",(unsigned long)cap);
+	//当flash芯片所剩下的容量小于40KB的时候进行一些必要的文件删除操作。
+	if (cap < 40) 
+	{
+		//删除最前面一天的ECU级别处理结果数据    如果该目录下存在文件的话
+		if(1 == checkOldFile("/home/record/almdata",oldFile))
+		{
+			unlink(oldFile);
+		}
+		
+		//删除最前面一天的逆变器级别处理结果数据  如果该目录下存在文件的话
+		memset(oldFile,0x00,100);
+		if(1 == checkOldFile("/home/record/ctldata",oldFile))
+		{
+			unlink(oldFile);
+		}
+		
+		//删除最前面一天的逆变器状态数据 如果该目录下存在文件的话
+		memset(oldFile,0x00,100);
+		if(1 == checkOldFile("/home/record/data",oldFile))
+		{
+			unlink(oldFile);
+		}
+		
+	}
+	
+	return 0;
+		
+}
+
+//返回0表示DHCP模式  返回1表示静态IP模式
+int get_DHCP_Status(void)
+{
+	int fd;
+	fd = open("/config/staticIP.con", O_RDONLY, 0);
+	if (fd >= 0)
+	{
+		close(fd);
+		return 1;
+	}else
+	{
+		return 0;
+	}
+
+}
+
+void delete_newline(char *s)
+{
+	if(10 == s[strlen(s)-1])
+		s[strlen(s)-1] = '\0';
+}
+
+int file_get_array(MyArray *array, int num, const char *filename)
+{
+	FILE *fp;
+	int count = 0;
+	char buffer[128] = {'\0'};
+	memset(array, 0 ,sizeof(MyArray)*num);
+	fp = fopen(filename, "r");
+	if(fp == NULL){
+		printmsg(ECU_DBG_CONTROL_CLIENT,(char *)filename);
+		return -1;
+	}
+	while(!feof(fp))
+	{
+		if(count >= num)
+		{
+			fclose(fp);
+			return 0;
+		}
+		memset(buffer, 0 ,sizeof(buffer));
+		fgets(buffer, 128, fp);
+		if(!strlen(buffer))continue;
+
+		strncpy(array[count].name, buffer, strcspn(buffer, "="));
+		strncpy(array[count].value, &buffer[strlen(array[count].name)+1], 64);
+		delete_newline(array[count].value);
+		count++;
+	}
+	fclose(fp);
+	return 0;
+}
+
+
 float get_lifetime_power(void)
 {
 	int fd;
@@ -377,6 +550,52 @@ void save_system_power(int system_power, char *date_time)
 	
 }
 
+//计算两天前的日期
+int calculate_earliest_2_day_ago(char *date,int *earliest_data)
+{
+	char year_s[5] = {'\0'};
+	char month_s[3] = {'\0'};
+	char day_s[3] = {'\0'};
+	int year = 0,month = 0,day = 0;	//year为年份 month为月份 day为日期  flag 为瑞年判断标志 count表示上个月好需要补的天数 number_of_days:上个月的总天数
+	int flag = 0;
+	
+	memcpy(year_s,date,4);
+	year_s[4] = '\0';
+	year = atoi(year_s);
+
+	memcpy(month_s,&date[4],2);
+	month_s[2] = '\0';
+	month = atoi(month_s);
+
+	memcpy(day_s,&date[6],2);
+	day_s[2] = '\0';
+	day = atoi(day_s);
+
+	if(day >= 3)
+	{	//两天前在当前月
+		day -= 2;
+		*earliest_data = (year * 10000 + month*100 + day);
+		return 0;
+	}else
+	{	//两天前在上个月
+		month -= 1;
+		if(month == 0)
+		{
+			month = 12;
+			year -= 1;
+		}
+
+		//计算天
+		flag = leap(year);
+		day = day_tab[flag][month-1]-(2 - day);
+		*earliest_data = (year * 10000 + month*100 + day);
+	}
+	
+	return -1;
+}
+
+
+
 //计算两个月前的月份
 int calculate_earliest_2_month_ago(char *date,int *earliest_data)
 {
@@ -415,6 +634,46 @@ int calculate_earliest_2_month_ago(char *date,int *earliest_data)
 	}
 	
 	return -1;
+}
+
+//删除两天之前的数据
+void delete_collect_info_2_day_ago(char *date_time)
+{
+	DIR *dirp;
+	char dir[30] = "/home/record/rsdinfo";
+	struct dirent *d;
+	char path[100];
+	int earliest_data,file_data;
+	char fileTime[20] = {'\0'};
+
+	/* 打开dir目录*/
+	dirp = opendir("/home/record/rsdinfo");
+	if(dirp == RT_NULL)
+	{
+		printmsg(ECU_DBG_CLIENT,"delete_collect_info_2_day_ago open directory error");
+	}
+	else
+	{
+		calculate_earliest_2_day_ago(date_time,&earliest_data);
+		/* 读取dir目录*/
+		while ((d = readdir(dirp)) != RT_NULL)
+		{
+			memcpy(fileTime,d->d_name,8);
+			fileTime[8] = '\0';
+			file_data = atoi(fileTime);
+			if(file_data <= earliest_data)
+			{
+				sprintf(path,"%s/%s",dir,d->d_name);
+				unlink(path);
+			}
+
+			
+		}
+		/* 关闭目录 */
+		closedir(dirp);
+	}
+
+
 }
 
 
@@ -470,15 +729,14 @@ int read_system_power(char *date_time, char *power_buff,int *length)
 	char date_tmp[9] = {'\0'};
 	int power = 0;
 	FILE *fp;
-	//rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 
 	memset(path,0,100);
 	memset(buff,0,100);
+	memcpy(power_buff,date_time,8);
 	memcpy(date_tmp,date_time,8);
 	date_tmp[6] = '\0';
 	sprintf(path,"%s/%s.dat",dir,date_tmp);
-
-	*length = 0;
+	*length = 8;
 	fp = fopen(path, "r");
 	if(fp)
 	{
@@ -495,15 +753,10 @@ int read_system_power(char *date_time, char *power_buff,int *length)
 				
 		}
 		fclose(fp);
-		//rt_mutex_release(record_data_lock);
 		return 0;
 	}
 
-	//rt_mutex_release(record_data_lock);
-
 	return -1;
-
-	
 }
 
 
@@ -553,7 +806,7 @@ void update_daily_energy(float current_energy, char *date_time)
 	char sendbuff[50] = {'\0'};
 	char date_time_tmp[14] = {'\0'};
 	rt_err_t result;
-	float energy_tmp = 0;
+	float energy_tmp = current_energy;
 	int fd;
 	//当前一轮发电量为0 不更新发电量
 	if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
@@ -589,157 +842,11 @@ void update_daily_energy(float current_energy, char *date_time)
 	
 }
 
-int leap(int year) 
-{ 
-    if(year%4==0 && year%100!=0 || year%400==0) 
-        return 1; 
-    else 
-        return 0; 
-} 
-
-//计算一周中最早一天的时间		返回值：0表示最早一天在当月   1：表示最早一天在上个月
-int calculate_earliest_week(char *date,int *earliest_data)
-{
-	char year_s[5] = {'\0'};
-	char month_s[3] = {'\0'};
-	char day_s[3] = {'\0'};
-	int year = 0,month = 0,day = 0,flag = 0,count = 0;	//year为年份 month为月份 day为日期  flag 为瑞年判断标志 count表示上个月好需要补的天数 number_of_days:上个月的总天数
-	
-	memcpy(year_s,date,4);
-	year_s[4] = '\0';
-	year = atoi(year_s);
-
-	memcpy(month_s,&date[4],2);
-	month_s[2] = '\0';
-	month = atoi(month_s);
-	
-	memcpy(day_s,&date[6],2);
-	day_s[2] = '\0';
-	day = atoi(day_s);
-	
-	if(day > 7)
-	{
-		*earliest_data = (year * 10000 + month * 100 + day) - 6;
-		return 0;
-	}else
-	{
-		count = 7 - day;
-		//判断上个月是几月
-		month = month - 1;
-		if(month == 0)
-		{
-			year = year - 1;
-			month = 12;
-		}	
-		//计算是否是闰年
-		flag = leap(year);
-		day = day_tab[flag][month-1]+1-count;
-		*earliest_data = (year * 10000 + month * 100 + day);	
-		
-		return 1;
-	}
-
-}
-
-//读取最近一周的发电量    按每日计量
-int read_weekly_energy(char *date_time, char *power_buff,int *length)
-{
-	char dir[30] = "/home/record/energy";
-	char path[100];
-	char buff[100]={'\0'};
-	char date_tmp[9] = {'\0'};
-	int earliest_date = 0,compare_time = 0,flag = 0;
-	char energy_tmp[20] = {'\0'};
-	int energy = 0;
-	FILE *fp;
-
-	memset(path,0,100);
-	memset(buff,0,100);
-
-	*length = 0;
-	//计算前七天中最早的一天   如果flag为0  表示最早一天在当月  如果为1表示在上个月
-	flag = calculate_earliest_week(date_time,&earliest_date);
-	
-	if(flag == 1)
-	{
-		sprintf(date_tmp,"%d",earliest_date);
-		date_tmp[6] = '\0';
-		//组件文件目录
-		sprintf(path,"%s/%s.dat",dir,date_tmp);
-		//打开文件
-		print2msg(ECU_DBG_OTHER,"path",path);
-		fp = fopen(path, "r");
-		if(fp)
-		{
-			while(NULL != fgets(buff,100,fp))  //读取一行数据
-			{	
-				//将时间转换为int型   然后进行比较
-				memcpy(date_tmp,buff,8);
-				date_tmp[8] = '\0';
-				compare_time = atoi(date_tmp);
-				//printf("compare_time %d     earliest_date %d\n",compare_time,earliest_date);
-				if(compare_time >= earliest_date)
-				{
-					memcpy(energy_tmp,&buff[9],(strlen(buff)-9));
-					energy = (int)(atof(energy_tmp)*100);
-					print2msg(ECU_DBG_OTHER,"buff",buff);
-					printdecmsg(ECU_DBG_OTHER,"energy",energy);
-					power_buff[(*length)++] = (date_tmp[0]-'0')*16 + (date_tmp[1]-'0');
-					power_buff[(*length)++] = (date_tmp[2]-'0')*16 + (date_tmp[3]-'0');
-					power_buff[(*length)++] = (date_tmp[4]-'0')*16 + (date_tmp[5]-'0');
-					power_buff[(*length)++] = (date_tmp[6]-'0')*16 + (date_tmp[7]-'0');
-					power_buff[(*length)++] = energy/256;
-					power_buff[(*length)++] = energy%256;
-				}
-					
-			}
-			fclose(fp);
-		}
-	}
-	
-	
-	memcpy(date_tmp,date_time,8);
-	date_tmp[6] = '\0';
-	sprintf(path,"%s/%s.dat",dir,date_tmp);
-
-	print2msg(ECU_DBG_OTHER,"path",path);
-	fp = fopen(path, "r");
-	if(fp)
-	{
-		while(NULL != fgets(buff,100,fp))  //读取一行数据
-		{	
-			//将时间转换为int型   然后进行比较
-			memcpy(date_tmp,buff,8);
-			date_tmp[8] = '\0';
-			compare_time = atoi(date_tmp);
-			//printf("compare_time %d     earliest_date %d\n",compare_time,earliest_date);
-			if(compare_time >= earliest_date)
-			{
-				memcpy(energy_tmp,&buff[9],(strlen(buff)-9));
-				energy = (int)(atof(energy_tmp)*100);
-				print2msg(ECU_DBG_OTHER,"buff",buff);
-				printdecmsg(ECU_DBG_OTHER,"energy",energy);
-				power_buff[(*length)++] = (date_tmp[0]-'0')*16 + (date_tmp[1]-'0');
-				power_buff[(*length)++] = (date_tmp[2]-'0')*16 + (date_tmp[3]-'0');
-				power_buff[(*length)++] = (date_tmp[4]-'0')*16 + (date_tmp[5]-'0');
-				power_buff[(*length)++] = (date_tmp[6]-'0')*16 + (date_tmp[7]-'0');
-				power_buff[(*length)++] = energy/256;
-				power_buff[(*length)++] = energy%256;
-			}
-				
-		}
-		fclose(fp);
-	}
-	return 0;
-
-}
-
 //计算一个月中最早一天的时间
 int calculate_earliest_month(char *date,int *earliest_data)
 {
 	char year_s[5] = {'\0'};
 	char month_s[3] = {'\0'};
-	char day_s[3] = {'\0'};
 	int year = 0,month = 0,day = 0;	//year为年份 month为月份 day为日期  flag 为瑞年判断标志 count表示上个月好需要补的天数 number_of_days:上个月的总天数
 	
 	memcpy(year_s,date,4);
@@ -749,32 +856,21 @@ int calculate_earliest_month(char *date,int *earliest_data)
 	memcpy(month_s,&date[4],2);
 	month_s[2] = '\0';
 	month = atoi(month_s);
-	
-	memcpy(day_s,&date[6],2);
-	day_s[2] = '\0';
-	day = atoi(day_s);
-	
-	//判断是否大于28号  
-	if(day >= 28)
+
+	day = 1;
+	//如果月份为1月 
+	if(month == 1)
 	{
-		day = 1;
+		year -= 1;
+		month = 12;
 		*earliest_data = (year * 10000 + month * 100 + day);
-		//printf("calculate_earliest_month:%d %d  %d    %d \n",year,month,day,*earliest_data);
-		return 0;
 	}else
 	{
-		//如果小于28号，取上个月的该天的后一天 
-		day = day + 1;
-		month = month - 1;
-		if(month == 0)
-		{
-			year = year - 1;
-			month = 12;
-		}
-		*earliest_data = (year * 10000 + month * 100 + day);	
-		//printf("calculate_earliest_month:%d %d  %d    %d \n",year,month,day,*earliest_data);
-		return 1;
+		month -= 1;
+		*earliest_data = (year * 10000 + month * 100 + day);
 	}
+
+	return 1;
 	
 }
 
@@ -872,32 +968,16 @@ int read_monthly_energy(char *date_time, char *power_buff,int *length)
 int calculate_earliest_year(char *date,int *earliest_data)
 {
 	char year_s[5] = {'\0'};
-	char month_s[3] = {'\0'};
 	int year = 0,month = 0;	//year为年份 month为月份 day为日期  flag 为瑞年判断标志 count表示上个月好需要补的天数 number_of_days:上个月的总天数
 	
 	memcpy(year_s,date,4);
 	year_s[4] = '\0';
 	year = atoi(year_s);
+	month = 1;
 
-	memcpy(month_s,&date[4],2);
-	month_s[2] = '\0';
-	month = atoi(month_s);
-	
-	if(month == 12)
-	{
-		month = 1;
-		*earliest_data = (year * 100 + month);
-		//printf("calculate_earliest_month:%d %d    %d \n",year,month,*earliest_data);
-		return 0;
-	}else
-	{
-		month = month + 1;
-		year = year - 1;
-		*earliest_data = (year * 100 + month);
-		//printf("calculate_earliest_month:%d %d    %d \n",year,month,*earliest_data);
-		return 1;
-	}
-	
+	year -= 1;
+	*earliest_data = (year * 100 + month);
+	return 1;	
 }
 
 //读取最近一年的发电量    以每月计量
@@ -951,6 +1031,98 @@ int read_yearly_energy(char *date_time, char *power_buff,int *length)
 }
 
 
+//读取最近一年的发电量    以每月计量
+int read_history_energy(char *date_time, char *power_buff,int *length)
+{
+	char dir[30] = "/home/record/energy";
+	char path[100];
+	char buff[100]={'\0'};
+	char date_tmp[9] = {'\0'};
+	char energy_tmp[20] = {'\0'};
+	int energy = 0;
+	FILE *fp;
+
+	memset(path,0,100);
+	memset(buff,0,100);
+
+	*length = 0;
+	
+	sprintf(path,"%s/history.dat",dir);
+
+	fp = fopen(path, "r");
+	if(fp)
+	{
+		while(NULL != fgets(buff,100,fp))  //读取一行数据
+		{	
+			//将时间转换为int型   然后进行比较
+			memcpy(date_tmp,buff,4);
+			date_tmp[4] = '\0';
+
+			memcpy(energy_tmp,&buff[5],(strlen(buff)-5));
+			energy = (int)(atof(energy_tmp)*100);
+			//printf("buff:%s\n energy:%d\n",buff,energy);
+			power_buff[(*length)++] = (date_tmp[0]-'0')*16 + (date_tmp[1]-'0');
+			power_buff[(*length)++] = (date_tmp[2]-'0')*16 + (date_tmp[3]-'0');
+			power_buff[(*length)++] = 0x01;
+			power_buff[(*length)++] = 0x01;
+			power_buff[(*length)++] = energy/256;
+			power_buff[(*length)++] = energy%256;
+
+				
+		}
+		fclose(fp);
+	}
+	return 0;
+}
+
+
+
+//读取某天某个RSD的相关参数曲线
+int read_RSD_info(char *date_time,char * UID,char *rsd_buff,int *length)
+{
+	char dir[30] = "/home/record/rsdinfo";
+	char UID_str[13] ={'\0'};
+	char path[100];
+	char buff[100]={'\0'};
+	FILE *fp;
+	char list[8][32];
+	memset(path,0,100);
+	memset(buff,0,100);
+
+	*length = 0;
+	sprintf(UID_str,"%02x%02x%02x%02x%02x%02x",UID[0],UID[1],UID[2],UID[3],UID[4],UID[5]);
+	UID_str[12] = '\0';
+	sprintf(path,"%s/%s.dat",dir,date_time);
+	///home/record/rsdinfo/20170923.dat
+	fp = fopen(path, "r");
+	if(fp)
+	{
+		while(NULL != fgets(buff,100,fp))  //读取一行数据
+		{	
+			//判断ID是否相同
+			if(!memcmp(buff,UID_str,12))
+			{
+				splitString(buff,list);
+				rsd_buff[(*length)++] = (list[1][8]-'0')*16 + (list[1][9]-'0');
+				rsd_buff[(*length)++] = (list[1][10]-'0')*16 + (list[1][11]-'0');
+				rsd_buff[(*length)++] = atoi(list[2])/256;
+				rsd_buff[(*length)++] = atoi(list[2])%256;
+				rsd_buff[(*length)++] = atoi(list[3]);
+				rsd_buff[(*length)++] = atoi(list[4])/256;
+				rsd_buff[(*length)++] = atoi(list[4])/256;
+				rsd_buff[(*length)++] = atoi(list[5])/256;
+				rsd_buff[(*length)++] = atoi(list[5])%256;
+				rsd_buff[(*length)++] = atoi(list[6]);
+				rsd_buff[(*length)++] = atoi(list[7])/256;
+				rsd_buff[(*length)++] = atoi(list[7])/256;
+			}				
+		}
+		fclose(fp);
+	}
+	return 0;
+}
+
+
 int search_monthly_energy(char *date,float *daily_energy)	
 {
 	char dir[30] = "/home/record/energy";
@@ -996,7 +1168,7 @@ void update_monthly_energy(float current_energy, char *date_time)
 	char sendbuff[50] = {'\0'};
 	char date_time_tmp[14] = {'\0'};
 	rt_err_t result;
-	float energy_tmp = 0;
+	float energy_tmp = current_energy;
 	int fd;
 	//当前一轮发电量为0 不更新发电量
 	if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
@@ -1030,6 +1202,85 @@ void update_monthly_energy(float current_energy, char *date_time)
 	rt_mutex_release(record_data_lock);
 	
 }
+
+int search_yearly_energy(char *date,float *daily_energy)	
+{
+	char dir[30] = "/home/record/energy";
+	char path[100];
+	char buff[100]={'\0'};
+	char date_tmp[9] = {'\0'};
+	FILE *fp;
+	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+
+	memset(path,0,100);
+	memset(buff,0,100);
+	memcpy(date_tmp,date,4);
+	date_tmp[4] = '\0';
+	sprintf(path,"%s/history.dat",dir);
+	
+	fp = fopen(path, "r");
+	if(fp)
+	{
+		while(NULL != fgets(buff,100,fp))  //读取一行数据
+		{	//第8个字节为，  且时间相同
+			if((buff[4] == ',') && (!memcmp(buff,date,4)))
+			{
+				*daily_energy = (float)atof(&buff[5]);
+				fclose(fp);
+				rt_mutex_release(record_data_lock);
+				return 0;
+			}
+				
+		}
+	
+		fclose(fp);
+	}
+
+	rt_mutex_release(record_data_lock);
+
+	return -1;
+}
+
+
+void update_yearly_energy(float current_energy, char *date_time)
+{
+	char dir[50] = "/home/record/energy/";
+	char sendbuff[50] = {'\0'};
+	char date_time_tmp[14] = {'\0'};
+	rt_err_t result;
+	float energy_tmp = current_energy;
+	int fd;
+	//当前一轮发电量为0 不更新发电量
+	if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
+	
+	memcpy(date_time_tmp,date_time,14);
+	sprintf(dir,"%shistory.dat",dir);
+	date_time_tmp[4] = '\0';	//存储时间为年 例如:2017
+
+	//检测是否已经存在该时间点的数据
+	if (0 == search_yearly_energy(date_time_tmp,&energy_tmp))
+	{
+		energy_tmp = current_energy + energy_tmp;
+		delete_line(dir,"/home/record/energy/3.tmp",date_time,4);
+	}
+	
+	print2msg(ECU_DBG_FILE,"update_yearly_energy DIR",dir);
+	result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	if(result == RT_EOK)
+	{
+		fd = open(dir, O_WRONLY | O_APPEND | O_CREAT,0);
+		if (fd >= 0)
+		{		
+			sprintf(sendbuff,"%s,%f\n",date_time_tmp,energy_tmp);
+			//print2msg(ECU_DBG_MAIN,"update_daily_energy",sendbuff);
+			write(fd,sendbuff,strlen(sendbuff));
+			close(fd);
+		}
+	}
+	rt_mutex_release(record_data_lock);
+	
+}
+
 
 void save_dbg(char sendbuff[])
 {
@@ -1079,6 +1330,62 @@ void save_record(char sendbuff[], char *date_time)
 	}
 	rt_mutex_release(record_data_lock);
 	
+}
+
+
+//保存最后一轮通讯相关数据
+void save_last_collect_info(void)
+{
+	int fd;
+	char str[300] = {'\0'};
+	inverter_info *curinverter = inverterInfo;
+	int i = 0;
+	fd = fileopen("/home/data/collect.con",O_WRONLY | O_APPEND | O_CREAT|O_TRUNC,0);
+	for(i = 0;i< ecu.validNum; i++)
+	{
+		if(curinverter->status.comm_status == 1)
+		{
+			sprintf(str,"%02x%02x%02x%02x%02x%02x,%s,%d,%d\n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
+			fileWrite(fd,str,strlen(str));
+		}
+		curinverter++;
+	}
+	fileclose(fd);
+
+}
+
+//保存历史发电相关数据
+void save_collect_info(char *curTime)
+{
+	int fd;
+	char str[300] = {'\0'};
+	inverter_info *curinverter = inverterInfo;
+	int i = 0;
+	char path[60] = {'\0'};
+	char pathTime[9] = {'\0'};
+	
+	memcpy(pathTime,curTime,8);
+	pathTime[8] = '\0';
+	sprintf(path,"/home/record/rsdinfo/%s.dat",pathTime);
+	print2msg(ECU_DBG_COLLECT,"path:",path);
+	
+	fd = fileopen(path,O_WRONLY | O_APPEND | O_CREAT,0);
+	for(i = 0;i< ecu.validNum; i++)
+	{
+		if(curinverter->status.comm_status == 1)
+		{
+			memset(str,'\0',300);
+			sprintf(str,"%02x%02x%02x%02x%02x%02x,%s,%d,%d,%d,%d,%d,%d\n",
+				curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curTime,
+				curinverter->PV1,curinverter->PI,(int)curinverter->AveragePower1,curinverter->PV2,curinverter->PI,(int)curinverter->AveragePower2);
+			fileWrite(fd,str,strlen(str));
+		}
+		
+	
+		curinverter++;
+	}
+	fileclose(fd);
+
 }
 
 int detection_resendflag2(void)		//存在返回1，不存在返回0

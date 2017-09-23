@@ -21,6 +21,8 @@
 #include "rthw.h"
 #include <rtthread.h>
 #include "socket.h"
+#include "stdlib.h"
+#include "threadlist.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -29,7 +31,7 @@
 #define WIFI_GPIO                   GPIOB
 #define WIFI_PIN                    (GPIO_Pin_15)
 
-#define SIZE_PER_SEND		3800
+
 rt_mutex_t wifi_uart_lock = RT_NULL;
 
 /*****************************************************************************/
@@ -1953,6 +1955,45 @@ int WIFI_QueryStatus(eSocketType Type)
 }
 
 char sendbuff[4096] = {'\0'};
+
+//SOCKET A 发送数据  \n需要在传入字符串中带入
+int SendToSocketA(char *data ,int length,unsigned char ID[8])
+{
+	char *sendbuff = NULL;
+	int send_length = 0;	//需要发送的字节位置
+	sendbuff = malloc(4096);
+	
+	while(length > 0)
+	{
+		
+		sprintf(sendbuff,"a%c%c%c%c%c%c%c%c",ID[0],ID[1],ID[2],ID[3],ID[4],ID[5],ID[6],ID[7]);
+
+		if(length > SIZE_PER_SEND)
+		{
+			printf("%d\n",length);
+			printf("%02x%02x%02x%02x%02x%02x%02x%02x\n",ID[0],ID[1],ID[2],ID[3],ID[4],ID[5],ID[6],ID[7]);
+			memcpy(&sendbuff[9],&data[send_length],SIZE_PER_SEND);
+			WIFI_SendData(sendbuff, (SIZE_PER_SEND+9));
+			send_length += SIZE_PER_SEND;
+			length -= SIZE_PER_SEND;
+		}else
+		{
+			printf("%d\n",length);
+			printf("%02x%02x%02x%02x%02x%02x%02x%02x\n",ID[0],ID[1],ID[2],ID[3],ID[4],ID[5],ID[6],ID[7]);
+			memcpy(&sendbuff[9],&data[send_length],length);	
+			WIFI_SendData(sendbuff, (length+9));
+			length -= length;
+			free(sendbuff);
+			sendbuff = NULL;
+			return 0;
+		}
+	}
+	
+	
+	free(sendbuff);
+	sendbuff = NULL;
+	return 0;
+}
 
 
 //SOCKET B 发送数据

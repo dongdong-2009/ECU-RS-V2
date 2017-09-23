@@ -57,9 +57,39 @@ int send_record(int fd_sock, char *sendbuff, char *send_date_time)			//·¢ËÍÊý¾Ýµ
 {
 	int sendbytes=0;
 	char *readbuff = NULL;
+	int send_length = 0,length;
 	readbuff = malloc((4+99*14));
 	memset(readbuff,'\0',(4+99*14));
-	sendbytes = send(fd_sock, sendbuff, strlen(sendbuff), 0);
+	length = strlen(sendbuff);
+	while(length > 0)
+	{
+		if(length > SIZE_PER_SEND)
+		{
+			printf("length :%d\n",length);
+			sendbytes = send(fd_sock, &sendbuff[send_length], SIZE_PER_SEND, 0);
+			send_length += SIZE_PER_SEND;
+			length -= SIZE_PER_SEND;
+		}else
+		{	
+			printf("length :%d\n",length);
+			sendbytes = send(fd_sock, &sendbuff[send_length], length, 0);
+
+			length -= length;
+		}
+
+		if(-1 == sendbytes)
+		{
+			printf("11111111:%d\n",errno);
+			free(readbuff);
+			readbuff = NULL;
+			return -1;
+		}
+		
+		rt_hw_ms_delay(500);
+	}
+
+	
+	
 
 	if(-1 == sendbytes)
 	{
