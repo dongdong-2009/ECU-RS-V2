@@ -238,9 +238,6 @@ void Collect_Client_Record(void)
 		}
 		client_Data[length++] = '\0';	//存入文件的时候不添加换行符，上传数据的时候再添加换行符
 		ecu.current_energy = ecu.current_energy/3600000;		//将发电量转换为千瓦时
-		
-		ecu.system_power = 280;
-		ecu.current_energy = 0.01;
 		ecu.life_energy = ecu.life_energy + ecu.current_energy;
 
 		printfloatmsg(ECU_DBG_COLLECT,"ecu.life_energy",ecu.life_energy);
