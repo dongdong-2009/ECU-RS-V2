@@ -28,25 +28,54 @@ typedef enum THREADTYPE {
 	TYPE_UPDATE = 3,
 }threadType;
 
+#define ALARM_RECORD_ON
 
+//WIFI 模块使用宏
+#if 1
 //使用有人模块
-#define USR_MODULE 		0
+#define USR_MODULE 		
+#else
 //使用RAK475模块
-//#define RAK475_MODULE	
-
+#define RAK475_MODULE	
+#endif
 
 #ifdef USR_MODULE
 //socket每次发送的字节数
 #define SIZE_PER_SEND		3800
-
 #endif 
 
 #ifdef RAK475_MODULE
 //socket每次发送的字节数
-#define SIZE_PER_SEND		480
-
+#define SIZE_PER_SEND		1000
 #endif 
 
+//网络通讯地址
+#if 1
+#define CLIENT_SERVER_DOMAIN			"ecu.apsema.com"
+#define CLIENT_SERVER_IP					"60.190.131.190"
+#define CLIENT_SERVER_PORT1				8982
+#define CLIENT_SERVER_PORT2				8982
+
+#define CONTROL_SERVER_DOMAIN			"ecu.apsema.com"
+#define CONTROL_SERVER_IP					"60.190.131.190"
+#define CONTROL_SERVER_PORT1			8981
+#define CONTROL_SERVER_PORT2			8981
+#else
+
+#define CLIENT_SERVER_DOMAIN		""
+//#define CLIENT_SERVER_IP			"139.168.200.158"
+#define CLIENT_SERVER_IP				"192.168.1.110"
+
+#define CLIENT_SERVER_PORT1			8982
+#define CLIENT_SERVER_PORT2			8982
+
+#define CONTROL_SERVER_DOMAIN		""
+//#define CONTROL_SERVER_IP			"139.168.200.158"
+#define CONTROL_SERVER_IP				"192.168.1.110"
+
+#define CONTROL_SERVER_PORT1		8981
+#define CONTROL_SERVER_PORT2		8981
+#endif
 
 //Thread Priority
 //Init device thread priority

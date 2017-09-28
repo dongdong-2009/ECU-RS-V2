@@ -222,14 +222,14 @@ int StaticIP(IP_t IPAddr,IP_t MSKAddr,IP_t GWAddr,IP_t DNS1Addr,IP_t DNS2Addr)
 	memset(DNS,'\0',100);
 	sprintf(DNS,"%d.%d.%d.%d",DNS1Addr.IP1,DNS1Addr.IP2,DNS1Addr.IP3,DNS1Addr.IP4);
 	
-	if(ipaddr_aton(DNS, &dns1))
+	if(memcmp(DNS,"0.0.0.0",7)&&(ipaddr_aton(DNS, &dns1)))
 	{
 		dns_setserver(0, &dns1);
 	}
 	
 	memset(DNS,'\0',100);
 	sprintf(DNS,"%d.%d.%d.%d",DNS2Addr.IP1,DNS2Addr.IP2,DNS2Addr.IP3,DNS2Addr.IP4);
-	if(ipaddr_aton(DNS, &dns2))
+	if(memcmp(DNS,"0.0.0.0",7)&&(ipaddr_aton(DNS, &dns2)))
 	{
 		dns_setserver(1, &dns2);
 	}

@@ -72,13 +72,7 @@ int RFM300_Bind_Uid(char *ECUID,char *UID,char channel,char rate,char *ver)
 	
 	Senddata[26]=0xFE;
 	Senddata[27]=0xFE;
-#ifdef CMT2300_DEBUG
-	for(i=0;i<28;i++)
-	{
-		SEGGER_RTT_printf(0, "%02x ",Senddata[i]);
-	}
-	SEGGER_RTT_printf(0, "\n",Senddata[i]);
-#endif
+
 	for(i=0;i<1;i++){
 		SendMessage((unsigned char *)Senddata,28);
 		RF_leng = GetMessage((unsigned char *)Recvdata);
@@ -97,6 +91,16 @@ int RFM300_Bind_Uid(char *ECUID,char *UID,char channel,char rate,char *ver)
 			(Senddata[14]==Recvdata[14])&&
 			(Senddata[15]==Recvdata[15]))
 		{
+
+#ifdef CMT2300_DEBUG
+			for(i=0;i<28;i++)
+			{
+				SEGGER_RTT_printf(0, "%02x ",Recvdata[i]);
+			}
+			SEGGER_RTT_printf(0, "\n");
+#endif
+
+		
 			*ver = Recvdata[18];
 			SEGGER_RTT_printf(0, "RFM300_Bind_Uid %02x%02x%02x%02x%02x%02x\n",Senddata[10],Senddata[11],Senddata[12],Senddata[13],Senddata[14],Senddata[15]);
 			//绑定成功，返回1
@@ -302,13 +306,7 @@ int RFM300_Status_Init(char *ECUID,char *UID,char Heart_Function,char Device_Typ
 	Senddata[26]=0xFE;
 	Senddata[27]=0xFE;
 	
-#ifdef CMT2300_DEBUG
-	for(i=0;i<28;i++)
-	{
-		SEGGER_RTT_printf(0, "%02x ",Senddata[i]);
-	}
-	SEGGER_RTT_printf(0, "\n");
-#endif
+
 	
 	for(i=0;i<2;i++){
 		SendMessage((unsigned char *)Senddata,28);
@@ -329,6 +327,14 @@ int RFM300_Status_Init(char *ECUID,char *UID,char Heart_Function,char Device_Typ
 			(Senddata[14]==Recvdata[14])&&
 			(Senddata[15]==Recvdata[15]))
 		{
+
+#ifdef CMT2300_DEBUG
+	for(i=0;i<28;i++)
+	{
+		SEGGER_RTT_printf(0, "%02x ",Recvdata[i]);
+	}
+	SEGGER_RTT_printf(0, "\n");
+#endif		
 			Status = Recvdata[16];
 			if(Status == 1)
 			{
@@ -401,13 +407,7 @@ int RFM300_Set_Uid(char *ECUID,char *UID,int channel,int rate,char *NewUid,char 
 	Senddata[26]=0xFE;
 	Senddata[27]=0xFE;
 
-#ifdef CMT2300_DEBUG
-	for(i=0;i<28;i++)
-	{
-		SEGGER_RTT_printf(0, "%02x ",Senddata[i]);
-	}
-	SEGGER_RTT_printf(0, "\n",Senddata[i]);
-#endif
+
 	
 	for(i=0;i<2;i++){
 		SendMessage((unsigned char *)Senddata,28);
@@ -428,6 +428,14 @@ int RFM300_Set_Uid(char *ECUID,char *UID,int channel,int rate,char *NewUid,char 
 			(Senddata[22]==Recvdata[14])&&
 			(Senddata[23]==Recvdata[15]))		
 		{
+
+#ifdef CMT2300_DEBUG
+			for(i=0;i<28;i++)
+			{
+				SEGGER_RTT_printf(0, "%02x ",Recvdata[i]);
+			}
+			SEGGER_RTT_printf(0, "\n");
+#endif		
 				*SaveChannel = Recvdata[16];
 				*SaveRate = Recvdata[17];
 				SEGGER_RTT_printf(0, "RFM300_Set_Uid  %d %d %d %d %d \n",*SaveChannel,*SaveRate);

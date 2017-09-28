@@ -302,7 +302,7 @@ int resend_alarm_record()
 	//在/home/record/data/目录下查询resendflag为2的记录
 	while(search_alarm_readflag(data,time,&flag,'2'))		//	获取一条resendflag为1的数据
 	{
-		printmsg(ECU_DBG_CONTROL_CLIENT,data);
+		//printmsg(ECU_DBG_CONTROL_CLIENT,data);
 		res = send_alarm_record(data, time);
 		if(-1 == res)
 			break;
@@ -395,7 +395,7 @@ int resend_control_record()
 	//在/home/record/data/目录下查询resendflag为2的记录
 	while(search_control_readflag(data,time,&flag,'2'))		//	获取一条resendflag为1的数据
 	{
-		printmsg(ECU_DBG_CONTROL_CLIENT,data);
+		//printmsg(ECU_DBG_CONTROL_CLIENT,data);
 		res = send_control_record(data, time);
 		if(-1 == res)
 			break;
@@ -446,7 +446,7 @@ void ECUControl_thread_entry(void* parameter)
 				{
 						break;
 				}
-				printmsg(ECU_DBG_CONTROL_CLIENT,data);
+				//printmsg(ECU_DBG_CONTROL_CLIENT,data);
 				res = send_control_record( data, time);
 				if(-1 == res)
 					break;
@@ -484,7 +484,7 @@ void ECUControl_thread_entry(void* parameter)
 				{
 						break;
 				}
-				printmsg(ECU_DBG_CONTROL_CLIENT,data);
+				//printmsg(ECU_DBG_CONTROL_CLIENT,data);
 				res = send_alarm_record( data, time);
 				if(-1 == res)
 					break;

@@ -149,21 +149,22 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 
 		if(validNum > 0)
 		{		
-			length = length - 9 + 3;
-			
+			SendData[length++] = 'E';
+			SendData[length++] = 'N';
+			SendData[length++] = 'D';
 			//改变报文字节长度
 			SendData[5] = (length/1000) + '0';
 			SendData[6] =	((length/100)%10) + '0';
 			SendData[7] = ((length/10)%10) + '0';
 			SendData[8] = ((length)%10) + '0';
-			SendData[length-3+9] = 'E';
-			SendData[length-2+9] = 'N';
-			SendData[length-1+9] = 'D';
-			SendData[length+9] = '\n';
+			
+			SendData[length] = '\n';
+			SendToSocketA(SendData ,length+1,ID);
 		}else
 		{
 			length = 13;
 			SendData[length] = '\n';
+			SendToSocketA(SendData ,length+1,ID);
 			
 		}
 		
@@ -174,7 +175,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 	}
 	SEGGER_RTT_printf(0, "\n");
 #endif	
-		SendToSocketA(SendData ,length+1,ID);
+		
 	}
 
 

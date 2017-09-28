@@ -79,7 +79,7 @@ int send_record(int fd_sock, char *sendbuff, char *send_date_time)			//·¢ËÍÊı¾İµ
 
 		if(-1 == sendbytes)
 		{
-			printf("11111111:%d\n",errno);
+			printf("Error Code:%d\n",errno);
 			free(readbuff);
 			readbuff = NULL;
 			return -1;
@@ -169,7 +169,7 @@ int resend_record()
 		{
 			if(1 == flag)		// »¹´æÔÚĞèÒªÉÏ´«µÄÊı¾İ
 					data[88] = '1';
-			printmsg(ECU_DBG_CLIENT,data);
+			//printmsg(ECU_DBG_CLIENT,data);
 			res = send_record(fd_sock,data, time);
 			if(-1 == res)
 				break;
@@ -182,7 +182,7 @@ int resend_record()
 		{
 			if(1 == flag)		// »¹´æÔÚĞèÒªÉÏ´«µÄÊı¾İ
 				data[88] = '1';
-			printmsg(ECU_DBG_CLIENT,data);
+			//printmsg(ECU_DBG_CLIENT,data);
 			res = wifi_send_record(data, time);
 			if(-1 == res)
 				break;
@@ -240,7 +240,7 @@ void ECUClient_thread_entry(void* parameter)
 					}
 					if(1 == flag)		// »¹´æÔÚĞèÒªÉÏ´«µÄÊı¾İ
 							data[88] = '1';
-					printmsg(ECU_DBG_CLIENT,data);
+					//printmsg(ECU_DBG_CLIENT,data);
 					res = send_record(fd_sock,data, time);
 					if(-1 == res)
 						break;
@@ -262,7 +262,7 @@ void ECUClient_thread_entry(void* parameter)
 						}
 						if(1 == flag)		// »¹´æÔÚĞèÒªÉÏ´«µÄÊı¾İ
 							data[88] = '1';
-						printmsg(ECU_DBG_CLIENT,data);
+						//printmsg(ECU_DBG_CLIENT,data);
 						res = wifi_send_record(data, time);
 						if(-1 == res)
 						{

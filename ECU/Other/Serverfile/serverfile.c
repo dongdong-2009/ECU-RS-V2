@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "string.h"
 #include "rtc.h"
+#include "threadlist.h"
 
 
 extern ecu_info ecu;
@@ -1093,6 +1094,7 @@ int read_RSD_info(char *date_time,char * UID,char *rsd_buff,int *length)
 	sprintf(UID_str,"%02x%02x%02x%02x%02x%02x",UID[0],UID[1],UID[2],UID[3],UID[4],UID[5]);
 	UID_str[12] = '\0';
 	sprintf(path,"%s/%s.dat",dir,date_time);
+	printmsg(ECU_DBG_FILE,"start");
 	///home/record/rsdinfo/20170923.dat
 	fp = fopen(path, "r");
 	if(fp)
@@ -1119,6 +1121,7 @@ int read_RSD_info(char *date_time,char * UID,char *rsd_buff,int *length)
 		}
 		fclose(fp);
 	}
+	printmsg(ECU_DBG_FILE,"start");
 	return 0;
 }
 
@@ -2143,7 +2146,7 @@ int update_control_send_flag(char *send_date_time)
 //创建报警信息	mos_status状态通过输出电压判断。输出电压大于0 表示MOS管开启，输出电压小于0 表示MOS管关闭。
 void create_alarm_record(unsigned short last_PV_output,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter)
 {
-#if 1
+#ifdef ALARM_RECORD_ON
 	int create_flag = 0;
 	char *alarm_data = 0;
 	char curTime[15] = {'\0'};
