@@ -209,7 +209,14 @@ void rt_init_thread_entry(void* parameter)
 	RFM_off();
 	rt_hw_led_init();
 	CMT2300_init();
-	uart5_init(57600);					//串口初始化
+	
+#ifdef USR_MODULE
+	uart5_init(57600);					//USR模块相应波特率 串口初始化
+#endif
+
+#ifdef RAK475_MODULE	
+	uart5_init(115200);					//RAK475相应波特率 串口初始化
+#endif 
 	TIM2_Int_Init(9999,7199);    //心跳包超时事件定时器初始化
 	rt_hw_watchdog_init();
 	SEGGER_RTT_printf(0, "init OK \n");

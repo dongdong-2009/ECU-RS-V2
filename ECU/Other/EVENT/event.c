@@ -474,27 +474,29 @@ void systemInfo(void)
 	int i = 0;
 	inverter_info *curinverter = inverterInfo;
 	printf("\n");
-	printf("*****ID*******Type***OnOff**Function**PV1Flag**PV2Flag**HeartTime**Timeout**CloseTime*****PV1********PV2********PI*******P1*******P2********PV1EN*********PV2EN*****RSSI******MOSCL\n");
+	printf("*****ID*****Type*OnOff*Function*PV1Flag*PV2Flag*HeartTime*Timeout*CloseTime***PV1******PV2******PI******P1*****P2******PV1EN*******PV2EN***RSSI****MOSCL*****EnergyPV1******EnergyPV2\n");
 	for(i=0; (i<MAXINVERTERCOUNT)&&(i < ecu.validNum); i++)	
 	{
 		printf("%02x%02x%02x%02x%02x%02x ",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5]);
-		printf("  %1d ",curinverter->status.device_Type);
-		printf("      %1d ",curinverter->status.comm_failed3_status);
-		printf("      %1d ",curinverter->status.function_status);
-		printf("       %1d ",curinverter->status.pv1_low_voltage_pritection);
-		printf("       %1d ",curinverter->status.pv2_low_voltage_pritection);
-		printf("       %5d ",curinverter->heart_rate);
-		printf("   %5d ",curinverter->off_times);
-		printf("  %5d ",curinverter->restartNum);
-		printf("       %5d ",curinverter->PV1);
-		printf("     %5d ",curinverter->PV2);
-		printf("    %5d ",curinverter->PI);
-		printf("    %5d ",curinverter->Power1);
-		printf("   %5d ",curinverter->Power2);
-		printf(" %10d ",curinverter->PV1_Energy);
-		printf("   %10d ",curinverter->PV2_Energy);
-		printf("   %5d ",curinverter->RSSI);
-		printf("   %3d \n",curinverter->Mos_CloseNum);
+		printf("%1d ",curinverter->status.device_Type);
+		printf("    %1d ",curinverter->status.comm_failed3_status);
+		printf("     %1d ",curinverter->status.function_status);
+		printf("      %1d ",curinverter->status.pv1_low_voltage_pritection);
+		printf("      %1d ",curinverter->status.pv2_low_voltage_pritection);
+		printf("      %5d ",curinverter->heart_rate);
+		printf("  %5d ",curinverter->off_times);
+		printf(" %5d ",curinverter->restartNum);
+		printf("     %5u ",curinverter->PV1);
+		printf("   %5u ",curinverter->PV2);
+		printf("  %5u ",curinverter->PI);
+		printf("  %5u ",curinverter->Power1);
+		printf(" %5u ",curinverter->Power2);
+		printf("%10u ",curinverter->PV1_Energy);
+		printf(" %10u ",curinverter->PV2_Energy);
+		printf(" %5d ",curinverter->RSSI);
+		printf(" %10u ",curinverter->EnergyPV1);
+		printf(" %10u ",curinverter->EnergyPV2);
+		printf("     %3d \n",curinverter->Mos_CloseNum);
 		curinverter++;
 	}
 	printf("*****************************************************************************************************************************************\n");

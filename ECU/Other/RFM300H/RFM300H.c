@@ -27,7 +27,7 @@ volatile unsigned int TimeOut_times = 0;
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-//#define CMT2300_DEBUG
+#define CMT2300_DEBUG
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -159,13 +159,6 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 	Senddata[26]=0xFE;
 	Senddata[27]=0xFE;
 
-#ifdef CMT2300_DEBUG
-	for(i=0;i<28;i++)
-	{
-		SEGGER_RTT_printf(0, "%02x ",Senddata[i]);
-	}
-	SEGGER_RTT_printf(0, "\n");
-#endif
 	
 	for(i=0;i<1;i++){
 		SendMessage((unsigned char *)Senddata,28);
@@ -186,6 +179,15 @@ int RFM300_Heart_Beat(char *ECUID,inverter_info * cur_inverter)
 			(Senddata[14]==Recvdata[14])&&
 			(Senddata[15]==Recvdata[15]))
 		{
+
+		
+#ifdef CMT2300_DEBUG
+	for(i=0;i<46;i++)
+	{
+		SEGGER_RTT_printf(0, "%02x ",Recvdata[i]);
+	}
+	SEGGER_RTT_printf(0, "\n");
+#endif
 			Heart_times++;
 			apstime(cur_inverter->LastCommTime);
 			cur_inverter->LastCommTime[14] = '\0';

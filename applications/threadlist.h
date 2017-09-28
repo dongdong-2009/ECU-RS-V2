@@ -29,8 +29,23 @@ typedef enum THREADTYPE {
 }threadType;
 
 
+//使用有人模块
+#define USR_MODULE 		0
+//使用RAK475模块
+//#define RAK475_MODULE	
+
+
+#ifdef USR_MODULE
 //socket每次发送的字节数
 #define SIZE_PER_SEND		3800
+
+#endif 
+
+#ifdef RAK475_MODULE
+//socket每次发送的字节数
+#define SIZE_PER_SEND		480
+
+#endif 
 
 
 //Thread Priority

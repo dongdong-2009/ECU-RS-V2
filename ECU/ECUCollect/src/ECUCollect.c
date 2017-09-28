@@ -63,8 +63,8 @@ void Collect_Client_Record(void)
 			char UID[13] = {'\0'};
 			//采集每一轮优化器的数据
 			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传   只有最新一轮通讯打野上一次采集，才会进入
-			//if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
-			if(1)
+			if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
+			//if(1)
 			{
 				commNum++;		
 				curinverter->status.comm_status = 1;
@@ -175,7 +175,7 @@ void Collect_Client_Record(void)
 				//inverter_Info(curinverter);
 
 #if 1
-				if((curinverter->EnergyPV1 > 3600000) || (curinverter->EnergyPV2 > 3600000))  //如果发电量大于 1 度  表示异常数据   存储
+				if((curinverter->EnergyPV1 > 80000) || (curinverter->EnergyPV2 > 80000))  //如果发电量大于 1 度  表示异常数据   存储
 				{
 					char *data = NULL;
 					data = malloc(4096);
@@ -261,7 +261,7 @@ void Collect_Client_Record(void)
 			//保存数据到文件中 该数据为最后一次的发电量
 			save_last_collect_info();
 			//保存07命令相关数据到文件中  
-			save_collect_info(curTime);	
+			//save_collect_info(curTime);	
 			//最多保存2天的数据
 			delete_collect_info_2_day_ago(curTime);//删除两天前的数据
 			

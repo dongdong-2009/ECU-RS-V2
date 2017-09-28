@@ -295,7 +295,13 @@ int wifi_socketb_format(char *data ,int length)
 	int i = 0,retlength = 0;
 
 	head[0] = 'b';
+#ifdef USR_MODULE	
 	head[1] = 0x00;
+#endif 
+#ifdef RAK475_MODULE	
+		head[1] = 0x30;
+#endif 
+
 	head[2] = 0x00;
 	head[3] = 0x00;
 	head[4] = 0x00;
