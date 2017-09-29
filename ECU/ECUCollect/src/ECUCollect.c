@@ -63,8 +63,8 @@ void Collect_Client_Record(void)
 			char UID[13] = {'\0'};
 			//采集每一轮优化器的数据
 			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传   只有最新一轮通讯打野上一次采集，才会进入
-			if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
-			//if(1)
+			//if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
+			if(1)
 			{
 				commNum++;		
 				curinverter->status.comm_status = 1;

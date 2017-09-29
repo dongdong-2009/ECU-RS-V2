@@ -1370,7 +1370,7 @@ void save_collect_info(char *curTime)
 	memcpy(pathTime,curTime,8);
 	pathTime[8] = '\0';
 	sprintf(path,"/home/record/rsdinfo/%s.dat",pathTime);
-	print2msg(ECU_DBG_COLLECT,"path:",path);
+	print2msg(ECU_DBG_COLLECT," save_collect_info path:",path);
 	
 	fd = fileopen(path,O_WRONLY | O_APPEND | O_CREAT,0);
 	for(i = 0;i< ecu.validNum; i++)
@@ -1384,10 +1384,10 @@ void save_collect_info(char *curTime)
 			fileWrite(fd,str,strlen(str));
 		}
 		
-	
 		curinverter++;
 	}
 	fileclose(fd);
+	printmsg(ECU_DBG_COLLECT,"end");
 
 }
 

@@ -27,9 +27,9 @@
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-#define WIFI_RCC                    RCC_APB2Periph_GPIOB
-#define WIFI_GPIO                   GPIOB
-#define WIFI_PIN                    (GPIO_Pin_15)
+#define WIFI_RCC                    RCC_APB2Periph_GPIOC
+#define WIFI_GPIO                   GPIOC
+#define WIFI_PIN                    (GPIO_Pin_6)
 
 
 rt_mutex_t wifi_uart_lock = RT_NULL;
@@ -1134,7 +1134,7 @@ int AT_TCPADDC(char *IP)
 	return 0;
 }
 
-//配置SOCKET C IP地址
+//配置SOCKET C IP端口
 int AT_TCPPTC(int port)
 {
 	int i = 0,flag_failed = 0;
@@ -2674,7 +2674,6 @@ int SendToSocketA(char *data ,int length,unsigned char ID[8])
 {
 	char *sendbuff = NULL;
 	int send_length = 0;	//需要发送的字节位置
-	sendbuff = malloc(4096);
 	
 	while(length > 0)
 	{

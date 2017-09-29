@@ -93,9 +93,9 @@ int resend_record()
 	//在/home/record/data/目录下查询resendflag为2的记录
 	while(search_readflag(data,time,&flag,'2'))		//	获取一条resendflag为1的数据
 	{
-		if(1 == flag)		// 还存在需要上传的数据
-				data[78] = '1';
-		printmsg(ECU_DBG_CLIENT,data);
+		//if(1 == flag)		// 还存在需要上传的数据
+		//		data[78] = '1';
+		//printmsg(ECU_DBG_CLIENT,data);
 		res = send_record(data, time);
 		if(-1 == res)
 			break;
@@ -146,7 +146,7 @@ void ECUClient_thread_entry(void* parameter)
 				}
 				//if(1 == flag)		// 还存在需要上传的数据
 						//data[88] = '1';
-				printmsg(ECU_DBG_CLIENT,data);
+				//printmsg(ECU_DBG_CLIENT,data);
 				res = send_record( data, time);
 				if(-1 == res)
 					break;
