@@ -10,119 +10,120 @@
 byte cmt2300A_para[FTP8_LENGTH]=
 {
 //[CMT Bank]
-
-0x00,  //0x00
-0x66,  //0x01
-0xEC,  //0x02
-0x1D,  //0x03
-0xF0,  //0x04
-0x80,  //0x05
-0x14,  //0x06
-0x08,  //0x07
-0x91,  //0x08
-0x03,  //0x09
-0x02,  //0x0A
-0xD0,  //0x0B
+//Addr	Value
+0x00,//0x00  
+0x66,//0x01  
+0xEC,//0x02  
+0x1D,//0x03  
+0xF0,//0x04  
+0x80,//0x05  
+0x14,//0x06  
+0x08,//0x07  
+0x91,//0x08  
+0x03,//0x09  
+0x02,//0x0A  
+0xD0,//0x0B  
 
 //[System Bank]
-
-0xAE,  //0x0C
-0xE0,  //0x0D
-0x35,  //0x0E
-0x00,  //0x0F
-0x00,  //0x10
-0xF4,  //0x11
-0x10,  //0x12
-0xE2,  //0x13
-0x42,  //0x14
-0x20,  //0x15
-0x00,  //0x16
-0x81,  //0x17
+//Addr	Value
+0xAE,//0x0C  
+0xE0,//0x0D  
+0x35,//0x0E  
+0x00,//0x0F  
+0x00,//0x10  
+0xF4,//0x11  
+0x10,//0x12  
+0xE2,//0x13  
+0x42,//0x14  
+0xE0,//0x15  
+0x00,//0x16  
+0x81,//0x17  
 
 //[Frequency Bank]
-
-0x42,  //0x18
-0x71,  //0x19
-0xCE,  //0x1A
-0x1C,  //0x1B
-0x42,  //0x1C
-0x5B,  //0x1D
-0x1C,  //0x1E
-0x1C,  //0x1F
+//Addr	Value
+0x42,//0x18  
+0x71,//0x19  
+0xCE,//0x1A  
+0x1C,//0x1B  
+0x42,//0x1C  
+0x5B,//0x1D  
+0x1C,//0x1E  
+0x1C,//0x1F  
 
 //[Data Rate Bank]
-
-0xD3,  //0x20
-0x64,  //0x21
-0x10,  //0x22
-0x33,  //0x23
-0xD1,  //0x24
-0x35,  //0x25
-0x0C,  //0x26
-0x0A,  //0x27
-0x9F,  //0x28
-0x4B,  //0x29
-0x29,  //0x2A
-0x29,  //0x2B
-0xC0,  //0x2C
-0x28,  //0x2D
-0x0A,  //0x2E
-0x53,  //0x2F
-0x08,  //0x30
-0x00,  //0x31
-0xB4,  //0x32
-0x00,  //0x33
-0x00,  //0x34
-0x01,  //0x35
-0x00,  //0x36
-0x00,  //0x37
+//Addr	Value
+0xCA,//0x20  
+0x60,//0x21  
+0x10,//0x22  
+0x33,//0x23  
+0xE1,//0x24  
+0x36,//0x25  
+0x19,//0x26  
+0x05,//0x27  
+0x9F,//0x28  
+0x38,//0x29  
+0x29,//0x2A  
+0x29,//0x2B  
+0xC0,//0x2C  
+0x94,//0x2D  
+0x0A,//0x2E  
+0x53,//0x2F  
+0x08,//0x30  
+0x00,//0x31  
+0xB4,//0x32  
+0x00,//0x33  
+0x00,//0x34  
+0x01,//0x35  
+0x00,//0x36  
+0x00,//0x37  
 
 //[Baseband Bank]
-
-0x12,  //0x38
-0x04,  //0x39
-0x00,  //0x3A
-0xAA,  //0x3B
-0x02,  //0x3C
-0x00,  //0x3D
-0x00,  //0x3E
-0x00,  //0x3F
-0x00,  //0x40
-0x00,  //0x41
-0x00,  //0x42
-0xD4,  //0x43
-0x2D,  //0x44
-0x01,  //0x45
-0x1F,  //0x46
-0x00,  //0x47
-0x00,  //0x48
-0x00,  //0x49
-0x00,  //0x4A
-0x00,  //0x4B
-0x01,  //0x4C
-0x00,  //0x4D
-0x00,  //0x4E
-0x60,  //0x4F
-0xFF,  //0x50
-0x00,  //0x51
-0x00,  //0x52
-0x1F,  //0x53
-0x10,  //0x54
+//Addr	Value
+0x12,//0x38  
+0x08,//0x39  
+0x00,//0x3A  
+0xAA,//0x3B  
+0x04,//0x3C  
+0x00,//0x3D  
+0x00,//0x3E  
+0x00,//0x3F  
+0x00,//0x40  
+0x00,//0x41  
+0xD4,//0x42  
+0x2D,//0x43  
+0xAA,//0x44  
+0x01,//0x45  
+0x1F,//0x46  
+0x00,//0x47  
+0x00,//0x48  
+0x00,//0x49  
+0x00,//0x4A  
+0x00,//0x4B  
+0x01,//0x4C  
+0x00,//0x4D  
+0x00,//0x4E  
+0x64,//0x4F  
+0xFF,//0x50  
+0x00,//0x51  
+0x00,//0x52  
+0x1F,//0x53  
+0x10,//0x54  
 
 //[TX Bank]
-
-0x50,  //0x55
-0x4D,  //0x56
-0x06,  //0x57
-0x00,  //0x58
-0x0F,  //0x59
-0x70,  //0x5A
-0x00,  //0x5B
-0x8A,  //0x5C
-0x18,  //0x5D
-0x3F,  //0x5E
-0x7F   //0x5F
+//Addr	Value
+0x50,//0x55  
+0x9A,//0x56  
+0x0C,//0x57  
+0x00,//0x58  
+0x0F,//0x59  
+0x90,//0x5A  
+0x00,//0x5B  
+0x8A,//0x5C  
+0x18,//0x5D  
+0x3F,//0x5E  
+0x7F //0x5F  
 };
+
 #endif
 
 #ifdef RFM_915
@@ -266,6 +267,7 @@ void	OutputSDA(void)
 	GPIO_Init(SDIO_GPIO, &GPIO_InitStructure);
 }
 
+
 // spi Init
 void Spi3Init(void)
 {	
@@ -312,238 +314,224 @@ void Spi3Init(void)
 	//_SCL = 0;
 }
 // spi read register
+/**********************************************************
+**Name: 	vSpi3WriteByte
+**Func: 	SPI-3 send one byte
+**Input:
+**Output:  
+**********************************************************/
+void vSpi3WriteByte(byte dat,byte sda_in)
+{
+ 	byte bitcnt;	
+ 
+	SetFCSB();				//FCSB = 1;
+ 
+ 	OutputSDA();			//SDA output mode
+ 	SetSDA();				//    output 1
+ 
+ 	ClrSCL();				
+ 	ClrCSB();
+
+ 	for(bitcnt=8; bitcnt!=0; bitcnt--)
+    {
+		ClrSCL();	
+		rt_hw_us_delay(SPI3_SPEED);
+ 		if(dat&0x80)
+ 			SetSDA();
+ 		else
+ 			ClrSDA();
+		SetSCL();
+ 		dat <<= 1; 		
+ 		rt_hw_us_delay(SPI3_SPEED);
+    }
+ 	if(sda_in!=0)			//shift to input for read [QY.Ruan]
+    {
+ 		InputSDA();
+ 		ClrSCL();	
+    }
+ 	else
+    {
+ 		ClrSCL();
+ 		SetSDA();	
+    }
+}
+
+/**********************************************************
+**Name: 	bSpi3ReadByte
+**Func: 	SPI-3 read one byte
+**Input:
+**Output:  
+**********************************************************/
+byte bSpi3ReadByte(void)
+{
+	byte RdPara = 0;
+ 	byte bitcnt;
+  
+ 	ClrCSB(); 
+ 	InputSDA();			
+ 	
+ 	for(bitcnt=8; bitcnt!=0; bitcnt--)
+    {
+ 		ClrSCL();
+ 		RdPara <<= 1;
+ 		rt_hw_us_delay(SPI3_SPEED);
+ 		SetSCL();
+ 		rt_hw_us_delay(SPI3_SPEED);
+ 		if(SDA_H())
+ 			RdPara |= 0x01;
+ 		else
+ 			RdPara |= 0x00;
+    } 
+ 	ClrSCL();
+ 	OutputSDA();
+ 	SetSDA();
+ 	SetCSB();			
+ 	return(RdPara);	
+}
+
+/**********************************************************
+**Name:	 	vSpi3Write
+**Func: 	SPI Write One word
+**Input: 	Write word
+**Output:	none
+**********************************************************/
+void Spi3WriteReg(byte addr,byte dat)
+{
+ 	vSpi3WriteByte((byte)(addr)&0x7F,0);
+ 	vSpi3WriteByte((byte)dat,0);
+ 	SetCSB();
+}
+
+/**********************************************************
+**Name:	 	bSpi3Read
+**Func: 	SPI-3 Read One byte
+**Input: 	readout addresss
+**Output:	readout byte
+**********************************************************/
 byte Spi3ReadReg(byte addr)
 {
-	byte i,val;
-	val=0x00;
-	addr|=0x80;
-
-   // Set CSB to low level and delay
-	Spi3Init();
-	ClrCSB();
-	rt_hw_us_delay(SPI3_SPEED);
-	
-	//write address
-	for (i=0;i<8;i++)
-	{
-		if (addr&0x80)
-			SetSDA();
-		else
-			ClrSDA();
-
-		ClrSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-		SetSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-		
-		addr<<=1;
-	}
-	SetSDA();
-	//read value
-	InputSDA();
-	for (i=8;i>0;i--)
-	{
-		val<<=1;
-		ClrSCL();
-		rt_hw_us_delay(SPI3_SPEED);		
-		SetSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-
-		if (SDA_H())
-		val|=0x01;
-		
-	}
-    
-	// Set CLK to low level and delay
-	ClrSCL();
-	rt_hw_us_delay(SPI3_SPEED);
-	Spi3Init();
-
-	// return value
-	return val;
+  	vSpi3WriteByte(addr|0x80,1);
+ 	return(bSpi3ReadByte());
 }
 
-// spi write register
-void Spi3WriteReg(byte addr,byte value)
+/**********************************************************
+**Name:	 	vSpi3WriteFIFO
+**Func: 	SPI-3 send one byte to FIFO
+**Input: 	one byte buffer
+**Output:	none
+**********************************************************/
+void Spi3WriteFIFOByte(byte dat)
 {
-	byte i;
-    
-	addr&=~0x80;
-
-    // Set CLK to low level and delay
-	Spi3Init();
-	ClrCSB();
-	rt_hw_us_delay(SPI3_SPEED);
-	
-	//write address
-	for (i=0;i<8;i++)
-	{
-		if (addr&0x80)
-			SetSDA();
-		else
-			ClrSDA();
-
-		ClrSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-		SetSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-		
-		addr<<=1;
-	}
-
-	//write value	
-	for (i=0;i<8;i++)
-	{
-		if (value&0x80)
-			SetSDA();
-		else
-			ClrSDA();
-
-		ClrSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-		SetSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-
-		value<<=1;
-	}
-    
-	// Set CLK to low level and delay
+ 	byte bitcnt;	
+ 
+ 	SetCSB();	
+	OutputSDA();	
 	ClrSCL();
-	rt_hw_us_delay(SPI3_SPEED);
-	Spi3Init();
+ 	ClrFCSB();			//FCSB = 0
+	for(bitcnt=8; bitcnt!=0; bitcnt--)
+    {
+ 		ClrSCL();
+ 		
+ 		if(dat&0x80)
+			SetSDA();		
+		else
+			ClrSDA();
+		rt_hw_us_delay(SPI3_SPEED);
+		SetSCL();
+		rt_hw_us_delay(SPI3_SPEED);
+ 		dat <<= 1;
+    }
+ 	ClrSCL();	
+ 	rt_hw_us_delay(SPI3_SPEED);		//Time-Critical
+ 	rt_hw_us_delay(SPI3_SPEED);		//Time-Critical
+ 	SetFCSB();
+	SetSDA();
+ 	rt_hw_us_delay(SPI3_SPEED);		//Time-Critical
+ 	rt_hw_us_delay(SPI3_SPEED);		//Time-Critical
 }
 
-// spi read one byte from the fifo
+/**********************************************************
+**Name:	 	bSpi3ReadFIFO
+**Func: 	SPI-3 read one byte to FIFO
+**Input: 	none
+**Output:	one byte buffer
+**********************************************************/
 byte Spi3ReadFIFOByte(void)
 {
-	byte i,val;
-	val=0x00;
-	//set FCSB to low and delay
-	Spi3Init();
-	ClrFCSB();
+	byte RdPara;
+ 	byte bitcnt;	
+ 	
+ 	SetCSB();
 	InputSDA();
-	rt_hw_us_delay(SPI3_SPEED<<2);
-    // read one byte
-    for (i=0;i<8;i++)
-    {
-		val<<=1;
-		ClrSCL();
-		rt_hw_us_delay(SPI3_SPEED);
+ 	ClrSCL();
+	ClrFCSB();
 		
+ 	for(bitcnt=8; bitcnt!=0; bitcnt--)
+    {
+ 		ClrSCL();
+ 		RdPara <<= 1;
+ 		rt_hw_us_delay(SPI3_SPEED);
 		SetSCL();
 		rt_hw_us_delay(SPI3_SPEED);
-		
-		if (SDA_H())
-		val|=0x01;
-
+ 		if(SDA_H())
+ 			RdPara |= 0x01;		//NRZ MSB
+ 		else
+ 		 	RdPara |= 0x00;		//NRZ MSB
     }
-    // set SCL to low and delay more than 2us
-    ClrSCL();
-	rt_hw_us_delay(SPI3_SPEED<<1);
-	// set FCSB to high and delay more than 4us
-	Spi3Init();
-	rt_hw_us_delay(SPI3_SPEED<<2);
-	
-	// return value
-	return val;
-
+ 	
+ 	ClrSCL();
+ 	rt_hw_us_delay(SPI3_SPEED);		//Time-Critical
+ 	rt_hw_us_delay(SPI3_SPEED);		//Time-Critical
+ 	SetFCSB();
+	OutputSDA();
+	SetSDA();
+ 	rt_hw_us_delay(SPI3_SPEED);		//Time-Critical
+ 	rt_hw_us_delay(SPI3_SPEED);		//Time-Critical
+ 	return(RdPara);
 }
-// SPI write one byte to the fifo
-void Spi3WriteFIFOByte(byte value)
+
+/**********************************************************
+**Name:	 	vSpi3BurstWriteFIFO
+**Func: 	burst wirte N byte to FIFO
+**Input: 	array length & head pointer
+**Output:	none
+**********************************************************/
+void vSpi3BurstWriteFIFO(byte ptr[], byte length)
+{
+ 	byte i;
+ 	if(length!=0x00)
+    {
+ 		for(i=0;i<length;i++)
+ 			Spi3WriteFIFOByte(ptr[i]);
+    }
+ 	return;
+}
+
+/**********************************************************
+**Name:	 	vSpiBurstRead
+**Func: 	burst wirte N byte to FIFO
+**Input: 	array length  & head pointer
+**Output:	none
+**********************************************************/
+void vSpi3BurstReadFIFO(byte ptr[], byte length)
 {
 	byte i;
-	//set FCSB to low and delay
-	Spi3Init();
-	ClrFCSB();
-	rt_hw_us_delay(SPI3_SPEED<<2);
-	
-    // write one byte
-    for (i=0;i<8;i++)
+ 	if(length!=0)
     {
-		
-		if (value&0x80)
-			SetSDA();
-		else
-			ClrSDA();
-		
-		
-		ClrSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-		SetSCL();
-		rt_hw_us_delay(SPI3_SPEED);
-
-		value<<=1;
-
-    }
-    // set SCL to low and delay more than 2us
-    ClrSCL();
-	rt_hw_us_delay(SPI3_SPEED<<1);
-	// set FCSB to high and delay more than 4us
-	Spi3Init();
-	rt_hw_us_delay(SPI3_SPEED<<2);
-
+ 		for(i=0;i<length;i++)
+ 			ptr[i] = Spi3ReadFIFOByte();
+    }	
+ 	return;
 }
-
 // set configuration  bank of the register 
 void SetConfigBank(void)
 {
 	byte i;
- #ifdef  RFM_433
-    if(RFM300H_Rate<4)
-    {
-        //if(RFM300H_Rate==0)
-        //{
-        //    memcpy(&cmt2300A_para[32], RFM300H_Rate_2K,17);
-        //    memcpy(&cmt2300A_para[89], &RFM300H_Rate_2K[17],2);
-        //}
-        if(RFM300H_Rate==1)
-        {
-            memcpy(&cmt2300A_para[32], RFM300H_Rate_5K,17);
-            memcpy(&cmt2300A_para[89], &RFM300H_Rate_5K[17],2);
-        }
-        if(RFM300H_Rate==2)
-        {
-            memcpy(&cmt2300A_para[32], RFM300H_Rate_10K,17);
-            memcpy(&cmt2300A_para[89], &RFM300H_Rate_10K[17],2);
-        }
-        if(RFM300H_Rate==3)
-        {
-            memcpy(&cmt2300A_para[32], RFM300H_Rate_20K,17);
-            memcpy(&cmt2300A_para[89], &RFM300H_Rate_20K[17],2);
-        }
-    }
+    
+    Set_Rate();    
+    setChannel(1);
 	for (i=0;i<FTP8_LENGTH;i++)
 		Spi3WriteReg(i,cmt2300A_para[i]);	
-#endif
-
-
-#ifdef RFM_915
-		if(RFM300H_Rate<5)
-    {
-        if(RFM300H_Rate==1)
-        {
-            memcpy(&cmt2300A_para[32], RFM300H_Rate_2K,17);
-            memcpy(&cmt2300A_para[89], &RFM300H_Rate_2K[17],2);
-        }
-        if(RFM300H_Rate==2)
-        {
-            memcpy(&cmt2300A_para[32], RFM300H_Rate_5K,17);
-            memcpy(&cmt2300A_para[89], &RFM300H_Rate_5K[17],2);
-        }
-        if(RFM300H_Rate==3)
-        {
-            memcpy(&cmt2300A_para[32], RFM300H_Rate_10K,17);
-            memcpy(&cmt2300A_para[89], &RFM300H_Rate_10K[17],2);
-        }
-        if(RFM300H_Rate==4)
-        {
-            memcpy(&cmt2300A_para[32], RFM300H_Rate_20K,17);
-            memcpy(&cmt2300A_para[89], &RFM300H_Rate_20K[17],2);
-        }       
-    }
-		for (i=0;i<FTP8_LENGTH;i++)
-			Spi3WriteReg(i,cmt2300A_para[i]);	
-#endif
 }
 
 // read the RSSI value
@@ -741,58 +729,95 @@ void AntennaDiversity_Rx(void)
 	Spi3WriteReg(CMT23_INT1_CTL,RF_SWT2_EN|val);
 }
 
+void Set_Rate(void)
+{
+    if(RFM300H_Rate<5)
+    {
+        if(RFM300H_Rate==1)
+        {
+            memcpy(&cmt2300A_para[32], RFM300H_Rate_24K,17);
+            memcpy(&cmt2300A_para[89], &RFM300H_Rate_24K[17],2);
+            return;
+        }
+        if(RFM300H_Rate==2)
+        {
+            memcpy(&cmt2300A_para[32], RFM300H_Rate_48K,17);
+            memcpy(&cmt2300A_para[89], &RFM300H_Rate_48K[17],2);
+            return;
+        }
+        if(RFM300H_Rate==3)
+        {
+            memcpy(&cmt2300A_para[32], RFM300H_Rate_96K,17);
+            memcpy(&cmt2300A_para[89], &RFM300H_Rate_96K[17],2);
+            return;
+        }
+        if(RFM300H_Rate==4)
+        {
+            memcpy(&cmt2300A_para[32], RFM300H_Rate_144K,17);
+            memcpy(&cmt2300A_para[89], &RFM300H_Rate_144K[17],2);
+            return;
+        }
+        return;        
+    }
+    if(RFM300H_Rate==0xFF)
+    {
+        memcpy(&cmt2300A_para[32], RFM300H_Rate_96K,17);
+        memcpy(&cmt2300A_para[89], &RFM300H_Rate_96K[17],1);
+        return;
+    }
+}
+
+
 // cmt2300 init
 void CMT2300_init(void)
 {
 	// init spi and UART
-	Spi3Init();
-	//uart.vUartInit(9600, _8N1);
-	
+	Spi3Init();	
 	// software reset and enter sleep mode
-	SoftReset();
-	
+	SoftReset();	
     // enter standby mode
-	SetOperaStatus(MODE_GO_STBY);
-	
+	SetOperaStatus(MODE_GO_STBY);	
 	// configuration 
 	SetConfigBank();
-	
+	//
 	ClearInt(0x00);
+    //
 	ClearFifo();
-	Enable_fifo_merge();
+    //
+    Enable_fifo_merge();//64
 	// enable TX_DONE ,PACKET_OK interrupt
     EnableInt(TX_DONE_EN|CRC_PASS_EN);
     //
     SelectIntSource(INT_TX_DONE,INT_CRC_PASS);
-    
-    Spi3WriteReg(0x65,0x22);
-		
     //
-    //AntennaDiversity_Rx();
-	SetOperaStatus(MODE_GO_SLEEP);	
+    Spi3WriteReg(0x65,0x20);
+    //
+    Spi3WriteReg(0x64,0xC8);//信道宽度500K，基础频点开始跳频
+    //
+    AntennaDiversity_Rx();
 	// go sleep
 	SetOperaStatus(MODE_GO_SLEEP);
-}
 
+}
 // transmit 
 byte SendMessage(byte *p,byte len)
 {
 	byte i=0;
 	byte val=0x00;
-	Enable_fifo_TX();
+    
+    ClearFifo();
+    Enable_fifo_TX();
 	SetTxpayloadLength(len);
 
-	Enable_fifo_write();
-	ClearFifo();
-	SetOperaStatus(MODE_GO_STBY);	//MODE_STA_STBY
+	SetOperaStatus(MODE_STA_STBY);
 	// verify transmit state
 	do {
 		val=GetOperaStatus();
-		if (val==MODE_STA_STBY)		//MODE_STA_STBY
+		if (val==MODE_STA_STBY)
 			break;
 	} while(1);
     // write FIFO
-	
+	Enable_fifo_write();
 	for (i=0;i<len;i++)
 	{
 		Spi3WriteFIFOByte(p[i]);
@@ -800,54 +825,37 @@ byte SendMessage(byte *p,byte len)
 	//go transmit
 
 	SetOperaStatus(MODE_GO_TX);
-  //rt_hw_ms_delay(300);
     
+    rt_hw_ms_delay(10);
 // verify transmit done
-	
 	do {
-		//Spi3WriteReg(0X68,0X04);
-		//rt_hw_ms_delay(500);
-		//val=Spi3ReadReg(0X68);
-		//SEGGER_RTT_printf(0, "0X68:%x\n",val);
-		
-		val=GetIrqFlag_Tx();
-		//SEGGER_RTT_printf(0, "GetIrqFlag_Tx:%d\n",val);
-		if (val==TX_DONE_FLAG)
-		{	
-			
-			ClearInt(0x00);
-			break;
-		}
+            val=GetIrqFlag_Tx();
+            if (val==TX_DONE_FLAG)
+            {
+                ClearInt(0x00);
+                break;
+            }
 		
 	} while(1);
-	
 	// go sleep mode
 	SetOperaStatus(MODE_GO_SLEEP);
-	RFM300H_SW = 0;	
+	RFM300H_SW = 0;
 	return 0x01;
 }
 // receive
 byte GetMessage(byte *p)
 {
-	int val = 0;
 	int index = 0;
 	byte i=0x00;
     
 	if(RFM300H_SW==0)
 	{
-		SetOperaStatus(MODE_GO_RX);//进入接收模式
-		Enable_fifo_RX();
-    Enable_fifo_read();
-		do {
-			val=GetOperaStatus();
-			
-			if (val==MODE_STA_RX)
-			{
-				break;
-			}
-		} while(1);
 
-			RFM300H_SW = 1; 	
+        Enable_fifo_RX();
+        Enable_fifo_read();
+        SetOperaStatus(MODE_GO_RX);//
+		RFM300H_SW = 1;
+
 	}
 	if(RFM300H_SW==1)
 	{	
@@ -871,7 +879,7 @@ byte GetMessage(byte *p)
 		{
 			p[i]=Spi3ReadFIFOByte();
 		}
-        ReadRssiValue(0);
+		ClearFifo();
         ClearInt(0x00);
 		RFM300H_SW = 3;
 		return length;
@@ -882,183 +890,15 @@ byte GetMessage(byte *p)
 
 char setChannel(char channel)
 {
-	byte val=0x00;
-#ifdef RFM_433	
 	if(channel<17)
-	{
-		if(channel==1)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_433M,8);
-		}
-		if(channel==2)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_434M,8);
-		}
-		if(channel==3)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_435M,8);
-		}
-		if(channel==4)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_436M,8);
-		}  
-		if(channel==5)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_437M,8);
-		}
-		if(channel==6)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_438M,8);
-		}
-		if(channel==7)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_439M,8);
-		}
-		if(channel==8)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_440M,8);
-		} 
-		if(channel==9)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_441M,8);
-		}
-		if(channel==10)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_442M,8);
-		}
-		if(channel==11)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_443M,8);
-		}
-		if(channel==12)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_444M,8);
-		} 
-		if(channel==13)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_445M,8);
-		}
-		if(channel==14)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_446M,8);
-		}
-		if(channel==15)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_447M,8);
-		}
-		if(channel==16)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_448M,8);
-		} 
-		SetOperaStatus(MODE_GO_STBY);
-		do {
-			val=GetOperaStatus();
-			if (val==MODE_STA_STBY)		//MODE_STA_STBY
-				break;
-		} while(1);
-		SetConfigBank();
-		SetOperaStatus(MODE_GO_SLEEP);
-		do {
-			val=GetOperaStatus();
-			if (val==MODE_STA_SLEEP)		//MODE_STA_SLEEP
-				break;
-		} while(1);
-		SEGGER_RTT_printf(0, "setChannel:%d\n",channel);
+   	{        
+		Spi3WriteReg(0x63,channel);
+		return 0;        
+   	}else
+   	{
+		Spi3WriteReg(0x63,1);
 		return 0;
-  } 
-	else
-	{
-		return 1;
-	}
-#endif
-	
-#ifdef RFM_915
-		if(channel<17)
-	{
-		if(channel==1)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_915M,8);
-		}
-		if(channel==2)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_916M,8);
-		}
-		if(channel==3)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_917M,8);
-		}
-		if(channel==4)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_918M,8);
-		}  
-		if(channel==5)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_919M,8);
-		}
-		if(channel==6)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_920M,8);
-		}
-		if(channel==7)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_921M,8);
-		}
-		if(channel==8)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_922M,8);
-		} 
-		if(channel==9)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_923M,8);
-		}
-		if(channel==10)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_924M,8);
-		}
-		if(channel==11)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_925M,8);
-		}
-		if(channel==12)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_926M,8);
-		} 
-		if(channel==13)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_927M,8);
-		}
-		if(channel==14)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_928M,8);
-		}
-		if(channel==15)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_929M,8);
-		}
-		if(channel==16)
-		{
-			memcpy(&cmt2300A_para[24], RFM300H_Channl_930M,8);
-		} 
-		SetOperaStatus(MODE_GO_STBY);
-		do {
-			val=GetOperaStatus();
-			if (val==MODE_STA_STBY)		//MODE_STA_STBY
-				break;
-		} while(1);
-		SetConfigBank();
-		SetOperaStatus(MODE_GO_SLEEP);
-		do {
-			val=GetOperaStatus();
-			if (val==MODE_STA_SLEEP)		//MODE_STA_SLEEP
-				break;
-		} while(1);
-		SEGGER_RTT_printf(0, "setChannel:%d\n",channel);
-		return 0;
-  } 
-	else
-	{
-		return 1;
-	}
-#endif
+   	}
+
 }
 	

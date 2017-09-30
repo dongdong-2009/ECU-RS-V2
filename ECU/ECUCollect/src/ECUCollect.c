@@ -238,6 +238,9 @@ void Collect_Client_Record(void)
 		}
 		client_Data[length++] = '\0';	//存入文件的时候不添加换行符，上传数据的时候再添加换行符
 		ecu.current_energy = ecu.current_energy/3600000;		//将发电量转换为千瓦时
+		//ecu.current_energy = 0.001;
+		//ecu.system_power = 200;
+
 		ecu.life_energy = ecu.life_energy + ecu.current_energy;
 
 		printfloatmsg(ECU_DBG_COLLECT,"ecu.life_energy",ecu.life_energy);
@@ -253,12 +256,12 @@ void Collect_Client_Record(void)
 			//最多保存两个月的数据
 			delete_system_power_2_month_ago(curTime);		//删除两个月前的数据
 			save_record(client_Data,curTime);				//保存需要发送给服务器的报文
-			print2msg(ECU_DBG_COLLECT,"client Data:",client_Data);
+			//print2msg(ECU_DBG_COLLECT,"client Data:",client_Data);
 
 			//保存数据到文件中 该数据为最后一次的发电量
 			save_last_collect_info();
 			//保存07命令相关数据到文件中  
-			save_collect_info(curTime);	
+			//save_collect_info(curTime);	
 			//最多保存2天的数据
 			delete_collect_info_2_day_ago(curTime);//删除两天前的数据
 			
@@ -355,9 +358,9 @@ void Collect_Control_Record(void)
 		
 		//保存报文数据
 		if(commNum > 0)
-		{			
+		{		
 			save_control_record(control_Data,curTime);
-			print2msg(ECU_DBG_COLLECT,"client Data:",control_Data);
+			//print2msg(ECU_DBG_COLLECT,"client Data:",control_Data);
 			
 		}
 		

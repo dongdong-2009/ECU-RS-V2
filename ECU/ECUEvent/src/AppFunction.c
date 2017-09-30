@@ -263,6 +263,7 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		//匹配成功进行相应操作
 		printf("COMMAND_SETWIREDNETWORK  Mapping\n");
 		//检查是DHCP  还是固定IP
+		APP_Response_SetWiredNetwork(0x00,ID);
 		ModeFlag = ResolveWired(&recvbuffer[26],&IPAddr,&MSKAddr,&GWAddr,&DNS1Addr,&DNS2Addr);
 		if(ModeFlag == 0x00)		//DHCP
 		{
@@ -280,7 +281,7 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 			StaticIP(IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr);
 		}
 						
-		APP_Response_SetWiredNetwork(0x00,ID);
+		
 	}	
 	else
 	{

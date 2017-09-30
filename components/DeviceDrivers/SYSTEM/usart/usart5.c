@@ -2672,12 +2672,11 @@ char sendbuff[4096] = {'\0'};
 //SOCKET A 发送数据  \n需要在传入字符串中带入
 int SendToSocketA(char *data ,int length,unsigned char ID[8])
 {
-	char *sendbuff = NULL;
 	int send_length = 0;	//需要发送的字节位置
 	
 	while(length > 0)
 	{
-		
+		memset(sendbuff,'\0',4096);
 		sprintf(sendbuff,"a%c%c%c%c%c%c%c%c",ID[0],ID[1],ID[2],ID[3],ID[4],ID[5],ID[6],ID[7]);
 
 		if(length > SIZE_PER_SEND)
@@ -2695,16 +2694,12 @@ int SendToSocketA(char *data ,int length,unsigned char ID[8])
 			memcpy(&sendbuff[9],&data[send_length],length);	
 			WIFI_SendData(sendbuff, (length+9));
 			length -= length;
-			free(sendbuff);
-			sendbuff = NULL;
+
 			return 0;
 		}
 		rt_hw_ms_delay(200);
 	}
 	
-	
-	free(sendbuff);
-	sendbuff = NULL;
 	return 0;
 }
 

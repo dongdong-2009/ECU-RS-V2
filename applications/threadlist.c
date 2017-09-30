@@ -208,8 +208,9 @@ void rt_init_thread_entry(void* parameter)
 	RFM_init();
 	RFM_off();
 	rt_hw_led_init();
+	printf("CMT2300_init start\n");
 	CMT2300_init();
-	
+	printf("CMT2300_init over\n");
 #ifdef USR_MODULE
 	uart5_init(57600);					//USR模块相应波特率 串口初始化
 #endif

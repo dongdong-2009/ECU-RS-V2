@@ -413,6 +413,6 @@ void AntennaDiversity_Rx(void);
 void CMT2300_init(void);
 byte SendMessage(byte *p,byte len);
 byte GetMessage(byte *p);
-
+void Set_Rate(void);
 char setChannel(char channel);
 #endif 
