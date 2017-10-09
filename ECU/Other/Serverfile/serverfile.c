@@ -126,13 +126,13 @@ void init_tmpdb(inverter_info *firstinverter)
 			for(j=0; (j<ecu.validNum); j++)	
 			{
 
-				if(!memcmp(curinverter->uid,UID6,2))
+				if(!memcmp(curinverter->uid,UID6,6))
 				{
 					memcpy(curinverter->LastCollectTime,list[1],14);
 					curinverter->LastCollectTime[14] = '\0';
 					curinverter->Last_PV1_Energy = atoi(list[2]);
 					curinverter->Last_PV2_Energy = atoi(list[3]);
-					printf("UID %s ,LastCollectTime: %s ,Last_PV1_Energy: %d ,Last_PV2_Energy: %d \n",list[0],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
+					printf("UID %02x%02x%02x%02x%02x%02x ,LastCollectTime: %s ,Last_PV1_Energy: %d ,Last_PV2_Energy: %d \n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
 					break;
 				}
 				curinverter++;

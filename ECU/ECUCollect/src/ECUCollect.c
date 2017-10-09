@@ -21,17 +21,17 @@ void inverter_Info(inverter_info *curinverter)
 {
 	printf("\n");
 
-	printf("ID:%02x%02x%02x%02x%02x%02x\n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5]);
-	printf("LastCollectTime: %s\n",curinverter->LastCollectTime);
-	printf("LastCommTime:    %s\n",curinverter->LastCommTime);
-	printf("PV1_Energy:%d \n",curinverter->PV1_Energy);
-	printf("PV2_Energy:%d \n",curinverter->PV2_Energy);
-	printf("Last_PV1_Energy:%d \n",curinverter->Last_PV1_Energy);
-	printf("Last_PV2_Energy:%d \n",curinverter->Last_PV2_Energy);
-	printf("AveragePower1:%lf \n",curinverter->AveragePower1);
-	printf("AveragePower2:%lf \n",curinverter->AveragePower2);
-	printf("EnergyPV1:%d \n",curinverter->EnergyPV1);
-	printf("EnergyPV2:%d \n\n",curinverter->EnergyPV2);
+	printf("ID:%02x%02x%02x%02x%02x%02x  ",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5]);
+	printf("LastCollectTime: %s  ",curinverter->LastCollectTime);
+	printf("LastCommTime:    %s  ",curinverter->LastCommTime);
+	printf("PV1_Energy:%d   ",curinverter->PV1_Energy);
+	printf("PV2_Energy:%d   ",curinverter->PV2_Energy);
+	printf("Last_PV1_Energy:%d   ",curinverter->Last_PV1_Energy);
+	printf("Last_PV2_Energy:%d   ",curinverter->Last_PV2_Energy);
+	printf("AveragePower1:%lf   ",curinverter->AveragePower1);
+	printf("AveragePower2:%lf  ",curinverter->AveragePower2);
+	printf("EnergyPV1:%d  ",curinverter->EnergyPV1);
+	printf("EnergyPV2:%d \n",curinverter->EnergyPV2);
 
 }
 
@@ -58,6 +58,7 @@ void Collect_Client_Record(void)
 		//采集一轮数据
 		commNum = 0;
 		curinverter = inverterInfo;
+		rt_enter_critical();
 		for(i = 0;i< ecu.validNum; i++)
 		{
 			char UID[13] = {'\0'};
@@ -237,6 +238,8 @@ void Collect_Client_Record(void)
 			
 		}
 		client_Data[length++] = '\0';	//存入文件的时候不添加换行符，上传数据的时候再添加换行符
+		rt_exit_critical();
+
 		ecu.current_energy = ecu.current_energy/3600000;		//将发电量转换为千瓦时
 		//ecu.current_energy = 0.001;
 		//ecu.system_power = 200;
@@ -263,7 +266,7 @@ void Collect_Client_Record(void)
 			//保存07命令相关数据到文件中  
 			//save_collect_info(curTime);	
 			//最多保存2天的数据
-			delete_collect_info_2_day_ago(curTime);//删除两天前的数据
+			//delete_collect_info_2_day_ago(curTime);//删除两天前的数据
 			
 		}
 		
