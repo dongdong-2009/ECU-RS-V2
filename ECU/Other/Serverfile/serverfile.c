@@ -93,7 +93,7 @@ void splitSpace(char *data,char *sourcePath,char *destPath)
 	memcpy(sourcePath,splitdata[1],strlen(splitdata[1]));
 	sourcePath[strlen(splitdata[1])] = '\0';
 	memcpy(destPath,splitdata[2],strlen(splitdata[2]));
-	destPath[strlen(splitdata[2])-2] = '\0';
+	destPath[strlen(splitdata[2])-1] = '\0';
 }
 
 //初始化
@@ -1576,7 +1576,7 @@ int search_readflag(char *data,char * time, int *flag,char sendflag)
 									data[strlen(buff)-18] = '\n';
 									//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
 									//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
-									rt_hw_s_delay(1);
+									rt_hw_ms_delay(1);
 									while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
 									{
 										if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
@@ -1746,7 +1746,7 @@ int update_send_flag(char *send_date_time)
 			print2msg(ECU_DBG_CLIENT,"Update send flag into database", "1");
 			break;
 		}
-		rt_hw_s_delay(5);
+		rt_hw_ms_delay(5);
 	}
 
 	return 0;
@@ -1967,7 +1967,7 @@ int search_control_readflag(char *data,char * time, int *flag,char sendflag)
 									data[strlen(buff)-18] = '\n';
 									//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
 									//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
-									rt_hw_s_delay(1);
+									rt_hw_ms_delay(1);
 									while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
 									{
 										if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
@@ -2137,7 +2137,7 @@ int update_control_send_flag(char *send_date_time)
 			print2msg(ECU_DBG_CLIENT,"Update send flag into database", "1");
 			break;
 		}
-		rt_hw_s_delay(5);
+		rt_hw_ms_delay(5);
 	}
 
 	return 0;
@@ -2438,7 +2438,7 @@ int search_alarm_readflag(char *data,char * time, int *flag,char sendflag)
 									data[strlen(buff)-18] = '\n';
 									//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
 									//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
-									rt_hw_s_delay(1);
+									rt_hw_ms_delay(1);
 									while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
 									{
 										if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
@@ -2608,7 +2608,7 @@ int update_alarm_send_flag(char *send_date_time)
 			print2msg(ECU_DBG_CLIENT,"Update send flag into database", "1");
 			break;
 		}
-		rt_hw_s_delay(5);
+		rt_hw_ms_delay(5);
 	}
 
 	return 0;
