@@ -9,15 +9,30 @@
 #include "led.h"
 #include "timer.h"
 #include "string.h"
-#include "RFM300H.h"
 #include "variation.h"
 #include "event.h"
 #include "inverter.h"
 #include "watchdog.h"
-#include "file.h"
+#include "zigbee.h"
+#include "serverfile.h"
+#include "threadlist.h"
+extern ecu_info ecu;
+extern inverter_info inverterInfo[MAXINVERTERCOUNT];
+
+int init_all(inverter_info *inverter)
+{
+	openzigbee();
+	zb_test_communication();
+	init_ecu();
+	init_inverter(inverter);
+	init_tmpdb(inverter);
+	return 0;
+}
 
 void ECUComm_thread_entry(void* parameter)
 {
+	rt_thread_delay(RT_TICK_PER_SECOND * START_TIME_COMM);
+	init_all(inverterInfo); //初始化所有逆变器
 	while(1)
 	{
 		//判断是否有433模块心跳超时事件

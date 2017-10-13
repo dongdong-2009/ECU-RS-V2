@@ -2,6 +2,13 @@
 #define __SERVERFILE_H__
 #include "variation.h"
 #include <rtthread.h>
+/*****************************************************************************/
+/*  Definitions                                                              */
+/*****************************************************************************/
+#define VERSION_ECU_RS    					"101"
+
+#define SOFEWARE_VERSION_LENGTH				5
+#define SOFEWARE_VERSION						"RS1.3"
 
 
 typedef struct name_value
@@ -16,6 +23,20 @@ int fileclose(int fd);
 int fileWrite(int fd,char* buf,int len);
 int fileRead(int fd,char* buf,int len);
 
+
+int Write_ECUID(char *ECUID);		//ECU ID
+int Read_ECUID(char *ECUID);
+//将12位ECU ID转换为6位ECU ID
+void transformECUID(char * ECUID6,char *ECUID12);
+int Write_IO_INIT_STATU(char *IO_InitStatus);								//IO上电状态
+int Read_IO_INIT_STATU(char *IO_InitStatus);
+int Write_WIFI_PW(char *WIFIPasswd,unsigned char Counter);	//WIFI密码
+int Read_WIFI_PW(char *WIFIPasswd,unsigned char Counter);
+void updateID(void);
+void echo(const char* filename,const char* string);
+char get_channel(void);
+unsigned short get_panid(void);
+int get_id_from_file(inverter_info *firstinverter);
 void init_tmpdb(inverter_info *firstinverter);
 void init_RecordMutex(void);
 void echo(const char* filename,const char* string);

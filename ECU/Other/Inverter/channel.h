@@ -1,30 +1,27 @@
+#ifndef __CHANNEL_H__ 
+#define	__CHANNEL_H__
 /*****************************************************************************/
-/* File      : inverter.h                                                    */
+/*  File      : channel.h                                                    */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-06-05 * Shengfeng Dong  * Creation of the file                      */
+/*  2017-03-05 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
-#ifndef __INVERTER_H__
-#define __INVERTER_H__
-
-/*****************************************************************************/
-/*  Include Files                                                            */
-/*****************************************************************************/
-#include "variation.h"
-
-/*****************************************************************************/
-/*  Variable Declarations                                                    */
-/*****************************************************************************/
-extern ecu_info ecu;
-extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-int init_ecu(void);
-int init_inverter(inverter_info *inverter);
-#endif /*__INVERTER_H__*/
+int process_channel(void);
+int channel_need_change(void);
+int saveOldChannel(unsigned char oldChannel);
+int saveNewChannel(unsigned char newChannel);
+int saveChannel_change_flag(void);
+int getOldChannel(void);
+int getNewChannel(void);
+int saveECUChannel(int channel);
+void changeChannelOfInverters(int oldChannel, int newChannel);
+
+#endif /*__CHANNEL_H__*/

@@ -22,7 +22,6 @@
 #include "version.h"
 #include "threadlist.h"
 #include "debug.h"
-#include "file.h"
 #include "datetime.h"
 
 /*****************************************************************************/

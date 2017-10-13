@@ -49,6 +49,10 @@
 #define UART5_GPIO_RX        GPIO_Pin_2
 #define UART5_GPIO_2           GPIOD
 
+#if defined(RT_USING_UART4)
+int zigbeeReadFlag = 0;
+#endif
+
 /* STM32 uart driver */
 struct stm32_uart
 {
@@ -324,6 +328,46 @@ void DMA1_Channel5_IRQHandler(void) {
 #endif /* RT_USING_UART1 */
 
 
+#if defined(RT_USING_UART4)
+/* UART4 device driver structure */
+struct stm32_uart uart4 =
+{
+    UART4,
+    UART4_IRQn,
+    {
+        DMA2_Channel3,
+        DMA2_FLAG_GL3,
+        DMA2_Channel3_IRQn,
+        0,
+    },
+};
+struct rt_serial_device serial4;
+
+void UART4_IRQHandler(void)
+{
+    /* enter interrupt */
+    rt_interrupt_enter();
+
+	//新增  如果是zigbee串口uart4 则设置就收到数据标志
+	zigbeeReadFlag = 1;
+	//------------------------------------
+
+	uart_isr(&serial4);
+
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
+
+void DMA2_Channel3_IRQHandler(void) {
+    /* enter interrupt */
+    rt_interrupt_enter();
+
+    dma_rx_done_isr(&serial4);
+
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
+#endif /* RT_USING_UART4 */
 
 
 static void RCC_Configuration(void)
@@ -334,6 +378,13 @@ static void RCC_Configuration(void)
     /* Enable UART clock */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 #endif /* RT_USING_UART1 */
+
+#if defined(RT_USING_UART4)
+    /* Enable UART GPIO clocks */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO, ENABLE);
+    /* Enable UART clock */
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE);
+#endif /* RT_USING_UART4 */
 
 }
 
@@ -353,6 +404,18 @@ static void GPIO_Configuration(void)
     GPIO_InitStructure.GPIO_Pin = UART1_GPIO_TX;
     GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
 #endif /* RT_USING_UART1 */
+
+#if defined(RT_USING_UART4)
+    /* Configure USART Rx/tx PIN */
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_InitStructure.GPIO_Pin = UART4_GPIO_RX;
+    GPIO_Init(UART4_GPIO, &GPIO_InitStructure);
+
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Pin = UART4_GPIO_TX;
+    GPIO_Init(UART4_GPIO, &GPIO_InitStructure);
+#endif /* RT_USING_UART4 */
+
 
 }
 
@@ -431,5 +494,25 @@ void rt_hw_usart_init(void)
                           RT_DEVICE_FLAG_INT_TX |   RT_DEVICE_FLAG_DMA_RX,
                           uart);
 #endif /* RT_USING_UART1 */
+
+
+#if defined(RT_USING_UART4)
+    uart = &uart4;
+
+    config.baud_rate = BAUD_RATE_57600;
+
+    serial4.ops    = &stm32_uart_ops;
+    serial4.config = config;
+
+    NVIC_Configuration(uart);
+
+    /* register UART4 device */
+    rt_hw_serial_register(&serial4, "uart4",
+                          RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX |
+                          RT_DEVICE_FLAG_INT_TX |   RT_DEVICE_FLAG_DMA_RX,
+                          uart);
+#endif /* RT_USING_UART4 */
+
+
 
 }

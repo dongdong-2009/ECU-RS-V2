@@ -31,12 +31,10 @@
 #include "led.h"
 #include "timer.h"
 #include "string.h"
-#include "RFM300H.h"
 #include "variation.h"
 #include "event.h"
 #include "inverter.h"
 #include "watchdog.h"
-#include "file.h"
 #include "serverfile.h"
 #include "socket.h"
 
@@ -208,9 +206,6 @@ void rt_init_thread_entry(void* parameter)
 	RFM_init();
 	RFM_off();
 	rt_hw_led_init();
-	printf("CMT2300_init start\n");
-	CMT2300_init();
-	printf("CMT2300_init over\n");
 #ifdef USR_MODULE
 	uart5_init(57600);					//USR模块相应波特率 串口初始化
 #endif
@@ -219,13 +214,10 @@ void rt_init_thread_entry(void* parameter)
 	uart5_init(115200);					//RAK475相应波特率 串口初始化
 #endif 
 	TIM2_Int_Init(9999,7199);    //心跳包超时事件定时器初始化
-	rt_hw_watchdog_init();
+	//rt_hw_watchdog_init();
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
 	initUSRLock();
-	init_ecu();										//初始化ECU
-	init_inverter(inverterInfo);	//初始化逆变器
-	init_tmpdb(inverterInfo);
 	
 }
 
@@ -416,6 +408,14 @@ void restartThread(threadType type)
 			break;
 #endif
 
+#ifdef THREAD_PRIORITY_COMM
+		case TYPE_COMM:
+			rt_thread_detach(&comm_thread);
+		  /* init comm thread */
+		  result = rt_thread_init(&comm_thread,"comm",ECUComm_thread_entry,RT_NULL,(rt_uint8_t*)&comm_stack[0],sizeof(comm_stack),THREAD_PRIORITY_COMM,5);
+		  if (result == RT_EOK) rt_thread_startup(&comm_thread);
+			break;
+#endif
 
 		default:
 			break;

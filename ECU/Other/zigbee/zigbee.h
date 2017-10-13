@@ -1,15 +1,15 @@
+#ifndef __ZIGBEE_H__
+#define __ZIGBEE_H__
 /*****************************************************************************/
-/* File      : inverter.h                                                    */
+/*  File      : zigbee.h                                                     */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-06-05 * Shengfeng Dong  * Creation of the file                      */
+/*  2017-03-05 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
-#ifndef __INVERTER_H__
-#define __INVERTER_H__
 
 /*****************************************************************************/
 /*  Include Files                                                            */
@@ -17,14 +17,18 @@
 #include "variation.h"
 
 /*****************************************************************************/
-/*  Variable Declarations                                                    */
-/*****************************************************************************/
-extern ecu_info ecu;
-extern inverter_info inverterInfo[MAXINVERTERCOUNT];
-
-/*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-int init_ecu(void);
-int init_inverter(inverter_info *inverter);
-#endif /*__INVERTER_H__*/
+void clear_zbmodem(void);		//清空串口缓冲区的数据
+int openzigbee(void);
+void zigbee_reset(void);	//复位zigbee模块
+int zb_test_communication(void);		//zigbee测试通信有没有断开
+int zb_change_ecu_panid(void);
+int zb_off_report_id_and_bind(int short_addr);
+int zb_restore_ecu_panid_0xffff(int channel);
+int zb_change_inverter_channel_one(char *inverter_id, int channel);
+int zigbeeRecvMsg(char *data, int timeout_sec);
+int zb_query_heart_data(inverter_info *inverter);
+
+#endif /*__ZIGBEE_H__*/
+

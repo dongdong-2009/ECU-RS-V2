@@ -1,7 +1,5 @@
 #include "AppFunction.h"
 #include "event.h"
-#include "RFM300H.h"
-#include "file.h"
 #include "string.h"
 #include "usart5.h"
 #include "appcomm.h"
@@ -19,11 +17,34 @@
 #include <dfs_fs.h>
 #include <dfs_file.h>
 #include "rtc.h"
+#include "threadlist.h"
+#include "channel.h"
 
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
+
+int phone_add_inverter(int num,const char *uidstring)
+{
+	int i = 0;
+	char buff[25] = { '\0' };
+	char *allbuff = NULL;
+	allbuff = malloc(2048);
+	memset(allbuff,0x00,2048);
+	for(i = 0; i < num; i++)
+	{
+		memset(buff,'\0',25);
+		sprintf(buff,"%02x%02x%02x%02x%02x%02x,,,,,,\n",uidstring[0+i*6],uidstring[1+i*6],uidstring[2+i*6],uidstring[3+i*6],uidstring[4+i*6],uidstring[5+i*6]);
+		memcpy(&allbuff[0+19*i],buff,19);
+	}
+	
+	echo("/home/data/id",allbuff);
+	echo("/config/limiteid.con","1");
+	free(allbuff);
+	allbuff = NULL;
+	return 0;
+}
 
 int ResolveWifiPasswd(char *oldPasswd,int *oldLen,char *newPasswd,int *newLen,char *passwdstring)
 {
@@ -38,10 +59,10 @@ int ResolveWifiPasswd(char *oldPasswd,int *oldLen,char *newPasswd,int *newLen,ch
 //??0 ????IP  ??1 ????IP   ??-1????
 int ResolveWired(const char *string,IP_t *IPAddr,IP_t *MSKAddr,IP_t *GWAddr,IP_t *DNS1Addr,IP_t *DNS2Addr)
 {
-	if(string[1] == '0')	//??IP
+	if(string[1] == '0')	//动态IP
 	{
 		return 0;
-	}else if(string[1] == '1') //??IP
+	}else if(string[1] == '1') //静态IP
 	{
 		IPAddr->IP1 = string[2];
 		IPAddr->IP2 = string[3];
@@ -87,9 +108,9 @@ void App_GetBaseInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 			
 	
 	//获取基本信息
 	//获取信号强度
-	ecu.Signal_Level = ReadRssiValue(1);
+	ecu.Signal_Level = 0;
 	sprintf(sofewareVersion,"%s_%s_%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
-	APP_Response_BaseInfo(ID,ecu.ECUID12,VERSION_ECU_RS,ecu.Signal_Level,ecu.Signal_Channel,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo,ecu.validNum);
+	APP_Response_BaseInfo(ID,ecu.ECUID12,VERSION_ECU_RS,ecu.Signal_Level,ecu.channel,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo,ecu.validNum);
 }
 
 
@@ -122,8 +143,10 @@ void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		printf("COMMAND_SETNETWORK	 Mapping   %d\n",AddNum);
 		APP_Response_SetNetwork(ID,0x00);
 		//将数据写入EEPROM
-		add_inverter(inverterInfo,AddNum,(char *)&WIFI_RecvSocketAData[26]);	
-		init_inverter(inverterInfo);
+		phone_add_inverter(AddNum,(char *)&WIFI_RecvSocketAData[26]);	
+		get_id_from_file(inverterInfo);
+		//重启main线程
+		restartThread(TYPE_COMM);
 	}	else
 	{	//不匹配
 		APP_Response_SetNetwork(ID,0x01);
@@ -137,18 +160,18 @@ void App_SetChannel(unsigned char * ID,int Data_Len,const char *recvbuffer)
 	printf("WIFI_Recv_Event%d %s\n",4,WIFI_RecvSocketAData);
 	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
 	{	//匹配成功进行相应的操作
-		//获取新的信道
-		memcpy(ecu.Signal_Channel,&WIFI_RecvSocketAData[26],2);
-		Write_CHANNEL(ecu.Signal_Channel);		//写入信道
-		//获取信号强度
-		ecu.Signal_Level = ReadRssiValue(1);
-		APP_Response_SetChannel(ID,0x00,ecu.Signal_Channel,ecu.Signal_Level);
-		//将其转换为1个字节
-		ecu.Channel_char = (ecu.Signal_Channel[0]-'0')*10+(ecu.Signal_Channel[1]-'0');
-		//改变自己的信道
-		setChannel(ecu.Channel_char);
-		SEGGER_RTT_printf(0, "COMMAND_SETCHANNEL  Signal_Channel:%s Channel_char%d\n",ecu.Signal_Channel,ecu.Channel_char);
-			
+		unsigned char old_channel = 0x00;
+		unsigned char new_channel = 0x00;
+	
+		APP_Response_SetChannel(ID,0x00,ecu.channel,ecu.Signal_Level);
+		
+		old_channel = (WIFI_RecvSocketAData[26] - '0')*0x10 + (WIFI_RecvSocketAData[27] - '0');
+		new_channel = (WIFI_RecvSocketAData[28] - '0')*0x10 + (WIFI_RecvSocketAData[29] - '0');
+		saveOldChannel(old_channel);
+		saveNewChannel(new_channel);
+		saveChannel_change_flag();
+		//重启main线程
+		restartThread(TYPE_COMM);
 	}	else
 	{	//不匹配
 		APP_Response_SetChannel(ID,0x01,NULL,NULL);

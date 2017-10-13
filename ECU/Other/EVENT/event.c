@@ -13,8 +13,6 @@
 /*  Include Files                                                            */
 /*****************************************************************************/
 #include "event.h"
-#include "RFM300H.h"
-#include "file.h"
 #include "string.h"
 #include "usart5.h"
 #include "appcomm.h"
@@ -26,7 +24,8 @@
 #include "version.h"
 #include "debug.h"
 #include "AppFunction.h"
-
+#include "serverfile.h"
+#include "zigbee.h"
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
@@ -104,20 +103,9 @@ void process_WIFI(unsigned char * ID)
 //硬件测试   返回值是测试的错误码
 int HardwareTest(char testItem)
 {
-	char testWrite[10] = "YUNENG APS";
-	char testRead[10] = {'\0'};
-
 	switch(testItem)
 	{
 		case HARDTEST_TEST_ALL:
-			//测试EEPROM读写
-			Write_Test(testWrite,10);				//测试
-			Read_Test(testRead,10);
-			if(memcmp(testWrite,testRead,10))
-			{
-				printf("EEPROM abnormal\n");
-				return 1;
-			}
 			//测试WIFI模块
 			if(0 != WIFI_Test())
 			{
@@ -174,35 +162,18 @@ void process_WIFIEvent(void)
 void process_HeartBeatEvent(void)
 {
 	int ret = 0;
-	//发送心跳包
+	
 	if(	ecu.validNum >0	)
 	{
 		if(ecu.curSequence >= ecu.validNum)		//当轮训的序号大于最后一台时，更换到第0台
 		{
 			ecu.curSequence = 0;
 		}
-		
-		//先保存上一轮的心跳
 		pre_heart_rate = inverterInfo[ecu.curSequence].heart_rate;
-		ret = RFM300_Heart_Beat(ecu.ECUID6,&inverterInfo[ecu.curSequence]);
-	
-		if(ret == 0)	//发送心跳包失败
+		//发送心跳命令
+		ret = zb_query_heart_data(&inverterInfo[ecu.curSequence]);
+		if(ret == -1)	//发送心跳包失败
 		{
-			//查看绑定标志位，如果绑定未成功，尝试绑定。
-			if(inverterInfo[ecu.curSequence].status.bind_status != 1)
-			{
-				ret = RFM300_Bind_Uid(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,0,0,&ecu.ver);
-				
-				if(ret == 1)
-				{
-					if(Write_UID_Bind(0x01,(ecu.curSequence+1)) == 0)
-					{
-						inverterInfo[ecu.curSequence].status.bind_status = 1;
-						inverterInfo[ecu.curSequence].status.heart_Failed_times = 0;
-					}
-					
-				}
-			}
 			inverterInfo[ecu.curSequence].status.heart_Failed_times++;
 			if(inverterInfo[ecu.curSequence].status.heart_Failed_times >= 3)
 			{
@@ -217,17 +188,7 @@ void process_HeartBeatEvent(void)
 			//通信失败，失败次数++
 			comm_failed_Num  = 0;
 			inverterInfo[ecu.curSequence].status.heart_Failed_times = 0;
-			//心跳成功  判断当前系统信道和当前RSD2最后一次通信的信道是否不同   不同则更改之
-			if(ecu.Channel_char != inverterInfo[ecu.curSequence].channel)
-			{
-					if(Write_UID_Channel(ecu.Channel_char,(ecu.curSequence+1)) == 0)
-					{
-						SEGGER_RTT_printf(0, "change Channel %02x%02x%02x%02x%02x%02x  Channel_char:%d   inverterInfo[curSequence].channel:%d\n",inverterInfo[ecu.curSequence].uid[0],inverterInfo[ecu.curSequence].uid[1],inverterInfo[ecu.curSequence].uid[2],inverterInfo[ecu.curSequence].uid[3],inverterInfo[ecu.curSequence].uid[4],inverterInfo[ecu.curSequence].uid[5],ecu.Channel_char,inverterInfo[ecu.curSequence].channel);
-
-						inverterInfo[ecu.curSequence].channel = ecu.Channel_char;
-					}
-			}
-
+		
 			//如果当前一轮心跳小于上一轮心跳,表示重启
 			if(inverterInfo[ecu.curSequence].heart_rate < pre_heart_rate)
 			{
@@ -236,49 +197,6 @@ void process_HeartBeatEvent(void)
 					inverterInfo[ecu.curSequence].restartNum++;
 			}
 			
-		}
-
-		
-		//在绑定成功的情况下才能改信道
-		//if(inverterInfo[curSequence].bind_status == 1)
-		{
-			//查看是否需要改变信道
-			if(ecu.Channel_char != inverterInfo[ecu.curSequence].channel)
-			{
-				//先变更到RSD2的信道 
-				setChannel(inverterInfo[ecu.curSequence].channel);
-				
-				//发送更改信道报文
-				ret = RFM300_Bind_Uid(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,ecu.Channel_char,0,&ecu.ver);
-				if(ret == 1)	//设置信道成功
-				{
-					if(Write_UID_Channel(ecu.Channel_char,(ecu.curSequence+1)) == 0)
-					{
-						SEGGER_RTT_printf(0, "change Channel %02x%02x%02x%02x%02x%02x  Channel_char:%d   inverterInfo[curSequence].channel:%d\n",inverterInfo[ecu.curSequence].uid[0],inverterInfo[ecu.curSequence].uid[1],inverterInfo[ecu.curSequence].uid[2],inverterInfo[ecu.curSequence].uid[3],inverterInfo[ecu.curSequence].uid[4],inverterInfo[ecu.curSequence].uid[5],ecu.Channel_char,inverterInfo[ecu.curSequence].channel);
-						inverterInfo[ecu.curSequence].channel = ecu.Channel_char;
-					}
-				}
-				
-				//更改到系统信道
-				setChannel(ecu.Channel_char);
-			}	
-
-			//心跳成功 判断是否需要关闭或者打开心跳功能
-			if(inverterInfo[ecu.curSequence].status.function_status == 1)	//心跳功能打开
-			{
-				if(ecu.IO_Init_Status == '0')		//需要关闭心跳功能
-				{
-					printf("ID: %02x%02x%02x%02x%02x%02x   IO_Init_Status 0\n",inverterInfo[ecu.curSequence].uid[0],inverterInfo[ecu.curSequence].uid[1],inverterInfo[ecu.curSequence].uid[2],inverterInfo[ecu.curSequence].uid[3],inverterInfo[ecu.curSequence].uid[4],inverterInfo[ecu.curSequence].uid[5]);
-					RFM300_Status_Init(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,0x02,0x00,&inverterInfo[ecu.curSequence].status);
-				}
-			}else					//心跳功能关闭
-			{
-				if(ecu.IO_Init_Status == '1')		//需要打开心跳功能
-				{
-					printf("ID: %02x%02x%02x%02x%02x%02x   IO_Init_Status 1\n",inverterInfo[ecu.curSequence].uid[0],inverterInfo[ecu.curSequence].uid[1],inverterInfo[ecu.curSequence].uid[2],inverterInfo[ecu.curSequence].uid[3],inverterInfo[ecu.curSequence].uid[4],inverterInfo[ecu.curSequence].uid[5]);
-					RFM300_Status_Init(ecu.ECUID6,(char *)inverterInfo[ecu.curSequence].uid,0x01,0x00,&inverterInfo[ecu.curSequence].status);
-				}
-			}
 		}
 		
 		ecu.curSequence++;
@@ -295,9 +213,8 @@ void process_HeartBeatEvent(void)
 			comm_failed_Num = 0;
 			ecu.curSequence = 0;
 		}
-		
-				
 	}
+
 }
 
 //按键初始化密码事件处理
@@ -341,37 +258,26 @@ int process_WIFI_RST(void)
 #include <finsh.h>
 int setECUID(char *ECUID)
 {
-	char USART1_ECUID12[13] = {'\0'};
-	char USART1_ECUID6[7] = {'\0'};
-	char Channel[2] = "01";
 	char ret =0;
 	if(strlen(ECUID) != 12)
 	{
 		printf("ECU ID Length misMatching\n");
 		return -1;
 	}
-	memcpy(USART1_ECUID12,ECUID,12);
-	USART1_ECUID6[0] = ((USART1_ECUID12[0]-'0')<<4) + (USART1_ECUID12[1]-'0') ;
-	USART1_ECUID6[1] = ((USART1_ECUID12[2]-'0')<<4) + (USART1_ECUID12[3]-'0') ;
-	USART1_ECUID6[2] = ((USART1_ECUID12[3]-'0')<<4) + (USART1_ECUID12[5]-'0') ;
-	USART1_ECUID6[3] = ((USART1_ECUID12[4]-'0')<<4) + (USART1_ECUID12[7]-'0') ;
-	USART1_ECUID6[4] = ((USART1_ECUID12[5]-'0')<<4) + (USART1_ECUID12[9]-'0') ;
-	USART1_ECUID6[5] = ((USART1_ECUID12[10]-'0')<<4) + (USART1_ECUID12[11]-'0') ;
-	ret = Write_ECUID(USART1_ECUID6);													  		//ECU ID
+
+	ret = Write_ECUID(ECUID);													  		//ECU ID
 	//设置WIFI密码
 	if(ret != 0) 	
 	{
 		printf("ECU ID Write EEPROM Failed\n");
 		return -1;
 	}
-	Write_CHANNEL(Channel);
-	Write_rebootNum(0);
+	echo("/config/channel.con","0x10");
 	ecu.IO_Init_Status= '1';
 	Write_IO_INIT_STATU(&ecu.IO_Init_Status);
 	//设置WIFI密码
-	USART1_ECUID12[12] = '\0';
 	rt_hw_ms_delay(5000);
-	ret = WIFI_Factory(USART1_ECUID12);
+	ret = WIFI_Factory(ECUID);
 	//写入WIFI密码
 	Write_WIFI_PW("88888888",8);	//WIFI密码		
 	init_ecu();
@@ -409,32 +315,9 @@ int Test(void)
 }
 FINSH_FUNCTION_EXPORT(Test, eg:Test Hardware);
 
-int SetNetwork(char *OPT700_RS_ID)
-{
-	int AddNum = 1;
-	char OPT700_RS_ID_list[7] = {'\0'};
-	if(strlen(OPT700_RS_ID) != 12)
-	{
-		printf("OPT700-RS ID Length misMatching\n");
-		return -1;
-	}
-	//将数据写入EEPROM
-	OPT700_RS_ID_list[0] = (OPT700_RS_ID[0] - '0') * 0x10 + (OPT700_RS_ID[1] - '0');
-	OPT700_RS_ID_list[1] = (OPT700_RS_ID[2] - '0') * 0x10 + (OPT700_RS_ID[3] - '0');
-	OPT700_RS_ID_list[2] = (OPT700_RS_ID[4] - '0') * 0x10 + (OPT700_RS_ID[5] - '0');
-	OPT700_RS_ID_list[3] = (OPT700_RS_ID[6] - '0') * 0x10 + (OPT700_RS_ID[7] - '0');
-	OPT700_RS_ID_list[4] = (OPT700_RS_ID[8] - '0') * 0x10 + (OPT700_RS_ID[9] - '0');
-	OPT700_RS_ID_list[5] = (OPT700_RS_ID[10] - '0') * 0x10 + (OPT700_RS_ID[11] - '0');
-	add_inverter(inverterInfo,AddNum,(char *)&OPT700_RS_ID_list);
-	return 0;
-}
-FINSH_FUNCTION_EXPORT(SetNetwork, eg:Set Network);
-
 int FactoryStatus(void)
 {
-	char USART1_UID_NUM[2] = {0x00,0x00};
-	Write_UID_NUM(USART1_UID_NUM);
-	Write_rebootNum(0);
+	//删除所有的UID文件
 	init_inverter(inverterInfo);
 	return 0;
 }
@@ -461,7 +344,7 @@ void baseInfo(void)
 	printf("************************************************************\n");
 	printf("ECU ID : %s\n",ecu.ECUID12);
 	printf("ECU Version :%s\n",VERSION_ECU_RS);
-	printf("ECU Channel :%s\n",ecu.Signal_Channel);
+	printf("ECU Channel :%02x\n",ecu.channel);
 	printf("ECU RSSI :%d\n",ecu.Signal_Level);
 	printf("RSD Type :%d\n",type);
 	printf("ECU software Version : %s_%s_%s\n",ECU_VERSION,MAJORVERSION,MINORVERSION);

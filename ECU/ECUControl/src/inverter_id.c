@@ -17,7 +17,6 @@
 #include "remote_control_protocol.h"
 #include "debug.h"
 #include "rthw.h"
-#include "file.h"
 #include "threadlist.h"
 #include "rtthread.h"
 #include "version.h"
@@ -104,12 +103,8 @@ int delete_id(const char *msg, int num)
 /* clear inverter ID */
 int clear_id()
 {
-	
-	int num = 0;
-	unsigned char UID_NUM[2] = {'\0'};
-	UID_NUM[0] = num/256;
-	UID_NUM[1] = num%256;
-	Write_UID_NUM((char *)&UID_NUM);
+
+	//Write_UID_NUM((char *)&UID_NUM);
 	init_inverter(inverterInfo);
 	return 0;
 

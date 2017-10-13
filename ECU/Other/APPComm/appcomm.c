@@ -47,7 +47,7 @@ int Resolve_RecvData(char *RecvData,int* Data_Len,int* Command_Id)
 }
 
 //ECU-RS获取基本信息回应
-void APP_Response_BaseInfo(unsigned char *ID,char *ECU_NO,char *TYPE,char SIGNAL_LEVEL,char *SIGNAL_CHANNEL,int Length,char * Version,inverter_info *inverter,int validNum)
+void APP_Response_BaseInfo(unsigned char *ID,char *ECU_NO,char *TYPE,char SIGNAL_LEVEL,char SIGNAL_CHANNEL,int Length,char * Version,inverter_info *inverter,int validNum)
 {
 	int i = 0 , type = inverter[0].status.device_Type;
 	for(i=0; (i<MAXINVERTERCOUNT)&&(i < validNum); i++)
@@ -61,7 +61,7 @@ void APP_Response_BaseInfo(unsigned char *ID,char *ECU_NO,char *TYPE,char SIGNAL
 	
 	
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
-	sprintf(SendData,"APS11%04d01%s%03d%03d%s%1d%02d%sEND\n",(37+Length),ECU_NO,101,SIGNAL_LEVEL,SIGNAL_CHANNEL,type,Length,Version);
+	sprintf(SendData,"APS11%04d01%s%03d%03d%02x%1d%02d%sEND\n",(37+Length),ECU_NO,101,SIGNAL_LEVEL,SIGNAL_CHANNEL,type,Length,Version);
 	SEGGER_RTT_printf(0, "APP_Response_BaseInfo %s\n",SendData);
 	SendToSocketA(SendData ,(38+Length),ID);
 }
@@ -72,13 +72,11 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 	inverter_info *curinverter = inverter;
 	unsigned short inverter_length = 0;
 	unsigned int Energy;
-	unsigned char inverter_data[57] = {'\0'};
+	unsigned char inverter_data[58] = {'\0'};
 	int i = 0;
 	int length = 0;
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
 	
-	//SEGGER_RTT_printf(0, "SystemInfo %d %d  %d\n",mapflag,validNum,(MAXINVERTERCOUNT*INVERTERLENGTH + 16));
-
 	if(mapflag == 1)	//匹配失败，发送失败命令
 	{
 		sprintf(SendData,"APS1100130201\n");
@@ -94,11 +92,17 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 		length = 15;
 		for(i=0; (i<MAXINVERTERCOUNT)&&(i < validNum); i++)			
 		{
-			memset(inverter_data,0x00,57);
+			memset(inverter_data,0x00,58);
 
-			inverter_length = 56;
-			//拼接20字节数据包
-			memcpy(&inverter_data[0],curinverter->uid,6);
+			inverter_length = 57;
+			//拼接57字节数据包
+			inverter_data[0] = (curinverter->uid[0] - '0')*0x10 + (curinverter->uid[1] - '0');
+			inverter_data[1] = (curinverter->uid[2] - '0')*0x10 + (curinverter->uid[3] - '0');
+			inverter_data[2] = (curinverter->uid[4] - '0')*0x10 + (curinverter->uid[5] - '0');
+			inverter_data[3] = (curinverter->uid[6] - '0')*0x10 + (curinverter->uid[7] - '0');
+			inverter_data[4] = (curinverter->uid[8] - '0')*0x10 + (curinverter->uid[9] - '0');
+			inverter_data[5] = (curinverter->uid[10] - '0')*0x10 + (curinverter->uid[11] - '0');
+
 			inverter_data[6] = curinverter->status.device_Type;
 				
 			inverter_data[7] |=  curinverter->status.comm_failed3_status;
@@ -117,30 +121,46 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 			inverter_data[14] = curinverter->PV1%256;
 			inverter_data[15] = curinverter->PV2/256;
 			inverter_data[16] = curinverter->PV2%256;
-			inverter_data[17] = curinverter->PI;
-			inverter_data[18] = curinverter->Power1/256;
-			inverter_data[19] = curinverter->Power1%256;
-			inverter_data[20] = curinverter->Power2/256;
-			inverter_data[21] = curinverter->Power2%256;
-			inverter_data[22] = curinverter->PV_Output/256;
-			inverter_data[23] = curinverter->PV_Output%256;
-
-			inverter_data[24] = curinverter->RSSI/256;
+			inverter_data[17] = curinverter->PI/256;
+			inverter_data[18] = curinverter->PI%256;
+			inverter_data[19] = curinverter->PI2/256;
+			inverter_data[20] = curinverter->PI2%256;
 			
-			Energy = curinverter->EnergyPV1*10/36;
-			inverter_data[25] = (Energy/16777216)%256;
-			inverter_data[26] = (Energy/65536)%256;
-			inverter_data[27] = (Energy/256)%256;
-			inverter_data[28] = Energy%256;
+			inverter_data[21] = curinverter->Power1/256;
+			inverter_data[22] = curinverter->Power1%256;
+			inverter_data[23] = curinverter->Power2/256;
+			inverter_data[24] = curinverter->Power2%256;
 			
-			Energy = curinverter->EnergyPV2*10/36;
-			inverter_data[29] = (Energy/16777216)%256;
-			inverter_data[30] = (Energy/65536)%256;
-			inverter_data[31] = (Energy/256)%256;
-			inverter_data[32] = Energy%256;
+			inverter_data[25] = curinverter->PV_Output/256;
+			inverter_data[26] = curinverter->PV_Output%256;
+			inverter_data[27] = curinverter->PI_Output/256;
+			inverter_data[28] = curinverter->PI_Output%256;
+			inverter_data[29] = curinverter->Power_Output/256;
+			inverter_data[30] = curinverter->Power_Output%256;
 
-			inverter_data[33] = curinverter->Mos_CloseNum;
+			inverter_data[31] = curinverter->RSSI;
+			
+			Energy = curinverter->EnergyPV1/36;
+			inverter_data[32] = (Energy/16777216)%256;
+			inverter_data[33] = (Energy/65536)%256;
+			inverter_data[34] = (Energy/256)%256;
+			inverter_data[35] = Energy%256;
+			
+			Energy = curinverter->EnergyPV2/36;
+			inverter_data[36] = (Energy/16777216)%256;
+			inverter_data[37] = (Energy/65536)%256;
+			inverter_data[38] = (Energy/256)%256;
+			inverter_data[39] = Energy%256;
 
+			Energy = curinverter->EnergyPV_Output/36;
+			inverter_data[40] = (Energy/16777216)%256;
+			inverter_data[41] = (Energy/65536)%256;
+			inverter_data[42] = (Energy/256)%256;
+			inverter_data[43] = Energy%256;
+
+			inverter_data[44] = curinverter->Mos_CloseNum;
+			inverter_data[45] = curinverter->version/256;
+			inverter_data[46] = curinverter->version%256;
 			memcpy(&SendData[length],inverter_data,inverter_length);
 			length += inverter_length;
 			
@@ -191,7 +211,7 @@ void APP_Response_SetNetwork(unsigned char *ID,unsigned char result)
 }
 
 //ECU-RS设置信道回应
-void APP_Response_SetChannel(unsigned char *ID,unsigned char mapflag,char *SIGNAL_CHANNEL,char SIGNAL_LEVEL)
+void APP_Response_SetChannel(unsigned char *ID,unsigned char mapflag,char SIGNAL_CHANNEL,char SIGNAL_LEVEL)
 {
 	//char SendData[22] = {'\0'};
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
@@ -200,7 +220,7 @@ void APP_Response_SetChannel(unsigned char *ID,unsigned char mapflag,char *SIGNA
 		sprintf(SendData,"APS1100130401\n");
 		SendToSocketA(SendData ,14,ID);
 	}else{
-		sprintf(SendData,"APS1100210400%s%03dEND\n",SIGNAL_CHANNEL,SIGNAL_LEVEL);		
+		sprintf(SendData,"APS1100210400%02x%03dEND\n",SIGNAL_CHANNEL,SIGNAL_LEVEL);		
 		SendToSocketA(SendData ,22,ID);
 	}
 }

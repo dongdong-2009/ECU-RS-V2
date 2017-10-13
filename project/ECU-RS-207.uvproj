@@ -363,7 +363,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_CL, USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\components\CMSIS\Include;..\components\DeviceDrivers;..\components\finsh;..\components\net\lwip-1.4.1\src;..\components\net\lwip-1.4.1\src\arch\include;..\components\net\lwip-1.4.1\src\include;..\components\net\lwip-1.4.1\src\include\ipv4;..\components\net\lwip-1.4.1\src\netif;..\rtt\include;..\libcpu\arm\common;..\libcpu\arm\cortex-m3;..\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x;..\Libraries\STM32F10x_StdPeriph_Driver\inc;..\applications;..\drivers;..\components\net\ethernet;..\applications;..\components\armlibc;..\..\ECU-RS-V2;..\ECU\ECUDBG\inc;..\components\DeviceDrivers\CMT2300;..\components\DeviceDrivers\EEPROM;..\components\DeviceDrivers\KEY;..\components\DeviceDrivers\LED;..\components\DeviceDrivers\Net;..\components\DeviceDrivers\rtc;..\components\DeviceDrivers\SYSTEM\sys;..\components\DeviceDrivers\SYSTEM\usart;..\components\DeviceDrivers\TIMER;..\components\DeviceDrivers\watchdog;..\ECU\ECUComm\inc;..\ECU\ECUEvent\inc;..\ECU\Other\APPComm;..\ECU\Other\EVENT;..\ECU\Other\FILE;..\ECU\Other\Inverter;..\ECU\Other\RFM300H;..\ECU\Other;..\ECU\ECUServer\inc;..\components\dfs\include;..\components\dfs\filesystems\elmfat;..\ECU\Other\socket;..\ECU\Other\Serverfile;..\ECU\Other\dateTime;..\ECU\ECUControl\inc;..\ECU\ECUCollect\inc;..\ECU\ECUClient\inc;..\ECU\ECUUpdate\inc;..\components\FTP;..\Test\inc</IncludePath>
+              <IncludePath>..\components\CMSIS\Include;..\components\DeviceDrivers;..\components\finsh;..\components\net\lwip-1.4.1\src;..\components\net\lwip-1.4.1\src\arch\include;..\components\net\lwip-1.4.1\src\include;..\components\net\lwip-1.4.1\src\include\ipv4;..\components\net\lwip-1.4.1\src\netif;..\rtt\include;..\libcpu\arm\common;..\libcpu\arm\cortex-m3;..\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x;..\Libraries\STM32F10x_StdPeriph_Driver\inc;..\applications;..\drivers;..\components\net\ethernet;..\applications;..\components\armlibc;..\..\ECU-RS-V2;..\ECU\ECUDBG\inc;..\components\DeviceDrivers\EEPROM;..\components\DeviceDrivers\KEY;..\components\DeviceDrivers\LED;..\components\DeviceDrivers\Net;..\components\DeviceDrivers\rtc;..\components\DeviceDrivers\SYSTEM\sys;..\components\DeviceDrivers\SYSTEM\usart;..\components\DeviceDrivers\TIMER;..\components\DeviceDrivers\watchdog;..\ECU\ECUComm\inc;..\ECU\ECUEvent\inc;..\ECU\Other\APPComm;..\ECU\Other\EVENT;..\ECU\Other\Inverter;..\ECU\Other;..\ECU\ECUServer\inc;..\components\dfs\include;..\components\dfs\filesystems\elmfat;..\ECU\Other\socket;..\ECU\Other\Serverfile;..\ECU\Other\dateTime;..\ECU\ECUControl\inc;..\ECU\ECUCollect\inc;..\ECU\ECUClient\inc;..\ECU\ECUUpdate\inc;..\components\FTP;..\Test\inc;..\ECU\Other\zigbee</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -595,11 +595,6 @@
               <FileName>stm32_eth.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\net\ethernet\stm32_eth.c</FilePath>
-            </File>
-            <File>
-              <FileName>CMT2300.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\components\DeviceDrivers\CMT2300\CMT2300.c</FilePath>
             </File>
             <File>
               <FileName>Flash_24L512.c</FileName>
@@ -1057,19 +1052,9 @@
               <FilePath>..\ECU\Other\EVENT\event.c</FilePath>
             </File>
             <File>
-              <FileName>file.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\ECU\Other\FILE\file.c</FilePath>
-            </File>
-            <File>
               <FileName>inverter.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ECU\Other\Inverter\inverter.c</FilePath>
-            </File>
-            <File>
-              <FileName>RFM300H.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\ECU\Other\RFM300H\RFM300H.c</FilePath>
             </File>
             <File>
               <FileName>datetime.c</FileName>
@@ -1085,6 +1070,26 @@
               <FileName>socket.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ECU\Other\socket\socket.c</FilePath>
+            </File>
+            <File>
+              <FileName>zigbee.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\Other\zigbee\zigbee.c</FilePath>
+            </File>
+            <File>
+              <FileName>bind_inverters.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\Other\Inverter\bind_inverters.c</FilePath>
+            </File>
+            <File>
+              <FileName>channel.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\Other\Inverter\channel.c</FilePath>
+            </File>
+            <File>
+              <FileName>resolve.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\Other\zigbee\resolve.c</FilePath>
             </File>
           </Files>
         </Group>

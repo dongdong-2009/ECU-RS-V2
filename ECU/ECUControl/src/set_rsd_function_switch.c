@@ -3,13 +3,12 @@
 #include "remote_control_protocol.h"
 #include "debug.h"
 #include "rthw.h"
-#include "file.h"
 #include "threadlist.h"
 #include "rtthread.h"
 #include "version.h"
 #include "set_rsd_function_switch.h"
 #include "debug.h"
-
+#include "serverfile.h"
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /*****************************************************************************/

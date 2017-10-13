@@ -1,30 +1,22 @@
+#ifndef __BIND_INVERTERS_H__
+#define __BIND_INVERTERS_H__
 /*****************************************************************************/
-/* File      : inverter.h                                                    */
+/*  File      : bind_inverters.h                                             */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-06-05 * Shengfeng Dong  * Creation of the file                      */
+/*  2017-03-05 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
-#ifndef __INVERTER_H__
-#define __INVERTER_H__
-
-/*****************************************************************************/
-/*  Include Files                                                            */
-/*****************************************************************************/
-#include "variation.h"
-
-/*****************************************************************************/
-/*  Variable Declarations                                                    */
-/*****************************************************************************/
-extern ecu_info ecu;
-extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-int init_ecu(void);
-int init_inverter(inverter_info *inverter);
-#endif /*__INVERTER_H__*/
+void bind_inverters(void);
+void setPanidOfInverters(int num, char **ids);
+int getShortaddrOfInverters(int num, char **ids);
+int getShortaddrOfEachInverter(char *id);
+
+#endif /*__BIND_INVERTERS_H__*/

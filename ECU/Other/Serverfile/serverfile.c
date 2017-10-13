@@ -17,8 +17,6 @@
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 rt_mutex_t record_data_lock = RT_NULL;
-extern ecu_info ecu;
-extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 #define EPSILON 0.000000001
 int day_tab[2][12]={{31,28,31,30,31,30,31,31,30,31,30,31},{31,29,31,30,31,30,31,31,30,31,30,31}}; 
 
@@ -50,6 +48,88 @@ int fileRead(int fd,char* buf,int len)
 {
 	return read( fd, buf, len );
 }
+
+
+int Write_ECUID(char *ECUID)		//ECU ID  12字节
+{
+	char ecuid[13] = {'\0'};
+	FILE *fp = fopen("/config/ecuid.con","w");
+	memcpy(ecuid,ECUID,12);
+	ecuid[12] = '\0';
+	fputs(ecuid,fp);
+	fclose(fp);
+	return 0;
+}
+int Read_ECUID(char *ECUID)		//读取ECUID  12字节
+{
+	int fd;
+	fd = open("/config/ecuid.con", O_RDONLY, 0);
+	if (fd >= 0)
+	{
+		read(fd, ECUID, 13);
+		if('\n' == ECUID[strlen(ECUID)-1])
+			ECUID[strlen(ECUID)-1] = '\0';
+		close(fd);
+	}
+	return 0;
+}
+//将12位ECU ID转换为6位ECU ID
+void transformECUID(char * ECUID6,char *ECUID12)
+{
+	ECUID6[0] = (ECUID12[0]-'0')*0x10 + (ECUID12[1]-'0');
+	ECUID6[1] = (ECUID12[2]-'0')*0x10 + (ECUID12[3]-'0');
+	ECUID6[2] = (ECUID12[4]-'0')*0x10 + (ECUID12[5]-'0');
+	ECUID6[3] = (ECUID12[6]-'0')*0x10 + (ECUID12[7]-'0');
+	ECUID6[4] = (ECUID12[8]-'0')*0x10 + (ECUID12[9]-'0');
+	ECUID6[5] = (ECUID12[10]-'0')*0x10 + (ECUID12[11]-'0');
+}
+
+int Write_IO_INIT_STATU(char *IO_InitStatus)								//IO上电状态
+{
+	char IO_INITStatus[1] = {'\0'};
+	FILE *fp = fopen("/config/IO_Init.con","w");
+	memcpy(IO_INITStatus,IO_InitStatus,1);
+	fputs(IO_INITStatus,fp);
+	fclose(fp);
+	return 0;
+}
+int Read_IO_INIT_STATU(char *IO_InitStatus)
+{
+	int fd;
+	fd = open("/config/IO_Init.con", O_RDONLY, 0);
+	if (fd >= 0)
+	{
+		read(fd, IO_InitStatus, 1);
+		close(fd);
+	}
+	return 0;
+}
+int Write_WIFI_PW(char *WIFIPasswd,unsigned char Counter)//WIFI密码
+{
+	int fd;
+	fd = open("/config/passwd.con", O_WRONLY|O_CREAT, 0);
+	if (fd >= 0)
+	{
+		write(fd, WIFIPasswd, Counter);
+		close(fd);
+	}
+	return 0;
+}
+int Read_WIFI_PW(char *WIFIPasswd,unsigned char Counter)
+{
+	int fd;
+	fd = open("/config/passwd.con", O_RDONLY, 0);
+	if (fd >= 0)
+	{
+		read(fd, WIFIPasswd, Counter);
+		if('\n' == WIFIPasswd[strlen(WIFIPasswd)-1])
+			WIFIPasswd[strlen(WIFIPasswd)-1] = '\0';
+		close(fd);
+	}
+	return 0;
+}
+
+
 
 
 //将CSV文件中的一行转换为字符串
@@ -184,6 +264,8 @@ void echo(const char* filename,const char* string)
 
 int initPath(void)
 {
+	mkdir("/tmp",0x777);
+	rt_hw_ms_delay(20);
 	mkdir("/home",0x777);
 	rt_hw_ms_delay(20);
 	mkdir("/config",0x777);
@@ -485,6 +567,211 @@ int file_get_array(MyArray *array, int num, const char *filename)
 	}
 	fclose(fp);
 	return 0;
+}
+
+unsigned short get_panid(void)
+{
+	int fd;
+	unsigned short ret = 0;
+	char buff[17] = {'\0'};
+	fd = open("/config/ECUMAC.CON", O_RDONLY, 0);
+	if (fd >= 0)
+	{
+		memset(buff, '\0', sizeof(buff));
+		read(fd, buff, 17);
+		close(fd);
+		if((buff[12]>='0') && (buff[12]<='9'))
+			buff[12] -= 0x30;
+		if((buff[12]>='A') && (buff[12]<='F'))
+			buff[12] -= 0x37;
+		if((buff[13]>='0') && (buff[13]<='9'))
+			buff[13] -= 0x30;
+		if((buff[13]>='A') && (buff[13]<='F'))
+			buff[13] -= 0x37;
+		if((buff[15]>='0') && (buff[15]<='9'))
+			buff[15] -= 0x30;
+		if((buff[15]>='A') && (buff[15]<='F'))
+			buff[15] -= 0x37;
+		if((buff[16]>='0') && (buff[16]<='9'))
+			buff[16] -= 0x30;
+		if((buff[16]>='A') && (buff[16]<='F'))
+			buff[16] -= 0x37;
+		ret = ((buff[12]) * 16 + (buff[13])) * 256 + (buff[15]) * 16 + (buff[16]);
+	}
+	return ret;
+}
+
+char get_channel(void)
+{
+	int fd;
+	char ret = 0;
+	char buff[5] = {'\0'};
+	fd = open("/config/CHANNEL.CON", O_RDONLY, 0);
+	if (fd >= 0)
+	{
+		memset(buff, '\0', sizeof(buff));
+		read(fd, buff, 5);
+		close(fd);
+		if((buff[2]>='0') && (buff[2]<='9'))
+			buff[2] -= 0x30;
+		if((buff[2]>='A') && (buff[2]<='F'))
+			buff[2] -= 0x37;
+		if((buff[2]>='a') && (buff[2]<='f'))
+			buff[2] -= 0x57;
+		if((buff[3]>='0') && (buff[3]<='9'))
+			buff[3] -= 0x30;
+		if((buff[3]>='A') && (buff[3]<='F'))
+			buff[3] -= 0x37;
+		if((buff[3]>='a') && (buff[3]<='f'))
+			buff[3] -= 0x57;
+		ret = (buff[2]*16+buff[3]);
+	} else {
+		fd = open("/config/CHANNEL.CON", O_WRONLY | O_CREAT | O_TRUNC, 0);
+		if (fd >= 0) {
+			write(fd, "0x10", 5);
+			close(fd);
+			ret = 0x10;
+		}
+	}
+	return ret;
+}
+
+void updateID(void)
+{
+	FILE *fp;
+	int i;
+	inverter_info *curinverter = inverterInfo;
+	//更新/home/data/id数据
+	fp = fopen("/home/data/id","w");
+	if(fp)
+	{
+		curinverter = inverterInfo;
+		for(i=0; (i<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); i++, curinverter++)			//有效逆变器轮训
+		{
+			fprintf(fp,"%s,%d,%d,%d,%d,%d,%d\n",curinverter->uid,curinverter->shortaddr,curinverter->model,curinverter->version,curinverter->status.bindflag,curinverter->zigbee_version,curinverter->status.flag);
+			
+		}
+		fclose(fp);
+	}
+}
+
+int get_id_from_file(inverter_info *firstinverter)
+{
+
+	int i,j,sameflag;
+	inverter_info *inverter = firstinverter;
+	inverter_info *curinverter = firstinverter;
+	char list[20][32];
+	char data[200];
+	int num =0;
+	FILE *fp;
+	
+	fp = fopen("/home/data/id", "r");
+	if(fp)
+	{
+		while(NULL != fgets(data,200,fp))
+		{
+			print2msg(ECU_DBG_COMM,"ID",data);
+			memset(list,0,sizeof(list));
+			splitString(data,list);
+			//判断是否存在该逆变器
+			curinverter = firstinverter;
+			sameflag=0;
+			for(j=0; (j<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); j++)	
+			{
+				if(!memcmp(list[0],curinverter->uid,12))
+					sameflag = 1;
+				curinverter++;
+			}
+			if(sameflag == 1)
+			{
+				continue;
+			}
+			
+			strcpy(inverter->uid, list[0]);
+			
+			if(0==strlen(list[1]))
+			{
+				inverter->shortaddr = 0;		//未获取到短地址的逆变器赋值为0.ZK
+			}
+			else
+			{
+				inverter->shortaddr = atoi(list[1]);
+			}
+			if(0==strlen(list[2]))
+			{
+				inverter->model = 0;		//未获得机型码的逆变器赋值为0.ZK
+			}
+			else
+			{
+				inverter->model = atoi(list[2]);
+			}
+			
+			if(0==strlen(list[3]))
+			{
+				inverter->version = 0;		//软件版本，没有标志为0
+			}
+			else
+			{
+				inverter->version = atoi(list[3]);
+			}
+			
+			if(0==strlen(list[4]))
+			{
+				inverter->status.bindflag = 0;		//未绑定的逆变器把标志位赋值为0.ZK
+			}
+			else
+			{
+				inverter->status.bindflag = atoi(list[4]);
+			}
+
+			if(0==strlen(list[5]))
+			{
+				inverter->zigbee_version = 0;		//没有获取到zigbee版本号的逆变器赋值为0.ZK
+			}
+			else
+			{
+				inverter->zigbee_version = atoi(list[5]);
+			}
+			if(0==strlen(list[6]))
+			{
+				inverter->status.flag = 0;		
+			}
+			else
+			{
+				inverter->status.flag = atoi(list[6]);
+			}
+			
+			inverter++;
+			num++;
+			if(num >= 100)
+			{
+				break;
+			}
+		}
+		fclose(fp);
+	}
+
+
+	inverter = firstinverter;
+	printmsg(ECU_DBG_COMM,"--------------");
+	for(i=1; i<=num; i++, inverter++)
+		printdecmsg(ECU_DBG_COMM,inverter->uid, inverter->shortaddr);
+	printmsg(ECU_DBG_COMM,"--------------");
+	printdecmsg(ECU_DBG_COMM,"total", num);
+
+
+	inverter = firstinverter;
+	printmsg(ECU_DBG_COMM,"--------------");
+	for(i=1; i<=num; i++,inverter++)
+	{
+		if(inverter->shortaddr == 0)
+		{
+			printmsg(ECU_DBG_COMM,inverter->uid);
+		}
+	}
+	
+	return num;
 }
 
 
@@ -2619,4 +2906,6 @@ int update_alarm_send_flag(char *send_date_time)
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 FINSH_FUNCTION_EXPORT(initsystem, eg:initsystem("80:97:1B:00:72:1C"));
+FINSH_FUNCTION_EXPORT(echo, eg:echo);
+
 #endif

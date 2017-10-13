@@ -9,12 +9,10 @@
 #include "led.h"
 #include "timer.h"
 #include "string.h"
-#include "RFM300H.h"
 #include "variation.h"
 #include "event.h"
 #include "inverter.h"
 #include "watchdog.h"
-#include "file.h"
 #include "arch/sys_arch.h"
 #include "serverfile.h"
 #include <lwip/netdb.h>

@@ -26,7 +26,6 @@
 #include <string.h>
 #include <dfs_posix.h> 
 #include <rtthread.h>
-#include "file.h"
 #include "datetime.h"
 #include "debug.h"
 #include "lan8720rst.h"

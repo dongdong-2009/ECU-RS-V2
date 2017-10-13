@@ -13,7 +13,6 @@
 /*  Include Files                                                            */
 /*****************************************************************************/
 #include "flash_if.h"
-#include "file.h"
 #include <unistd.h>
 #include "rtthread.h"
 #include "debug.h"
