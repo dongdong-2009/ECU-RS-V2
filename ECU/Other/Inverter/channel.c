@@ -38,11 +38,10 @@ int process_channel()
 	int oldChannel, newChannel;
 	
 	if (channel_need_change()) {
-		printf("11111111111\n");
 		//获取变更前后的信道
 		oldChannel = getOldChannel();
 		newChannel = getNewChannel();
-
+		printf("%02x %02x\n",oldChannel,newChannel);
 		//修改信道
 		changeChannelOfInverters(oldChannel, newChannel);
 
@@ -84,10 +83,10 @@ int saveOldChannel(unsigned char oldChannel)
 {
 	FILE *fp;
 	char buffer[3] = {'\0'};
-	sprintf(buffer,"%d",oldChannel);
-	printf("oldChannel:%d\n",oldChannel);
+	
 	fp = fopen("/tmp/old_chan.con", "w");
 	if (fp) {
+		sprintf(buffer,"%d",oldChannel);
 		fputs(buffer, fp);
 		fclose(fp);
 	}
@@ -97,11 +96,10 @@ int saveNewChannel(unsigned char newChannel)
 {
 	FILE *fp;
 	char buffer[3] = {'\0'};
-	sprintf(buffer,"%d",newChannel);
-	printf("newChannel:%d\n",newChannel);
 
 	fp = fopen("/tmp/new_chan.con", "w");
 	if (fp) {
+		sprintf(buffer,"%d",newChannel);
 		fputs(buffer, fp);
 		fclose(fp);
 	}
@@ -118,6 +116,7 @@ int getOldChannel()
 
 	fp = fopen("/tmp/old_chan.con", "r");
 	if (fp) {
+		printf("getOldChannel:%s\n",buffer);
 		fgets(buffer, 4, fp);
 		fclose(fp);
 		return atoi(buffer);
@@ -131,6 +130,7 @@ int getNewChannel()
 
 	fp = fopen("/tmp/new_chan.con", "r");
 	if (fp) {
+		printf("getNewChannel:%s\n",buffer);
 		fgets(buffer, 4, fp);
 		fclose(fp);
 		return atoi(buffer);

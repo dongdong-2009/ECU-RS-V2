@@ -213,8 +213,8 @@ void rt_init_thread_entry(void* parameter)
 #ifdef RAK475_MODULE	
 	uart5_init(115200);					//RAK475相应波特率 串口初始化
 #endif 
-	TIM2_Int_Init(9999,7199);    //心跳包超时事件定时器初始化
-	//rt_hw_watchdog_init();
+	TIM2_Int_Init(19999,7199);    //心跳包超时事件定时器初始化
+	
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
 	initUSRLock();
@@ -241,9 +241,10 @@ static void led_thread_entry(void* parameter)
 		rt_uint8_t major,minor;
 		/* Initialize led */
     rt_hw_led_init();
-
+	rt_hw_watchdog_init();
 		while (1)
     {
+    	kickwatchdog();
         /* led1 on */
         count++;
         rt_hw_led_on();

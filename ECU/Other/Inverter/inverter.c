@@ -124,6 +124,9 @@ int init_inverter(inverter_info *inverter)
 			fclose(fp);
 		}
 	}
+
+	//判断是否需要改变RSD功能
+	
 	return 0;
 }
 

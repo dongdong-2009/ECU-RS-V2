@@ -24,6 +24,25 @@
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
+int switchChannel(unsigned char *buff)
+{
+	int ret=0x10;
+	if((buff[0]>='0') && (buff[0]<='9'))
+			buff[0] -= 0x30;
+	if((buff[0]>='A') && (buff[0]<='F'))
+			buff[0] -= 0x37;
+	if((buff[0]>='a') && (buff[0]<='f'))
+			buff[0] -= 0x57;
+	if((buff[1]>='0') && (buff[1]<='9'))
+			buff[1] -= 0x30;
+	if((buff[1]>='A') && (buff[1]<='F'))
+			buff[1] -= 0x37;
+	if((buff[1]>='a') && (buff[1]<='f'))
+			buff[1] -= 0x57;
+	ret = (buff[0]*16+buff[1]);
+	return ret;
+}
+
 
 int phone_add_inverter(int num,const char *uidstring)
 {
@@ -106,9 +125,6 @@ void App_GetBaseInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 			
 		set_time(cur_time);
 	}
 	
-	//获取基本信息
-	//获取信号强度
-	ecu.Signal_Level = 0;
 	sprintf(sofewareVersion,"%s_%s_%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
 	APP_Response_BaseInfo(ID,ecu.ECUID12,VERSION_ECU_RS,ecu.Signal_Level,ecu.channel,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo,ecu.validNum);
 }
@@ -164,9 +180,9 @@ void App_SetChannel(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		unsigned char new_channel = 0x00;
 	
 		APP_Response_SetChannel(ID,0x00,ecu.channel,ecu.Signal_Level);
-		
-		old_channel = (WIFI_RecvSocketAData[26] - '0')*0x10 + (WIFI_RecvSocketAData[27] - '0');
-		new_channel = (WIFI_RecvSocketAData[28] - '0')*0x10 + (WIFI_RecvSocketAData[29] - '0');
+		old_channel = switchChannel(&WIFI_RecvSocketAData[26]);
+		new_channel = switchChannel(&WIFI_RecvSocketAData[28]);	
+
 		saveOldChannel(old_channel);
 		saveNewChannel(new_channel);
 		saveChannel_change_flag();

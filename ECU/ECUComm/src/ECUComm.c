@@ -40,7 +40,7 @@ void ECUComm_thread_entry(void* parameter)
 		{
 			//SEGGER_RTT_printf(0,"COMM_Timeout_Event start\n");
 			process_HeartBeatEvent();			
-			kickwatchdog();
+			
 			COMM_Timeout_Event = 0;
 			//SEGGER_RTT_printf(0,"COMM_Timeout_Event end\n");
 		}

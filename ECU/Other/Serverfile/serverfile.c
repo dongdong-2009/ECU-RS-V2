@@ -180,9 +180,9 @@ void splitSpace(char *data,char *sourcePath,char *destPath)
 void init_tmpdb(inverter_info *firstinverter)
 {
 	int j;
-	char list[4][32];
+	char list[5][32];
 	char data[200];
-	unsigned char UID6[7] = {'\0'};
+	unsigned char UID12[13] = {'\0'};
 	FILE *fp;
 	inverter_info *curinverter = firstinverter;
 	fp = fopen("/home/data/collect.con", "r");
@@ -195,23 +195,19 @@ void init_tmpdb(inverter_info *firstinverter)
 			splitString(data,list);
 			//判断是否存在该逆变器
 			//将12位的RSD ID转换为6位的BCD编码ID
-			UID6[0] = (list[0][0]-'0')*0x10 + (list[0][1]-'0');
-			UID6[1] = (list[0][2]-'0')*0x10 + (list[0][3]-'0');
-			UID6[2] = (list[0][4]-'0')*0x10 + (list[0][5]-'0');
-			UID6[3] = (list[0][6]-'0')*0x10 + (list[0][7]-'0');
-			UID6[4] = (list[0][8]-'0')*0x10 + (list[0][9]-'0');
-			UID6[5] = (list[0][10]-'0')*0x10 + (list[0][11]-'0');
-			UID6[6] = '\0';
+			memcpy(UID12,list[0],12);
+			UID12[12] = '\0';
 			curinverter = firstinverter;
 			for(j=0; (j<ecu.validNum); j++)	
 			{
 
-				if(!memcmp(curinverter->uid,UID6,6))
+				if(!memcmp(curinverter->uid,UID12,12))
 				{
 					memcpy(curinverter->LastCollectTime,list[1],14);
 					curinverter->LastCollectTime[14] = '\0';
 					curinverter->Last_PV1_Energy = atoi(list[2]);
 					curinverter->Last_PV2_Energy = atoi(list[3]);
+					curinverter->Last_PV_Output_Energy = atoi(list[4]);
 					printf("UID %02x%02x%02x%02x%02x%02x ,LastCollectTime: %s ,Last_PV1_Energy: %d ,Last_PV2_Energy: %d \n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
 					break;
 				}
@@ -1635,7 +1631,7 @@ void save_last_collect_info(void)
 	{
 		if(curinverter->status.comm_status == 1)
 		{
-			sprintf(str,"%02x%02x%02x%02x%02x%02x,%s,%d,%d\n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
+			sprintf(str,"%02x%02x%02x%02x%02x%02x,%s,%d,%d,%d\n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy,curinverter->Last_PV_Output_Energy);
 			fileWrite(fd,str,strlen(str));
 		}
 		curinverter++;
@@ -2470,19 +2466,8 @@ void create_alarm_record(unsigned short last_PV_output,unsigned char last_functi
 		memcpy(&alarm_data[48],"END",3);
 		
 		length = 51;
-		
-		alarm_data[length++] = (curinverter->uid[0]/16) + '0';
-		alarm_data[length++] = (curinverter->uid[0]%16) + '0';
-		alarm_data[length++] = (curinverter->uid[1]/16) + '0';
-		alarm_data[length++] = (curinverter->uid[1]%16) + '0';
-		alarm_data[length++] = (curinverter->uid[2]/16) + '0';
-		alarm_data[length++] = (curinverter->uid[2]%16) + '0';
-		alarm_data[length++] = (curinverter->uid[3]/16) + '0';
-		alarm_data[length++] = (curinverter->uid[3]%16) + '0';
-		alarm_data[length++] = (curinverter->uid[4]/16) + '0';
-		alarm_data[length++] = (curinverter->uid[4]%16) + '0';
-		alarm_data[length++] = (curinverter->uid[5]/16) + '0';
-		alarm_data[length++] = (curinverter->uid[5]%16) + '0';
+		memcpy(&alarm_data[length],curinverter->uid,12);
+		length += 12;
 		alarm_data[length++] = mos_status + '0';
 		alarm_data[length++] = curinverter->status.function_status + '0';
 		alarm_data[length++] = curinverter->status.pv1_low_voltage_pritection+ '0';

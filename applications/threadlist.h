@@ -84,24 +84,24 @@ typedef enum THREADTYPE {
 //LAN8720A Monitor thread priority
 #define THREAD_PRIORITY_LAN8720_RST				11
 //LED thread priority
-#define THREAD_PRIORITY_LED               12
+#define THREAD_PRIORITY_LED               11
 //Update thread priority
-//#define THREAD_PRIORITY_UPDATE						16
+#define THREAD_PRIORITY_UPDATE						13
 //LED thread priority
-#define THREAD_PRIORITY_EVENT            	13			//其他相关事件线程
+#define THREAD_PRIORITY_EVENT            	12			//其他相关事件线程
 //LED thread priority
-#define THREAD_PRIORITY_COMM              16			//OPT700-RS通信线程
+#define THREAD_PRIORITY_COMM              14			//OPT700-RS通信线程
 //Data Collection thread priority
-//#define THREAD_PRIORITY_DATACOLLECT       17			//OPT700-RS相关数据采集
+#define THREAD_PRIORITY_DATACOLLECT       18			//OPT700-RS相关数据采集
 //Client thread priority
-//#define THREAD_PRIORITY_CLIENT       			19			//OPT700-RS数据上报
+#define THREAD_PRIORITY_CLIENT       			20			//OPT700-RS数据上报
 //Control Client thread priority
-//#define THREAD_PRIORITY_CONTROL_CLIENT  	18			//OPT700-RS远程控制
+#define THREAD_PRIORITY_CONTROL_CLIENT  	19			//OPT700-RS远程控制
 
 
 //thread start time
 #define START_TIME_UPDATE									15
-#define START_TIME_COMM								4	
+#define START_TIME_COMM								2	
 #define START_TIME_COLLECT								120			
 #define START_TIME_CONTROL_CLIENT					20 	//150
 #define START_TIME_CLIENT									30			//180

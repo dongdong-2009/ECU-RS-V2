@@ -302,7 +302,7 @@ void bind_inverters()
 		ecu.panid=temppanid;
 		zb_change_ecu_panid();
 	}
-	rt_hw_s_delay(1);
+	rt_hw_s_delay(10);
 	
 	updateID();
 

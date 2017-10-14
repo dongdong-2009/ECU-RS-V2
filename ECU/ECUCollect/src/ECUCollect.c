@@ -61,7 +61,6 @@ void Collect_Client_Record(void)
 		rt_enter_critical();
 		for(i = 0;i< ecu.validNum; i++)
 		{
-			char UID[13] = {'\0'};
 			//采集每一轮优化器的数据
 			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传   只有最新一轮通讯打野上一次采集，才会进入
 			if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
@@ -72,33 +71,31 @@ void Collect_Client_Record(void)
 
 				//内部数据有更新
 				//ID	12字节
-				UID[0] = (curinverter->uid[0]/16) + '0';
-				UID[1] = (curinverter->uid[0]%16) + '0';
-				UID[2] = (curinverter->uid[1]/16) + '0';
-				UID[3] = (curinverter->uid[1]%16) + '0';
-				UID[4] = (curinverter->uid[2]/16) + '0';
-				UID[5] = (curinverter->uid[2]%16) + '0';
-				UID[6] = (curinverter->uid[3]/16) + '0';
-				UID[7] = (curinverter->uid[3]%16) + '0';
-				UID[8] = (curinverter->uid[4]/16) + '0';
-				UID[9] = (curinverter->uid[4]%16) + '0';
-				UID[10] = (curinverter->uid[5]/16) + '0';
-				UID[11] = (curinverter->uid[5]%16) + '0';
-				UID[12] = '\0';
-				memcpy(&client_Data[length],UID,12);
+				memcpy(&client_Data[length],curinverter->uid,12);
 				length+=12;
 				//输出电压 6字节
 				sprintf(&client_Data[length],"%06d",curinverter->PV_Output*100);
 				length += 6;
 				//输出电流 6字节
-				memcpy(&client_Data[length],"000000",6);
+				sprintf(&client_Data[length],"%06d",curinverter->PI_Output*100);
 				length += 6;
 				//输出功率 6字节
-				memcpy(&client_Data[length],"000000",6);
+				sprintf(&client_Data[length],"%06d",curinverter->Power_Output*100);
 				length += 6;
-				//输出功率 10字节
-				memcpy(&client_Data[length],"0000000000",10);
-				length += 10;
+				//输出电量 10字节
+				if(curinverter->Last_PV_Output_Energy > curinverter->PV_Output_Energy)
+				{
+					curinverter->EnergyPV_Output= curinverter->PV_Output_Energy;
+					sprintf(&client_Data[length],"%010d",(curinverter->PV_Output_Energy/36));
+					length += 10;
+				}else
+				{
+					
+					curinverter->EnergyPV_Output= (curinverter->PV_Output_Energy - curinverter->Last_PV_Output_Energy);
+					//pv1输入电量(两轮计算差值)
+					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV_Output/36));
+					length += 10;	
+				}			
 				//温度 3字节
 				memcpy(&client_Data[length],"100",3);
 				length += 3;
@@ -114,10 +111,10 @@ void Collect_Client_Record(void)
 				if(curinverter->Last_PV1_Energy > curinverter->PV1_Energy)
 				{
 					curinverter->AveragePower1 = curinverter->Power1;
-					sprintf(&client_Data[length],"%06d",(curinverter->Power1*1000));
+					sprintf(&client_Data[length],"%06d",(curinverter->Power1*100));
 					length += 6;
 					curinverter->EnergyPV1 = curinverter->PV1_Energy;
-					sprintf(&client_Data[length],"%010d",(curinverter->PV1_Energy*10/36));
+					sprintf(&client_Data[length],"%010d",(curinverter->PV1_Energy/36));
 					length += 10;
 				}else
 				{
@@ -126,12 +123,12 @@ void Collect_Client_Record(void)
 					Power1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
 					curinverter->AveragePower1 = Power1;
 					//pv1输入功率(计算得到平均功率)
-					sprintf(&client_Data[length],"%06d",((unsigned short)curinverter->AveragePower1*1000));
+					sprintf(&client_Data[length],"%06d",((unsigned short)curinverter->AveragePower1*100));
 					length += 6;
 					
 					curinverter->EnergyPV1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy);
 					//pv1输入电量(两轮计算差值)
-					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV1*10/36));
+					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV1/36));
 					length += 10;	
 				}
 										
@@ -141,16 +138,16 @@ void Collect_Client_Record(void)
 				sprintf(&client_Data[length],"%06d",curinverter->PV2*100);
 				length += 6;
 				// pv2输入电流 6字节
-				sprintf(&client_Data[length],"%06d",curinverter->PI*100);
+				sprintf(&client_Data[length],"%06d",curinverter->PI2*100);
 				length += 6;
 				//如果当前一轮电量小于上一轮的电量  我们默认为重启过了，电量直接获取，功率为当时的瞬时功率
 				if(curinverter->Last_PV2_Energy > curinverter->PV2_Energy)
 				{
 					curinverter->AveragePower2 = curinverter->Power2;
-					sprintf(&client_Data[length],"%06d",(curinverter->Power2*1000));
+					sprintf(&client_Data[length],"%06d",(curinverter->Power2*100));
 					length += 6;
 					curinverter->EnergyPV2 = curinverter->PV2_Energy;
-					sprintf(&client_Data[length],"%010d",(curinverter->PV2_Energy*10/36));
+					sprintf(&client_Data[length],"%010d",(curinverter->PV2_Energy/36));
 					length += 10;
 				}else
 				{
@@ -159,12 +156,12 @@ void Collect_Client_Record(void)
 					Power2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
 					curinverter->AveragePower2 = Power2;
 					//pv2输入功率(计算得到平均功率)
-					sprintf(&client_Data[length],"%06d",((unsigned short)curinverter->AveragePower2*1000));
+					sprintf(&client_Data[length],"%06d",((unsigned short)curinverter->AveragePower2*100));
 					length += 6;
 					
 					curinverter->EnergyPV2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy);
 					//pv2输入电量(两轮计算差值)
-					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV2*10/36));
+					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV2/36));
 					length += 10;
 				}
 					
@@ -191,7 +188,8 @@ void Collect_Client_Record(void)
 				memcpy(curinverter->LastCollectTime,curinverter->LastCommTime,15);
 				curinverter->LastCollectTime[14] = '\0';
 				curinverter->Last_PV1_Energy = curinverter->PV1_Energy;
-				curinverter->Last_PV2_Energy = curinverter->PV2_Energy;			
+				curinverter->Last_PV2_Energy = curinverter->PV2_Energy;
+				curinverter->Last_PV_Output_Energy = curinverter->PV_Output_Energy;	
 			}
 			else
 			{
@@ -306,18 +304,8 @@ void Collect_Control_Record(void)
 
 				//内部数据有更新
 				//ID	12字节
-				control_Data[length++] = (curinverter->uid[0]/16) + '0';
-				control_Data[length++] = (curinverter->uid[0]%16) + '0';
-				control_Data[length++] = (curinverter->uid[1]/16) + '0';
-				control_Data[length++] = (curinverter->uid[1]%16) + '0';
-				control_Data[length++] = (curinverter->uid[2]/16) + '0';
-				control_Data[length++] = (curinverter->uid[2]%16) + '0';
-				control_Data[length++] = (curinverter->uid[3]/16) + '0';
-				control_Data[length++] = (curinverter->uid[3]%16) + '0';
-				control_Data[length++] = (curinverter->uid[4]/16) + '0';
-				control_Data[length++] = (curinverter->uid[4]%16) + '0';
-				control_Data[length++] = (curinverter->uid[5]/16) + '0';
-				control_Data[length++] = (curinverter->uid[5]%16) + '0';
+				memcpy(&control_Data[length],curinverter->uid,12);
+				length += 12;
 				sprintf(&control_Data[length],"%05d",curinverter->heart_rate);
 				length += 5;
 				sprintf(&control_Data[length],"%05d",curinverter->off_times);
