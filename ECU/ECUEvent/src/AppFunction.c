@@ -19,7 +19,7 @@
 #include "rtc.h"
 #include "threadlist.h"
 #include "channel.h"
-
+#include "rsdFunction.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -236,12 +236,13 @@ void App_SetIOInitStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
 	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
 	{//匹配成功进行相应的操作
 		//获取IO初始状态
-		ecu.IO_Init_Status = WIFI_RecvSocketAData[23];
 		APP_Response_IOInitStatus(ID,0x00);
-		//保存新IO初始化状态到Flash
+		
 		//0：低电平（关闭心跳功能）1：高电平（打开心跳功能）
-		Write_IO_INIT_STATU(&ecu.IO_Init_Status); 
-	
+		saveChangeFunctionStatus(WIFI_RecvSocketAData[23]);
+		save_rsdFunction_change_flag();
+		//重启main线程
+		restartThread(TYPE_COMM);
 	}else
 	{
 		APP_Response_IOInitStatus(ID,0x01);

@@ -1091,6 +1091,11 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\Other\zigbee\resolve.c</FilePath>
             </File>
+            <File>
+              <FileName>rsdFunction.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\Other\Inverter\rsdFunction.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

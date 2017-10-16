@@ -29,6 +29,8 @@ int zb_restore_ecu_panid_0xffff(int channel);
 int zb_change_inverter_channel_one(char *inverter_id, int channel);
 int zigbeeRecvMsg(char *data, int timeout_sec);
 int zb_query_heart_data(inverter_info *inverter);
+int zb_set_heartSwitch_boardcast(unsigned char functionStatus);
+int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStatus);
 
 #endif /*__ZIGBEE_H__*/
 

@@ -9,6 +9,8 @@
 #include "set_rsd_function_switch.h"
 #include "debug.h"
 #include "serverfile.h"
+#include "rsdFunction.h"
+
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /*****************************************************************************/
@@ -42,14 +44,23 @@ int set_rsd_function_switch(const char *recvbuffer, char *sendbuffer)
 		case 0:
 			//RSD功能关闭
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Write_IO_INIT_STATU(0)");
-			Write_IO_INIT_STATU("0");
-			ecu.IO_Init_Status = '0';
+			
+			saveChangeFunctionStatus('0');
+			save_rsdFunction_change_flag();
+			//重启main线程
+			restartThread(TYPE_COMM);
+
 			break;
 		case 1:
 			//RSD功能打开
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Write_IO_INIT_STATU(1)");
-			Write_IO_INIT_STATU("1");
-			ecu.IO_Init_Status = '1';
+			
+			saveChangeFunctionStatus('1');
+			save_rsdFunction_change_flag();
+			//重启main线程
+			restartThread(TYPE_COMM);
+			
+
 			break;
 		default:
 			ack_flag = FORMAT_ERROR; //格式错误

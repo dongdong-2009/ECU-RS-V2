@@ -424,6 +424,39 @@ int zb_send_cmd(inverter_info *inverter, char *buff, int length)		//zigbee包头
 		return -1;
 }
 
+int zb_broadcast_cmd(char *buff, int length)		//zigbee广播包头
+{
+	unsigned char sendbuff[512] = {'\0'};
+	int i;
+	int check=0;
+	sendbuff[0]  = 0xAA;
+	sendbuff[1]  = 0xAA;
+	sendbuff[2]  = 0xAA;
+	sendbuff[3]  = 0xAA;
+	sendbuff[4]  = 0x55;
+	sendbuff[5]  = 0x00;
+	sendbuff[6]  = 0x00;
+	sendbuff[7]  = 0x00;
+	sendbuff[8]  = 0x00;
+	sendbuff[9]  = 0x00;
+	sendbuff[10] = 0x00;
+	sendbuff[11] = 0x00;
+	for(i=4;i<12;i++)
+		check=check+sendbuff[i];
+	sendbuff[12] = check/256;
+	sendbuff[13] = check%256;
+	sendbuff[14] = length;
+
+	for(i=0; i<length; i++)
+	{
+		sendbuff[15+i] = buff[i];
+	}
+
+	ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL,0, sendbuff, length+15);
+
+	return 1;
+}
+
 int zb_get_reply(char *data,inverter_info *inverter)			//读取逆变器的返回帧
 {
 	int i;
@@ -446,7 +479,7 @@ int zb_get_reply(char *data,inverter_info *inverter)			//读取逆变器的返回帧
 		{
 			data[i]=data_all[i+12];
 		}
-		//printhexmsg(ECU_DBG_COMM,"Reply", data_all, temp_size);
+		printhexmsg(ECU_DBG_COMM,"Reply", data_all, temp_size);
 		rt_sprintf(inverterid,"%02x%02x%02x%02x%02x%02x",data_all[6],data_all[7],data_all[8],data_all[9],data_all[10],data_all[11]);
 		if((size>0)&&(0xFC==data_all[0])&&(0xFC==data_all[1])&&(data_all[2]==inverter->shortaddr/256)&&(data_all[3]==inverter->shortaddr%256)&&(0==rt_strcmp(inverter->uid,inverterid)))
 		{
@@ -590,4 +623,103 @@ int zb_query_heart_data(inverter_info *inverter)		//请求逆变器实时数据
 
 
 //设置心跳状态开关
+int zb_set_heartSwitch_boardcast(unsigned char functionStatus)
+{
+	int i=0;
+	char sendbuff[256];
+	
+	clear_zbmodem();			//发送指令前,先清空缓冲区
+	sendbuff[i++] = 0xFB;
+	sendbuff[i++] = 0xFB;
+	sendbuff[i++] = 0x01;
+	sendbuff[i++] = 0x02;
+	sendbuff[i++] = 0x06;
+	sendbuff[i++] = 0xC5;
+	sendbuff[i++] = 0x01;
+	sendbuff[i++] = 0x00;
+	if(functionStatus == 0x00)
+	{
+		sendbuff[i++] = 0x02;
+		sendbuff[i++] = 0x00;
+		sendbuff[i++] = 0x00;
+		//校验值
+		sendbuff[i++] = 0xFC;
+		sendbuff[i++] = 0xA0;
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","2");
+	}else
+	{
+		sendbuff[i++] = 0x01;
+		sendbuff[i++] = 0x00;
+		sendbuff[i++] = 0x00;
+		//校验值
+		sendbuff[i++] = 0xA5;
+		sendbuff[i++] = 0xF0;
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","1");
+	}
+	
+	sendbuff[i++] = 0xFE;
+	sendbuff[i++] = 0xFE;
+	zb_broadcast_cmd(sendbuff, i);
+	return 0;
+
+}
+
+
+int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStatus)
+{
+	int i=0, ret;
+	char sendbuff[256];
+	char data[256];
+	
+	clear_zbmodem();			//发送指令前,先清空缓冲区
+	sendbuff[i++] = 0xFB;
+	sendbuff[i++] = 0xFB;
+	sendbuff[i++] = 0x01;
+	sendbuff[i++] = 0x02;
+	sendbuff[i++] = 0x06;
+	sendbuff[i++] = 0xC6;
+	sendbuff[i++] = 0x01;
+	sendbuff[i++] = 0x00;
+	
+	if(functionStatus == 0x00)
+	{
+		sendbuff[i++] = 0x02;
+		sendbuff[i++] = 0x00;
+		sendbuff[i++] = 0x00;
+		//校验值
+		sendbuff[i++] = 0x32;
+		sendbuff[i++] = 0x40;
+	}else
+	{
+		sendbuff[i++] = 0x01;
+		sendbuff[i++] = 0x00;
+		sendbuff[i++] = 0x00;
+		//校验值
+		sendbuff[i++] = 0x6B;
+		sendbuff[i++] = 0x10;
+	}
+
+	sendbuff[i++] = 0xFE;
+	sendbuff[i++] = 0xFE;
+
+	zb_send_cmd(inverter, sendbuff, i);
+	ret = zb_get_reply(data,inverter);
+
+	if((15 == ret)&&(0xFB == data[0])&&(0xFB == data[1])&&(0xFE == data[13])&&(0xFE == data[14]))
+	{
+		if(data[5] == 0xDE)
+		{
+			print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_single success",inverter->uid);
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+	}
+	else
+	{
+		return -1;
+	}
+}
 

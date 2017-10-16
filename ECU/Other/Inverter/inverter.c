@@ -22,6 +22,8 @@
 #include "zigbee.h"
 #include "debug.h"
 #include "bind_inverters.h"
+#include "rsdFunction.h"
+
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
@@ -126,7 +128,7 @@ int init_inverter(inverter_info *inverter)
 	}
 
 	//判断是否需要改变RSD功能
-	
+	process_rsdFunction();
 	return 0;
 }
 

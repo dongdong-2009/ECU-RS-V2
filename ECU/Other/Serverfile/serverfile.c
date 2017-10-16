@@ -91,6 +91,7 @@ int Write_IO_INIT_STATU(char *IO_InitStatus)								//IOÉÏµç×´Ì¬
 	memcpy(IO_INITStatus,IO_InitStatus,1);
 	fputs(IO_INITStatus,fp);
 	fclose(fp);
+	memcpy(&ecu.IO_Init_Status,IO_INITStatus,1);
 	return 0;
 }
 int Read_IO_INIT_STATU(char *IO_InitStatus)
@@ -1404,7 +1405,7 @@ int read_RSD_info(char *date_time,char * UID,char *rsd_buff,int *length)
 		}
 		fclose(fp);
 	}
-	printmsg(ECU_DBG_FILE,"start");
+	printmsg(ECU_DBG_FILE,"end");
 	return 0;
 }
 
@@ -1661,9 +1662,8 @@ void save_collect_info(char *curTime)
 		if(curinverter->status.comm_status == 1)
 		{
 			memset(str,'\0',300);
-			sprintf(str,"%02x%02x%02x%02x%02x%02x,%s,%d,%d,%d,%d,%d,%d\n",
-				curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curTime,
-				curinverter->PV1,curinverter->PI,(int)curinverter->AveragePower1,curinverter->PV2,curinverter->PI,(int)curinverter->AveragePower2);
+			sprintf(str,"%s,%s,%d,%d,%d,%d,%d,%d\n",
+				curinverter->uid,curTime,curinverter->PV1,curinverter->PI,(int)curinverter->AveragePower1,curinverter->PV2,curinverter->PI2,(int)curinverter->AveragePower2);
 			fileWrite(fd,str,strlen(str));
 		}
 		

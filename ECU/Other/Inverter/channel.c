@@ -34,7 +34,6 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /* 信道操作 */
 int process_channel()
 {
-	FILE *fp;
 	int oldChannel, newChannel;
 	
 	if (channel_need_change()) {
@@ -49,8 +48,9 @@ int process_channel()
 		saveECUChannel(newChannel);
 	
 		//清空标志位
-		fp = fopen("/tmp/changech.con", "w");
-		fclose(fp);
+		unlink("/tmp/changech.con");
+		unlink("/tmp/old_chan.con");
+		unlink("/tmp/new_chan.con");
 	}
 	return 0;
 }
