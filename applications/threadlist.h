@@ -90,7 +90,7 @@ typedef enum THREADTYPE {
 //LED thread priority
 #define THREAD_PRIORITY_EVENT            	12			//其他相关事件线程
 //LED thread priority
-#define THREAD_PRIORITY_COMM              14			//OPT700-RS通信线程
+#define THREAD_PRIORITY_COMM              16			//OPT700-RS通信线程
 //Data Collection thread priority
 #define THREAD_PRIORITY_DATACOLLECT       18			//OPT700-RS相关数据采集
 //Client thread priority

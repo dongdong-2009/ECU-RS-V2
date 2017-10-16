@@ -87,9 +87,11 @@ void add_APP_functions(void)
 void process_WIFI(unsigned char * ID)
 {
 	ResolveFlag =  Resolve_RecvData((char *)WIFI_RecvSocketAData,&Data_Len,&Command_Id);
+	printf("%d %d %s\n",ResolveFlag,Command_Id,WIFI_RecvSocketAData);
 	if(ResolveFlag == 0)
 	{
-		
+		add_APP_functions();
+		//函数指针不为空，则运行对应的函数
 		if(pfun_Phone[Command_Id%100])
 		{
 			printf("pfun_Phone ID:%d\n",Command_Id);
