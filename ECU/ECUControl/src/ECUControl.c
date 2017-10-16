@@ -246,6 +246,8 @@ int prealarmprocess(void)
 	sendbytes = serverCommunication_Control(sendbuff,strlen(sendbuff),readbuff,&readbytes,10000);
 	if(-1 == sendbytes)
 	{
+		free(readbuff);
+		readbuff = NULL;
 		return -1;
 	}
 	if(readbytes > 54)
@@ -254,8 +256,12 @@ int prealarmprocess(void)
 		
 	}else
 	{
+		free(readbuff);
+		readbuff = NULL;
 		return -1;
 	}
+	free(readbuff);
+	readbuff = NULL;
 	return 0;
 }
 
@@ -339,6 +345,8 @@ int precontrolprocess(void)
 	sendbytes = serverCommunication_Control(sendbuff,strlen(sendbuff),readbuff,&readbytes,10000);
 	if(-1 == sendbytes)
 	{
+		free(readbuff);
+		readbuff = NULL;
 		return -1;
 	}
 	if(readbytes > 54)
@@ -347,8 +355,12 @@ int precontrolprocess(void)
 		
 	}else
 	{
+		free(readbuff);
+		readbuff = NULL;
 		return -1;
 	}
+	free(readbuff);
+	readbuff = NULL;
 	return 0;
 }
 

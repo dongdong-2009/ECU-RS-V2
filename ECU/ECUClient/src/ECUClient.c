@@ -35,6 +35,8 @@ int preprocess(void)
 	sendbytes = serverCommunication_Client(sendbuff,strlen(sendbuff),readbuff,&readbytes,10000);
 	if(-1 == sendbytes)
 	{
+		free(readbuff);
+		readbuff = NULL;
 		return -1;
 	}
 	if(readbytes >3)
@@ -43,8 +45,12 @@ int preprocess(void)
 		
 	}else
 	{
+		free(readbuff);
+		readbuff = NULL;
 		return -1;
 	}
+	free(readbuff);
+	readbuff = NULL;
 	return 0;
 }
 
