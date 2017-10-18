@@ -1393,14 +1393,16 @@ int read_RSD_info(char *date_time,char * UID,char *rsd_buff,int *length)
 				rsd_buff[(*length)++] = (list[1][10]-'0')*16 + (list[1][11]-'0');
 				rsd_buff[(*length)++] = atoi(list[2])/256;
 				rsd_buff[(*length)++] = atoi(list[2])%256;
-				rsd_buff[(*length)++] = atoi(list[3]);
+				rsd_buff[(*length)++] = atoi(list[3])/256;
+				rsd_buff[(*length)++] = atoi(list[3])%256;
 				rsd_buff[(*length)++] = atoi(list[4])/256;
-				rsd_buff[(*length)++] = atoi(list[4])/256;
+				rsd_buff[(*length)++] = atoi(list[4])%256;
 				rsd_buff[(*length)++] = atoi(list[5])/256;
 				rsd_buff[(*length)++] = atoi(list[5])%256;
-				rsd_buff[(*length)++] = atoi(list[6]);
+				rsd_buff[(*length)++] = atoi(list[6])/256;
+				rsd_buff[(*length)++] = atoi(list[6])%256;
 				rsd_buff[(*length)++] = atoi(list[7])/256;
-				rsd_buff[(*length)++] = atoi(list[7])/256;
+				rsd_buff[(*length)++] = atoi(list[7])%256;
 			}				
 		}
 		fclose(fp);
