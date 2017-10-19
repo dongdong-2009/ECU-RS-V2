@@ -139,7 +139,7 @@ void zigbee_reset(void)
 	GPIO_ResetBits(GPIOC, GPIO_Pin_7);		//设置引脚为低电平输出
 	rt_hw_ms_delay(1000);
 	GPIO_SetBits(GPIOC, GPIO_Pin_7);		//设置引脚为高电平输出
-	rt_hw_s_delay(10);
+
 	printmsg(ECU_DBG_COMM,"zigbee reset successful");
 }
 

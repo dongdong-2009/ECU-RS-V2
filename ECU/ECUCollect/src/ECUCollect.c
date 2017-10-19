@@ -45,6 +45,8 @@ void Collect_Client_Record(void)
 	inverter_info *curinverter = inverterInfo;
 	int commNum = 0; 	//通讯上的逆变器数量
 	char curTime[15] = {'\0'};
+	unsigned int CurEnergy = 0;
+	unsigned int SysPower = 0;
 	apstime(curTime);
 	curTime[14] = '\0';
 	if(ecu.validNum > 0)
@@ -198,29 +200,30 @@ void Collect_Client_Record(void)
 			curinverter++;
 		}
 		
-		
+		ecu.count= commNum;
 		//计算ECU级别相关数据
 		if(commNum > 0)
 		{
 			char system_power_str[11] = {'\0'};
 			char current_energy_str[11] = {'\0'};
 			char commNum_str[4] = {'\0'};
+			
 			curinverter = inverterInfo;
 			for(i = 0;i< ecu.validNum; i++)
 			{
 				//如果该台采集的时候成功
 				if(curinverter->status.comm_status == 1)
 				{
-					ecu.current_energy = curinverter->EnergyPV1 + curinverter->EnergyPV2;
-					ecu.system_power = curinverter->AveragePower1 + curinverter->AveragePower2;
+					CurEnergy = CurEnergy + curinverter->EnergyPV1 + curinverter->EnergyPV2;
+					SysPower = SysPower + curinverter->AveragePower1 + curinverter->AveragePower2;
 				}
 				curinverter++;
 			}
 			//当前一轮输入功率
-			sprintf(system_power_str,"%010d",(long)ecu.system_power*1000);
+			sprintf(system_power_str,"%010d",(long)SysPower*100);
 			memcpy(&client_Data[30],system_power_str,10);
 			//当前一轮输入电量
-			sprintf(current_energy_str,"%010d",(long)ecu.current_energy*10/36);
+			sprintf(current_energy_str,"%010d",(long)CurEnergy/36);
 			memcpy(&client_Data[50],current_energy_str,10);
 			memcpy(&client_Data[70],curTime,14);
 			//最后一次通讯上的次数
@@ -238,12 +241,12 @@ void Collect_Client_Record(void)
 		client_Data[length++] = '\0';	//存入文件的时候不添加换行符，上传数据的时候再添加换行符
 		rt_exit_critical();
 
-		ecu.current_energy = ecu.current_energy/3600000;		//将发电量转换为千瓦时
-		//ecu.current_energy = 0.001;
-		//ecu.system_power = 200;
-
+		ecu.current_energy = (float)CurEnergy/36000000;		//将发电量转换为千瓦时
+		ecu.system_power = SysPower/10;
 		ecu.life_energy = ecu.life_energy + ecu.current_energy;
-
+		
+		printfloatmsg(ECU_DBG_COLLECT,"ecu.current_energy",ecu.current_energy);
+		printfloatmsg(ECU_DBG_COLLECT,"ecu.system_power",ecu.system_power);
 		printfloatmsg(ECU_DBG_COLLECT,"ecu.life_energy",ecu.life_energy);
 		update_life_energy(ecu.life_energy);								//设置系统历史发电量
 		//保存报文数据

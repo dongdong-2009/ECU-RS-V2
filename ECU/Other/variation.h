@@ -101,7 +101,7 @@ typedef struct ecu_info_t{
 	char channel;				//Zigbee信道
 	char Signal_Level;		//信号强度
 	char IO_Init_Status;	//IO初始状态
-
+	int count;					//系统当前一轮有数据的逆变器数
 	int validNum;			//当前有效台数
 	int curSequence;		//心跳轮训机器号
 	char MacAddress[7];			//ECU  MAC地址

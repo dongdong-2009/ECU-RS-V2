@@ -5,8 +5,6 @@
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-#define VERSION_ECU_RS    					"101"
-
 #define SOFEWARE_VERSION_LENGTH				5
 #define SOFEWARE_VERSION						"RS1.3"
 
@@ -65,12 +63,10 @@ void delete_system_power_2_month_ago(char *date_time);
 int read_system_power(char *date_time, char *power_buff,int *length);
 int search_daily_energy(char *date,float *daily_energy)	;
 void update_daily_energy(float current_energy, char *date_time);
-int calculate_earliest_month(char *date,int *earliest_data);
+int read_weekly_energy(char *date_time, char *power_buff,int *length);
 int read_monthly_energy(char *date_time, char *power_buff,int *length);
-int calculate_earliest_year(char *date,int *earliest_data);
 int read_yearly_energy(char *date_time, char *power_buff,int *length);
-
-int read_history_energy(char *date_time, char *power_buff,int *length);
+float get_today_energy(void);
 int search_monthly_energy(char *date,float *daily_energy);
 void update_monthly_energy(float current_energy, char *date_time);
 int search_yearly_energy(char *date,float *daily_energy);

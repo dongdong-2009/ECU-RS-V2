@@ -114,28 +114,17 @@ int ResolveWired(const char *string,IP_t *IPAddr,IP_t *MSKAddr,IP_t *GWAddr,IP_t
 void App_GetBaseInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 				//获取基本信息请求
 {
 	char sofewareVersion[50];
-	char cur_time[15];
 	printf("WIFI_Recv_Event%d %s\n",1,WIFI_RecvSocketAData);
-
-	if(Data_Len == 28)
-	{	//发送命令带时间戳  需要校准时间
-		memcpy(cur_time,&recvbuffer[11],14);
-		cur_time[14] = '\0';
-		printf("%s\n",cur_time);
-		set_time(cur_time);
-	}
 	
 	sprintf(sofewareVersion,"%s_%s_%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
-	APP_Response_BaseInfo(ID,ecu.ECUID12,VERSION_ECU_RS,ecu.Signal_Level,ecu.channel,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo,ecu.validNum);
+	APP_Response_BaseInfo(ID,ecu,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo);
 }
-
-
 
 void App_GetSystemInfo(unsigned char * ID,int Data_Len,const char *recvbuffer)
 {
 	printf("WIFI_Recv_Event%d %s\n",2,WIFI_RecvSocketAData);
 	//先对比ECUID是否匹配
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
 	{	//匹配成功进行相应的操作
 		SEGGER_RTT_printf(0, "COMMAND_SYSTEMINFO  Mapping\n");
 		APP_Response_SystemInfo(ID,0x00,inverterInfo,ecu.validNum);
@@ -147,19 +136,61 @@ void App_GetSystemInfo(unsigned char * ID,int Data_Len,const char *recvbuffer)
 
 }
 
+void App_GetPowerCurve(unsigned char * ID,int Data_Len,const char *recvbuffer)
+{
+	char date[9];
+	printf("WIFI_Recv_Event%d %s\n",3,recvbuffer);
+	memset(date,'\0',9);
+	//匹配成功进行相应操作
+	printf("COMMAND_POWERCURVE  Mapping\n");
+	memcpy(date,&recvbuffer[28],8);
+	//匹配成功进行相应操作
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{
+		APP_Response_PowerCurve(0x00,ID,date);
+	}else
+	{
+		APP_Response_PowerCurve(0x01,ID,date);
+	}
+
+}
+
+void App_GetGenerationCurve(unsigned char * ID,int Data_Len,const char *recvbuffer)
+{
+	printf("WIFI_Recv_Event%d %s\n",4,recvbuffer);
+
+	//匹配成功进行相应操作
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{
+		APP_Response_GenerationCurve(0x00,ID,recvbuffer[29]);
+	}else
+	{
+		APP_Response_GenerationCurve(0x01,ID,recvbuffer[29]);
+	}
+}
+
+
 void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 {
-	printf("WIFI_Recv_Event%d %s\n",3,WIFI_RecvSocketAData);
+	printf("WIFI_Recv_Event%d %s\n",5,WIFI_RecvSocketAData);
 	//先对比ECUID是否匹配
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
 	{	//匹配成功进行相应的操作
 		int AddNum = 0;
+		int i = 0;
+		inverter_info *curinverter = inverterInfo;
 		printf("WIFI_Recv_SocketA_LEN:%d\n",WIFI_Recv_SocketA_LEN);
-		AddNum = (WIFI_Recv_SocketA_LEN - 29)/6;
+		AddNum = (WIFI_Recv_SocketA_LEN - 31)/6;
 		printf("COMMAND_SETNETWORK	 Mapping   %d\n",AddNum);
 		APP_Response_SetNetwork(ID,0x00);
 		//将数据写入EEPROM
-		phone_add_inverter(AddNum,(char *)&WIFI_RecvSocketAData[26]);	
+		phone_add_inverter(AddNum,(char *)&WIFI_RecvSocketAData[28]);	
+		
+		for(i=0; i<MAXINVERTERCOUNT; i++, curinverter++)
+		{
+			rt_memset(curinverter->uid, '\0', sizeof(curinverter->uid));		//清空逆变器UID
+		}
+		
 		get_id_from_file(inverterInfo);
 		//重启main线程
 		restartThread(TYPE_COMM);
@@ -171,120 +202,38 @@ void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 
 }
 
-void App_SetChannel(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_SetTime(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//ECU时间设置
 {
-	printf("WIFI_Recv_Event%d %s\n",4,WIFI_RecvSocketAData);
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-	{	//匹配成功进行相应的操作
-		unsigned char old_channel = 0x00;
-		unsigned char new_channel = 0x00;
-	
-		APP_Response_SetChannel(ID,0x00,ecu.channel,ecu.Signal_Level);
-		old_channel = switchChannel(&WIFI_RecvSocketAData[26]);
-		new_channel = switchChannel(&WIFI_RecvSocketAData[28]);	
+	char setTime[15];
+	char getTime[15];
+	printf("WIFI_Recv_Event%d %s\n",6,recvbuffer);
 
-		saveOldChannel(old_channel);
-		saveNewChannel(new_channel);
-		saveChannel_change_flag();
-		//重启main线程
-		restartThread(TYPE_COMM);
-	}	else
-	{	//不匹配
-		APP_Response_SetChannel(ID,0x01,NULL,NULL);
-	}
-
-}
-
-void App_SetWIFIPasswd(unsigned char * ID,int Data_Len,const char *recvbuffer)
-{
-	printf("WIFI_Recv_Event%d %s\n",5,WIFI_RecvSocketAData);
-	//先对比ECUID是否匹配
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-	{	//匹配成功进行相应的操作
-		char OldPassword[100] = {'\0'};
-		char NewPassword[100] = {'\0'};
-		char EEPROMPasswd[100] = {'\0'};
-		int oldLen,newLen;
-				
-		ResolveWifiPasswd(OldPassword,&oldLen,NewPassword,&newLen,(char *)&WIFI_RecvSocketAData[26]);								
-		SEGGER_RTT_printf(0, "COMMAND_SETWIFIPASSWORD %d %s %d %s\n",oldLen,OldPassword,newLen,NewPassword);
-								
-		//读取旧密码，如果旧密码相同，设置新密码
-		Read_WIFI_PW(EEPROMPasswd,100);
-				
-		if(!memcmp(EEPROMPasswd,OldPassword,oldLen))
-		{
-			APP_Response_SetWifiPassword(ID,0x00);
-			WIFI_ChangePasswd(NewPassword);
-			Write_WIFI_PW(NewPassword,newLen);
-		}else
-		{
-			APP_Response_SetWifiPassword(ID,0x02);
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{
+		//匹配成功进行相应操作
+		printf("COMMAND_SETTIME  Mapping\n");
+		memset(setTime,'\0',15);
+		memcpy(setTime,&recvbuffer[28],14);
+		apstime(getTime);
+		if(!memcmp("99999999",setTime,8))
+		{	//如果年月日都是9 年月日取当前的
+			memcpy(setTime,getTime,8);
 		}
-								
-	}	else
-	{	//不匹配
-		APP_Response_SetWifiPassword(ID,0x01);
-	}
 
-}
-
-void App_SetIOInitStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
-{
-	printf("WIFI_Recv_Event%d %s\n",6,WIFI_RecvSocketAData);
-	//先对比ECUID是否匹配
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-	{//匹配成功进行相应的操作
-		//获取IO初始状态
-		APP_Response_IOInitStatus(ID,0x00);
-		
-		//0：低电平（关闭心跳功能）1：高电平（打开心跳功能）
-		saveChangeFunctionStatus(WIFI_RecvSocketAData[23]);
-		save_rsdFunction_change_flag();
+		if(!memcmp("999999",&setTime[8],6))
+		{	//如果时间都是9 时间取当前的
+			memcpy(&setTime[8],&getTime[8],6);
+		}
+			
+		//设置时间
+		set_time(setTime);
 		//重启main线程
-		restartThread(TYPE_COMM);
-	}else
-	{
-		APP_Response_IOInitStatus(ID,0x01);
+		restartThread(TYPE_COMM);	
+		APP_Response_SetTime(ID,0x00);
 	}
-
-}
-
-void APP_GetRSDHistoryInfo(unsigned char * ID,int Data_Len,const char *recvbuffer)
-{
-	char date[9] = {'\0'};
-	char UID[7] = {'\0'};
-	printf("WIFI_Recv_Event%d %s\n",7,recvbuffer);
-
-	memcpy(date,&recvbuffer[26],8);
-	date[8] = '\0';
-	memcpy(UID,&recvbuffer[34],6);
-	
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
+	else
 	{
-		APP_Response_GetRSDHistoryInfo(0x00,ID,date,UID);
-
-	}else
-	{
-		APP_Response_GetRSDHistoryInfo(0x01,ID,date,UID);
-
-	}
-}
-
-void App_GetGenerationCurve(unsigned char * ID,int Data_Len,const char *recvbuffer)
-{
-	char date[9] = {'\0'};
-	
-	printf("WIFI_Recv_Event%d %s\n",8,recvbuffer);
-	memcpy(date,&recvbuffer[26],8);
-	date[8] = '\0';
-	//匹配成功进行相应操作
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-	{
-		APP_Response_GenerationCurve(0x00,ID,date,recvbuffer[35]);
-	}else
-	{
-		APP_Response_GenerationCurve(0x01,ID,date,recvbuffer[35]);
+		APP_Response_SetTime(ID,0x01);
 	}
 	
 
@@ -293,9 +242,9 @@ void App_GetGenerationCurve(unsigned char * ID,int Data_Len,const char *recvbuff
 
 void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 {
-	printf("WIFI_Recv_Event%d %s\n",9,recvbuffer);	
+	printf("WIFI_Recv_Event%d %s\n",7,recvbuffer);	
 
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
 	{
 		int ModeFlag = 0;
 		char buff[200] = {'\0'};
@@ -304,7 +253,7 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		printf("COMMAND_SETWIREDNETWORK  Mapping\n");
 		//检查是DHCP  还是固定IP
 		APP_Response_SetWiredNetwork(0x00,ID);
-		ModeFlag = ResolveWired(&recvbuffer[26],&IPAddr,&MSKAddr,&GWAddr,&DNS1Addr,&DNS2Addr);
+		ModeFlag = ResolveWired(&recvbuffer[28],&IPAddr,&MSKAddr,&GWAddr,&DNS1Addr,&DNS2Addr);
 		if(ModeFlag == 0x00)		//DHCP
 		{
 			printmsg(ECU_DBG_WIFI,"dynamic IP");
@@ -330,6 +279,98 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 
 }
 
+
+void App_SetWIFIPasswd(unsigned char * ID,int Data_Len,const char *recvbuffer)
+{
+	printf("WIFI_Recv_Event%d %s\n",10,WIFI_RecvSocketAData);
+	//先对比ECUID是否匹配
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{	//匹配成功进行相应的操作
+		char OldPassword[100] = {'\0'};
+		char NewPassword[100] = {'\0'};
+		char EEPROMPasswd[100] = {'\0'};
+		int oldLen,newLen;
+				
+		ResolveWifiPasswd(OldPassword,&oldLen,NewPassword,&newLen,(char *)&WIFI_RecvSocketAData[28]);								
+		SEGGER_RTT_printf(0, "COMMAND_SETWIFIPASSWORD %d %s %d %s\n",oldLen,OldPassword,newLen,NewPassword);
+								
+		//读取旧密码，如果旧密码相同，设置新密码
+		Read_WIFI_PW(EEPROMPasswd,100);
+				
+		if(!memcmp(EEPROMPasswd,OldPassword,oldLen))
+		{
+			APP_Response_SetWifiPassword(ID,0x00);
+			WIFI_ChangePasswd(NewPassword);
+			Write_WIFI_PW(NewPassword,newLen);
+		}else
+		{
+			APP_Response_SetWifiPassword(ID,0x02);
+		}
+								
+	}	else
+	{	//不匹配
+		APP_Response_SetWifiPassword(ID,0x01);
+	}
+
+}
+
+void App_GetIDInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//获取ID信息
+{
+	
+	
+	printf("WIFI_Recv_Event%d %s\n",11,recvbuffer);
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{
+		APP_Response_GetIDInfo(0x00,ID,inverterInfo);
+	}else
+	{
+		APP_Response_GetIDInfo(0x01,ID,inverterInfo);
+	}
+	
+}
+
+void App_GetTime(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//获取时间
+{
+	char Time[15] = {'\0'};
+	printf("WIFI_Recv_Event%d %s\n",12,recvbuffer);
+	apstime(Time);
+	Time[14] = '\0';
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{
+		APP_Response_GetTime(0x00,ID,Time);
+	}else
+	{
+		APP_Response_GetTime(0x01,ID,Time);
+	}
+
+}
+
+void App_GetFlashSize(unsigned char * ID,int Data_Len,const char *recvbuffer)
+{
+	int result;
+	long long cap;
+	struct statfs buffer;
+
+	printf("WIFI_Recv_Event%d %s\n",13,recvbuffer);
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{
+		result = dfs_statfs("/", &buffer);
+		if (result != 0)
+		{
+			APP_Response_FlashSize(0x00,ID,0);
+			return;
+		}
+		cap = buffer.f_bsize * buffer.f_bfree / 1024;
+
+		APP_Response_FlashSize(0x00,ID,(unsigned int)cap);
+	}else
+	{
+		APP_Response_FlashSize(0x01,ID,0);
+	}
+
+
+}
+
 void App_GetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 {
 	unsigned int addr = 0;
@@ -339,9 +380,9 @@ void App_GetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 	ip_addr_t DNS;
 	IP_t IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr;
 
-	printf("WIFI_Recv_Event%d %s\n",10,recvbuffer);  
+	printf("WIFI_Recv_Event%d %s\n",14,recvbuffer);  
 
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
 	{
 
 		//匹配成功进行相应操作
@@ -392,43 +433,71 @@ void App_GetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 }
 
 
-void App_GetFlashSize(unsigned char * ID,int Data_Len,const char *recvbuffer)
+
+void App_SetChannel(unsigned char * ID,int Data_Len,const char *recvbuffer)
 {
-	int result;
-	long long cap;
-	struct statfs buffer;
+	printf("WIFI_Recv_Event%d %s\n",15,WIFI_RecvSocketAData);
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{	//匹配成功进行相应的操作
+		unsigned char old_channel = 0x00;
+		unsigned char new_channel = 0x00;
+	
+		APP_Response_SetChannel(ID,0x00,ecu.channel,ecu.Signal_Level);
+		old_channel = switchChannel(&WIFI_RecvSocketAData[28]);
+		new_channel = switchChannel(&WIFI_RecvSocketAData[30]);	
 
-	printf("WIFI_Recv_Event%d %s\n",11,recvbuffer);
-	if(!memcmp(&WIFI_RecvSocketAData[11],ecu.ECUID12,12))
-	{
-		result = dfs_statfs("/", &buffer);
-		if (result != 0)
-		{
-			APP_Response_FlashSize(0x00,ID,0);
-			return;
-		}
-		cap = buffer.f_bsize * buffer.f_bfree / 1024;
-
-		APP_Response_FlashSize(0x00,ID,(unsigned int)cap);
-	}else
-	{
-		APP_Response_FlashSize(0x01,ID,0);
+		saveOldChannel(old_channel);
+		saveNewChannel(new_channel);
+		saveChannel_change_flag();
+		//重启main线程
+		restartThread(TYPE_COMM);
+	}	else
+	{	//不匹配
+		APP_Response_SetChannel(ID,0x01,NULL,NULL);
 	}
 
-
 }
 
 
-void App_GetPowerCurve(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_SetIOInitStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
 {
-	char date[9];
-	printf("WIFI_Recv_Event%d %s\n",12,recvbuffer);
-	memset(date,'\0',9);
-	//匹配成功进行相应操作
-	printf("COMMAND_POWERCURVE  Mapping\n");
-	memcpy(date,&recvbuffer[26],8);
-	APP_Response_PowerCurve(0x00,ID,date);
+	printf("WIFI_Recv_Event%d %s\n",16,WIFI_RecvSocketAData);
+	//先对比ECUID是否匹配
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{//匹配成功进行相应的操作
+		//获取IO初始状态
+		APP_Response_IOInitStatus(ID,0x00);
+		
+		//0：低电平（关闭心跳功能）1：高电平（打开心跳功能）
+		saveChangeFunctionStatus(WIFI_RecvSocketAData[25]);
+		save_rsdFunction_change_flag();
+		//重启main线程
+		restartThread(TYPE_COMM);
+	}else
+	{
+		APP_Response_IOInitStatus(ID,0x01);
+	}
 
 }
 
+void APP_GetRSDHistoryInfo(unsigned char * ID,int Data_Len,const char *recvbuffer)
+{
+	char date[9] = {'\0'};
+	char UID[7] = {'\0'};
+	printf("WIFI_Recv_Event%d %s\n",17,recvbuffer);
+
+	memcpy(date,&recvbuffer[28],8);
+	date[8] = '\0';
+	memcpy(UID,&recvbuffer[36],6);
+	
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{
+		APP_Response_GetRSDHistoryInfo(0x00,ID,date,UID);
+
+	}else
+	{
+		APP_Response_GetRSDHistoryInfo(0x01,ID,date,UID);
+
+	}
+}
 

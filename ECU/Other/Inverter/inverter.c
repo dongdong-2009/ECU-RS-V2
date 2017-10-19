@@ -34,6 +34,7 @@ int init_ecu(void)
 	//ªÒ»°panid
 	ecu.panid = get_panid();
 	ecu.channel = get_channel();
+	ecu.today_energy = get_today_energy();
 
 	Read_IO_INIT_STATU(&ecu.IO_Init_Status);
 	ecu.life_energy = get_lifetime_power();

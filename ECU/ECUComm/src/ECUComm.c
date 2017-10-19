@@ -22,6 +22,7 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 int init_all(inverter_info *inverter)
 {
 	openzigbee();
+	zigbee_reset();
 	zb_test_communication();
 	init_ecu();
 	init_inverter(inverter);

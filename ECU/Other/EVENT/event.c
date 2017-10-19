@@ -51,30 +51,34 @@ typedef enum
 } eHardWareID;// receive state machin
 
 enum CommandID{
-	P00, P01, P02, P03, P04, P05, P06, P07, P08, P09, //0-9
-	P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, //10-19
-	P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, //20-29
-	P30, P31, P32, P33, P34, P35, P36, P37, P38, P39, //30-39
-	P40, P41, P42, P43, P44, P45, P46, P47, P48, P49, //40-49
-	P50, P51, P52, P53, P54, P55, P56, P57, P58, P59, //50-59
+	P0000, P0001, P0002, P0003, P0004, P0005, P0006, P0007, P0008, P0009, //0-9
+	P0010, P0011, P0012, P0013, P0014, P0015, P0016, P0017, P0018, P0019, //10-19
+	P0020, P0021, P0022, P0023, P0024, P0025, P0026, P0027, P0028, P0029, //20-29
+	P0030, P0031, P0032, P0033, P0034, P0035, P0036, P0037, P0038, P0039, //30-39
+	P0040, P0041, P0042, P0043, P0044, P0045, P0046, P0047, P0048, P0049, //40-49
+	P0050, P0051, P0052, P0053, P0054, P0055, P0056, P0057, P0058, P0059, //50-59
 };
 
 void (*pfun_Phone[100])(unsigned char * id,int DataLen,const char *recvbuffer);
 
 void add_APP_functions(void)
 {
-	pfun_Phone[P01] = App_GetBaseInfo; 				//获取基本信息请求
-	pfun_Phone[P02] = App_GetSystemInfo; 				//获取系统信息
-	pfun_Phone[P03] = App_SetNetwork; 				//设置组网
-	pfun_Phone[P04] = App_SetChannel; 				//设置信道
-	pfun_Phone[P05] = App_SetWIFIPasswd; 			//设置WIFI密码
-	pfun_Phone[P06] = App_SetIOInitStatus; 			//设置IO初始状态
-	pfun_Phone[P07] = APP_GetRSDHistoryInfo; 		//功率电流电压曲线
-	pfun_Phone[P08] = App_GetGenerationCurve; 				//发电量曲线请求
-	pfun_Phone[P09] = App_SetWiredNetwork; 	//有线网络设置
-	pfun_Phone[P10] = App_GetWiredNetwork; 		//获取有线网络设置
-	pfun_Phone[P11] = App_GetFlashSize; 			//获取Flash剩余空间
-	pfun_Phone[P12] = App_GetPowerCurve; 			//获取Flash剩余空间
+	pfun_Phone[P0001] = App_GetBaseInfo; 				//获取基本信息请求
+	pfun_Phone[P0002] = App_GetSystemInfo; 				//获取系统信息
+	pfun_Phone[P0003] = App_GetPowerCurve; 			//获取功率曲线
+	pfun_Phone[P0004] = App_GetGenerationCurve; 				//发电量曲线请求
+	pfun_Phone[P0005] = App_SetNetwork; 				//设置组网
+	pfun_Phone[P0006] = App_SetTime; 			//ECU时间设置
+	pfun_Phone[P0007] = App_SetWiredNetwork; 	//有线网络设置
+	pfun_Phone[P0010] = App_SetWIFIPasswd; 			//设置WIFI密码
+	pfun_Phone[P0011] = App_GetIDInfo; 			//获取ID信息
+	pfun_Phone[P0012] = App_GetTime; 			//获取时间
+	pfun_Phone[P0013] = App_GetFlashSize; 			//获取Flash剩余空间
+	pfun_Phone[P0014] = App_GetWiredNetwork; 		//获取有线网络设置
+	pfun_Phone[P0015] = App_SetChannel; 				//设置信道
+	pfun_Phone[P0016] = App_SetIOInitStatus; 			//设置IO初始状态
+	pfun_Phone[P0017] = APP_GetRSDHistoryInfo; 		//功率电流电压曲线
+
 
 
 }
@@ -345,7 +349,6 @@ void baseInfo(void)
 	printf("\n");
 	printf("************************************************************\n");
 	printf("ECU ID : %s\n",ecu.ECUID12);
-	printf("ECU Version :%s\n",VERSION_ECU_RS);
 	printf("ECU Channel :%02x\n",ecu.channel);
 	printf("ECU RSSI :%d\n",ecu.Signal_Level);
 	printf("RSD Type :%d\n",type);
