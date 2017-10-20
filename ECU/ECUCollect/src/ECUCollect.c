@@ -21,7 +21,7 @@ void inverter_Info(inverter_info *curinverter)
 {
 	printf("\n");
 
-	printf("ID:%02x%02x%02x%02x%02x%02x  ",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5]);
+	printf("ID:%s  ",curinverter->uid);
 	printf("LastCollectTime: %s  ",curinverter->LastCollectTime);
 	printf("LastCommTime:    %s  ",curinverter->LastCommTime);
 	printf("PV1_Energy:%d   ",curinverter->PV1_Energy);

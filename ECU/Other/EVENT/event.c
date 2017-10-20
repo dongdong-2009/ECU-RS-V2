@@ -365,7 +365,7 @@ void systemInfo(void)
 	printf("*****ID*****Type*OnOff*Function*PV1Flag*PV2Flag*HeartTime*Timeout*CloseTime***PV1******PV2******PI******P1*****P2******PV1EN*******PV2EN***RSSI****MOSCL*****EnergyPV1******EnergyPV2\n");
 	for(i=0; (i<MAXINVERTERCOUNT)&&(i < ecu.validNum); i++)	
 	{
-		printf("%02x%02x%02x%02x%02x%02x ",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5]);
+		printf("%s ",curinverter->uid);
 		printf("%1d ",curinverter->status.device_Type);
 		printf("    %1d ",curinverter->status.comm_failed3_status);
 		printf("     %1d ",curinverter->status.function_status);

@@ -46,7 +46,6 @@ void APP_Response_SetNetwork(unsigned char *ID,unsigned char result);
 void APP_Response_SetTime(unsigned char *ID,char mapping);
 //07 命令回应
 void APP_Response_SetWiredNetwork(char mapping,unsigned char *ID);
-
 //10 命令回应
 void APP_Response_SetWifiPassword(unsigned char *ID,unsigned char result);
 //11 命令回应
@@ -55,7 +54,6 @@ void APP_Response_GetIDInfo(char mapping,unsigned char *ID,inverter_info *invert
 void APP_Response_GetTime(char mapping,unsigned char *ID,char *Time);
 //13 命令回应
 void APP_Response_FlashSize(char mapping,unsigned char *ID,unsigned int Flashsize);
-
 //14 命令回应
 void APP_Response_GetWiredNetwork(char mapping,unsigned char *ID,char dhcpStatus,IP_t IPAddr,IP_t MSKAddr,IP_t GWAddr,IP_t DNS1Addr,IP_t DNS2Addr,char *MacAddress);
 //15 命令回应

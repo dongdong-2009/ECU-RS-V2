@@ -597,11 +597,6 @@
               <FilePath>..\components\net\ethernet\stm32_eth.c</FilePath>
             </File>
             <File>
-              <FileName>Flash_24L512.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\components\DeviceDrivers\EEPROM\Flash_24L512.c</FilePath>
-            </File>
-            <File>
               <FileName>key.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\DeviceDrivers\KEY\key.c</FilePath>

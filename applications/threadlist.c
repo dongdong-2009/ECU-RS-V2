@@ -27,7 +27,6 @@
 #include "key.h"
 #include "sys.h"
 #include "usart5.h"
-#include "Flash_24L512.h"
 #include "led.h"
 #include "timer.h"
 #include "string.h"
@@ -119,7 +118,6 @@ static rt_uint8_t control_stack[4096];
 static struct rt_thread control_thread;
 #endif 
 
-
 ecu_info ecu;	//ecu相关信息
 inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
 
@@ -200,11 +198,10 @@ void rt_init_thread_entry(void* parameter)
 	rt_hw_rtc_init();		
 	cpu_usage_init();	
 	
-	I2C_Init();										//FLASH 芯片初始化
 	EXTIX_Init();									//恢复出厂设置IO中断初始化
 	KEY_Init();										//恢复出厂设置按键初始化
-	RFM_init();
-	RFM_off();
+	//RFM_init();
+	//RFM_off();
 	rt_hw_led_init();
 #ifdef USR_MODULE
 	uart5_init(57600);					//USR模块相应波特率 串口初始化
@@ -213,7 +210,7 @@ void rt_init_thread_entry(void* parameter)
 #ifdef RAK475_MODULE	
 	uart5_init(115200);					//RAK475相应波特率 串口初始化
 #endif 
-	TIM2_Int_Init(19999,7199);    //心跳包超时事件定时器初始化
+	TIM2_Int_Init(9999,7199);    //心跳包超时事件定时器初始化
 	
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
@@ -244,7 +241,7 @@ static void led_thread_entry(void* parameter)
 	rt_hw_watchdog_init();
 		while (1)
     {
-    	kickwatchdog();
+				kickwatchdog();
         /* led1 on */
         count++;
         rt_hw_led_on();
@@ -351,12 +348,12 @@ void tasks_new(void)
   if (result == RT_EOK)	rt_thread_startup(&collect_thread);
 #endif
 #ifdef THREAD_PRIORITY_CLIENT
-  /* init Communication thread */
+  /* init Client thread */
   result = rt_thread_init(&client_thread,"client",ECUClient_thread_entry,RT_NULL,(rt_uint8_t*)&client_stack[0],sizeof(client_stack),THREAD_PRIORITY_CLIENT,5);
   if (result == RT_EOK)	rt_thread_startup(&client_thread);
 #endif
 #ifdef THREAD_PRIORITY_CONTROL_CLIENT
-  /* init Communication thread */
+  /* init Control thread */
   result = rt_thread_init(&control_thread,"control",ECUControl_thread_entry,RT_NULL,(rt_uint8_t*)&control_stack[0],sizeof(control_stack),THREAD_PRIORITY_CONTROL_CLIENT,5);
   if (result == RT_EOK)	rt_thread_startup(&control_thread);
 #endif
