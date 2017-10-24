@@ -210,7 +210,7 @@ void rt_init_thread_entry(void* parameter)
 #ifdef RAK475_MODULE	
 	uart5_init(115200);					//RAK475相应波特率 串口初始化
 #endif 
-	TIM2_Int_Init(9999,7199);    //心跳包超时事件定时器初始化
+	TIM2_Int_Init(14999,7199);    //心跳包超时事件定时器初始化
 	
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
@@ -419,6 +419,32 @@ void restartThread(threadType type)
 			break;
 	}
 }
+
+//定时器启动
+rt_timer_t threadRestarttimer;	//线程重启定时器
+threadType threadRestartType;
+
+
+
+//定时器超时函数   复位超时
+static void threadRestartTimeout(void* parameter)
+{
+	restartThread(threadRestartType);
+}
+
+//定时重启某个线程
+void threadRestartTimer(int timeout,threadType Type)			
+{
+	threadRestartType = Type;
+	threadRestarttimer = rt_timer_create("Restart", /* 定时器名字为 read */
+					threadRestartTimeout, /* 超时时回调的处理函数 */
+					RT_NULL, /* 超时函数的入口参数 */
+					timeout*RT_TICK_PER_SECOND, /* 定时时间长度,以OS Tick为单位*/
+					 RT_TIMER_FLAG_ONE_SHOT); /* 单周期定时器 */
+	if (threadRestarttimer != RT_NULL) rt_timer_start(threadRestarttimer);
+}
+
+
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>

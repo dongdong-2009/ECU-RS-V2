@@ -432,7 +432,6 @@ void APP_Response_GetIDInfo(char mapping,unsigned char *ID,inverter_info *invert
 			uid[3] = (curinverter->uid[6] - '0')*16+(curinverter->uid[7] - '0');
 			uid[4] = (curinverter->uid[8] - '0')*16+(curinverter->uid[9] - '0');
 			uid[5] = (curinverter->uid[10] - '0')*16+(curinverter->uid[11] - '0');
-			printf("%02x%02x%02x%02x%02x%02x\n",uid[0],uid[1],uid[2],uid[3],uid[4],uid[5]);
 			memcpy(&SendData[packlength],uid,6);	
 			packlength += 6;
 		}

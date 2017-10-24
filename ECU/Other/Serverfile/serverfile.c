@@ -276,8 +276,12 @@ int initPath(void)
 	mkdir("/home/record/data",0x777);
 	rt_hw_ms_delay(20);
 	mkdir("/home/record/power",0x777);
-	mkdir("/home/record/energy",0x777);
-	echo("/config/ftpadd.con", "IP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
+	mkdir("/home/record/energy",0x777);	
+	echo("/config/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
+	rt_hw_ms_delay(20);
+	echo("/config/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
+	rt_hw_ms_delay(20);
+	echo("/config/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
 	rt_hw_ms_delay(20);
 	mkdir("/ftp",0x777);
 	rt_hw_ms_delay(20);
@@ -1211,7 +1215,7 @@ int read_weekly_energy(char *date_time, char *power_buff,int *length)
 		//组件文件目录
 		sprintf(path,"%s/%s.dat",dir,date_tmp);
 		//打开文件
-		print2msg(ECU_DBG_OTHER,"path",path);
+		//print2msg(ECU_DBG_OTHER,"path",path);
 		fp = fopen(path, "r");
 		if(fp)
 		{
@@ -1226,8 +1230,8 @@ int read_weekly_energy(char *date_time, char *power_buff,int *length)
 				{
 					memcpy(energy_tmp,&buff[9],(strlen(buff)-9));
 					energy = (int)(atof(energy_tmp)*100);
-					print2msg(ECU_DBG_OTHER,"buff",buff);
-					printdecmsg(ECU_DBG_OTHER,"energy",energy);
+					//print2msg(ECU_DBG_OTHER,"buff",buff);
+					//printdecmsg(ECU_DBG_OTHER,"energy",energy);
 					power_buff[(*length)++] = (date_tmp[0]-'0')*16 + (date_tmp[1]-'0');
 					power_buff[(*length)++] = (date_tmp[2]-'0')*16 + (date_tmp[3]-'0');
 					power_buff[(*length)++] = (date_tmp[4]-'0')*16 + (date_tmp[5]-'0');
@@ -1246,7 +1250,7 @@ int read_weekly_energy(char *date_time, char *power_buff,int *length)
 	date_tmp[6] = '\0';
 	sprintf(path,"%s/%s.dat",dir,date_tmp);
 
-	print2msg(ECU_DBG_OTHER,"path",path);
+	//print2msg(ECU_DBG_OTHER,"path",path);
 	fp = fopen(path, "r");
 	if(fp)
 	{
@@ -1261,8 +1265,8 @@ int read_weekly_energy(char *date_time, char *power_buff,int *length)
 			{
 				memcpy(energy_tmp,&buff[9],(strlen(buff)-9));
 				energy = (int)(atof(energy_tmp)*100);
-				print2msg(ECU_DBG_OTHER,"buff",buff);
-				printdecmsg(ECU_DBG_OTHER,"energy",energy);
+				//print2msg(ECU_DBG_OTHER,"buff",buff);
+				//printdecmsg(ECU_DBG_OTHER,"energy",energy);
 				power_buff[(*length)++] = (date_tmp[0]-'0')*16 + (date_tmp[1]-'0');
 				power_buff[(*length)++] = (date_tmp[2]-'0')*16 + (date_tmp[3]-'0');
 				power_buff[(*length)++] = (date_tmp[4]-'0')*16 + (date_tmp[5]-'0');

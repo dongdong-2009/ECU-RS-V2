@@ -34,11 +34,11 @@
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
-void getFTPConf(char *FTPIP,int *port,char* user,char *password)
+void getFTPConf(char *domain,char *FTPIP,int *port,char* user,char *password)
 {
 	FILE *fp;
 	char buff[50];
-	fp = fopen("/yuneng/ftpadd.con", "r");
+	fp = fopen("/config/ftpadd.con", "r");
 	if(fp)
 	{
 		while(1)
@@ -47,6 +47,12 @@ void getFTPConf(char *FTPIP,int *port,char* user,char *password)
 			fgets(buff, sizeof(buff), fp);
 			if(!strlen(buff))
 				break;
+			if(!strncmp(buff, "Domain", 6))
+			{
+				strcpy(domain, &buff[7]);
+				if('\n' == domain[strlen(domain)-1])
+					domain[strlen(domain)-1] = '\0';
+			}			
 			if(!strncmp(buff, "IP", 2))
 			{
 				strcpy(FTPIP, &buff[3]);
@@ -81,8 +87,9 @@ void getFTPConf(char *FTPIP,int *port,char* user,char *password)
 
  
 //创建一个socket并返回
-int socket_connect(char *host,int port)
+int socket_connect(char *domain,char *host,int port)
 {
+	char ip[20] = {'\0'};	
     struct sockaddr_in address;
     int s, opvalue;
     socklen_t slen;
@@ -103,25 +110,33 @@ int socket_connect(char *host,int port)
     address.sin_family = AF_INET;
     address.sin_port = htons((unsigned short)port);
      
-    server = gethostbyname(host);
+    server = gethostbyname(domain);
     if (!server)
     {
-    	closesocket(s);
-     	return -1;
+			memcpy(ip,host,strlen(host));
+    	printmsg(ECU_DBG_UPDATE,"Resolve domain failure");
+    }else
+    {
+    	memset(ip, '\0', sizeof(ip));
+			sprintf(ip,"%s",ip_ntoa((ip_addr_t*)*server->h_addr_list));
     }
-	
-    memcpy(&address.sin_addr.s_addr, server->h_addr, server->h_length); 
+
+	memset(&address,0,sizeof(struct sockaddr_in));
+	address.sin_family=AF_INET;
+	address.sin_port=htons(port);
+	address.sin_addr.s_addr=inet_addr(ip);
+	memset(&(address.sin_zero),0,8);
+
     if (connect(s, (struct sockaddr*) &address, sizeof(address)) == -1)
     {
     	closesocket(s);
     	return -1;
     }  
-     
     return s;
 }
  
 //连接到一个ftp的服务器，返回socket
-int connect_server( char *host, int port )
+int connect_server(char *domain, char *host, int port )
 {   
     int       ctrl_sock;
     char      *buf;
@@ -130,7 +145,7 @@ int connect_server( char *host, int port )
     fd_set rd;
 	struct timeval timeout;
 	buf = malloc(512);
-    ctrl_sock = socket_connect(host, port);
+    ctrl_sock = socket_connect(domain,host, port);
     if (ctrl_sock == -1) {
 		free(buf);
         return -1;
@@ -322,7 +337,7 @@ int ftp_pasv_connect( int c_sock )
     sprintf( buf, "%d.%d.%d.%d",addr[0],addr[1],addr[2],addr[3]);
 		print2msg(ECU_DBG_UPDATE,"UPDATE IP",buf);
 		printdecmsg(ECU_DBG_UPDATE,"UPDATE PORT",(addr[4]*256+addr[5]));
-    r_sock = socket_connect(buf,addr[4]*256+addr[5]);
+    r_sock = socket_connect("",buf,addr[4]*256+addr[5]);
      
     return r_sock;
 }
@@ -508,8 +523,19 @@ int ftp_storfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
     memset(buf,0x00, sizeof(buf));
     while ( (len = fileRead( handle, buf, 512)) > 0)
     {
-        send_len = send(d_sock, buf, len, 0);
-			
+    	int index = 0;
+			for(index = 0;index < 3 ;index++)
+			{
+				send_len = send(d_sock, buf, len, 0);
+				if(send_len > 0)
+				{
+					break;
+				}else
+				{
+					rt_hw_ms_delay(10);
+			}
+		}	
+		
         if (send_len != len ||
             (stop != NULL && *stop))
         {
@@ -543,14 +569,14 @@ int ftp_storfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
 }
  
 //连接服务器
-int ftp_connect( char *host, int port, char *user, char *pwd )
+int ftp_connect(char *domain, char *host, int port, char *user, char *pwd )
 {
     int     c_sock;
 	if(rt_hw_GetWiredNetConnect() == 0)
 	{
 		return -1;
 	}
-    c_sock = connect_server( host, port );
+    c_sock = connect_server(domain,host, port );
     if ( c_sock == -1 ) return -1;
     if ( login_server( c_sock, user, pwd ) == -1 ) {
         closesocket( c_sock );
@@ -582,11 +608,11 @@ int ftp_deletefile( int c_sock, char *s )
 
 
 //下载文件
-int ftpgetfile(char *host, int port, char *user, char *pwd,char *remotefile,char *localfile)
+int ftpgetfile(char *domain,char *host, int port, char *user, char *pwd,char *remotefile,char *localfile)
 {
 	unsigned long long stor_size = 0;
 	int stop = 0,ret = 0;
-	int sockfd = ftp_connect( host, port, user, pwd  );
+	int sockfd = ftp_connect(domain,host, port, user, pwd  );
 	if(sockfd != -1)
 	{
 		printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);
@@ -605,11 +631,11 @@ int ftpgetfile(char *host, int port, char *user, char *pwd,char *remotefile,char
 }
 
 //上传文件
-int ftpputfile(char *host, int port, char *user, char *pwd,char *remotefile,char *localfile)
+int ftpputfile(char *domain,char *host, int port, char *user, char *pwd,char *remotefile,char *localfile)
 {
 	unsigned long long stor_size = 0;
 	int stop = 0,ret = 0;
-	int sockfd = ftp_connect( host, port, user, pwd  );
+	int sockfd = ftp_connect(domain, host, port, user, pwd  );
 
 	if(sockfd != -1)
 	{
@@ -630,10 +656,10 @@ int ftpputfile(char *host, int port, char *user, char *pwd,char *remotefile,char
 }
 
 //删除文件
-int ftpdeletefile(char *host, int port, char *user, char *pwd,char *remotefile)
+int ftpdeletefile(char *domain,char *host, int port, char *user, char *pwd,char *remotefile)
 {
 	int ret = 0;
-	int sockfd = ftp_connect( host, port, user, pwd  );
+	int sockfd = ftp_connect(domain, host, port, user, pwd  );
 
 	if(sockfd != -1)
 	{
@@ -654,50 +680,54 @@ int ftpdeletefile(char *host, int port, char *user, char *pwd,char *remotefile)
 
 int getfile(char *remoteFile, char *localFile)
 {
+	char domain[100]={'\0'};		
 	char FTPIP[50];
 	int port=0;
 	char user[20]={'\0'};
 	char password[20]={'\0'};
-	getFTPConf(FTPIP,&port,user,password);
+	getFTPConf(domain,FTPIP,&port,user,password);
 	
 	print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
 	printdecmsg(ECU_DBG_UPDATE,"port",port);
 	print2msg(ECU_DBG_UPDATE,"user",user);
 	print2msg(ECU_DBG_UPDATE,"password",password);
 
-	return ftpgetfile(FTPIP,port, user, password,remoteFile,localFile);
+	return ftpgetfile(domain,FTPIP,port, user, password,remoteFile,localFile);
 }
 
 int putfile(char *remoteFile, char *localFile)
 {
+	char domain[100]={'\0'};
 	char FTPIP[50];
 	int port=0;
 	char user[20]={'\0'};
 	char password[20]={'\0'};
-	getFTPConf(FTPIP,&port,user,password);
+	getFTPConf(domain,FTPIP,&port,user,password);
 
 	print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
 	printdecmsg(ECU_DBG_UPDATE,"port",port);
 	print2msg(ECU_DBG_UPDATE,"user",user);
 	print2msg(ECU_DBG_UPDATE,"password",password);
 
-	return ftpputfile(FTPIP,port, user, password,remoteFile,localFile);
+	return ftpputfile(domain,FTPIP,port, user, password,remoteFile,localFile);
 }
 
 int deletefile(char *remoteFile)
 {
+	char domain[100]={'\0'};
 	char FTPIP[50];
 	int port=0;
 	char user[20]={'\0'};
 	char password[20]={'\0'};
-	getFTPConf(FTPIP,&port,user,password);
+	getFTPConf(domain,FTPIP,&port,user,password);
 
+	print2msg(ECU_DBG_UPDATE,"Domain",domain);
 	print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
 	printdecmsg(ECU_DBG_UPDATE,"port",port);
 	print2msg(ECU_DBG_UPDATE,"user",user);
 	print2msg(ECU_DBG_UPDATE,"password",password);
 
-	return ftpdeletefile(FTPIP,port, user, password,remoteFile);
+	return ftpdeletefile(domain,FTPIP,port, user, password,remoteFile);
 }
 
 

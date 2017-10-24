@@ -141,8 +141,7 @@ void App_GetPowerCurve(unsigned char * ID,int Data_Len,const char *recvbuffer)
 	char date[9];
 	printf("WIFI_Recv_Event%d %s\n",3,recvbuffer);
 	memset(date,'\0',9);
-	//匹配成功进行相应操作
-	printf("COMMAND_POWERCURVE  Mapping\n");
+	
 	memcpy(date,&recvbuffer[28],8);
 	//匹配成功进行相应操作
 	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
@@ -179,9 +178,7 @@ void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		int AddNum = 0;
 		int i = 0;
 		inverter_info *curinverter = inverterInfo;
-		printf("WIFI_Recv_SocketA_LEN:%d\n",WIFI_Recv_SocketA_LEN);
 		AddNum = (WIFI_Recv_SocketA_LEN - 31)/6;
-		printf("COMMAND_SETNETWORK	 Mapping   %d\n",AddNum);
 		APP_Response_SetNetwork(ID,0x00);
 		//将数据写入EEPROM
 		phone_add_inverter(AddNum,(char *)&WIFI_RecvSocketAData[28]);	
@@ -211,7 +208,6 @@ void App_SetTime(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//EC
 	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
 	{
 		//匹配成功进行相应操作
-		printf("COMMAND_SETTIME  Mapping\n");
 		memset(setTime,'\0',15);
 		memcpy(setTime,&recvbuffer[28],14);
 		apstime(getTime);
@@ -249,8 +245,6 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		int ModeFlag = 0;
 		char buff[200] = {'\0'};
 		IP_t IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr;
-		//匹配成功进行相应操作
-		printf("COMMAND_SETWIREDNETWORK  Mapping\n");
 		//检查是DHCP  还是固定IP
 		APP_Response_SetWiredNetwork(0x00,ID);
 		ModeFlag = ResolveWired(&recvbuffer[28],&IPAddr,&MSKAddr,&GWAddr,&DNS1Addr,&DNS2Addr);
@@ -384,9 +378,6 @@ void App_GetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 
 	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
 	{
-
-		//匹配成功进行相应操作
-		printf("COMMAND_GETWIREDNETWORK  Mapping\n");
 		netif = netif_list;
 		addr = ip4_addr_get_u32(&netif->ip_addr);
 		IPAddr.IP4 = (addr/16777216)%256;

@@ -1724,7 +1724,7 @@ int AT(void)
 	//先向模块写入"+++"然后再写入"a" 写入+++返回"a" 写入"a"返回+ok
 	WIFI_SendData("+++", 3);
 	//获取到a
-	rt_hw_ms_delay(150);
+	rt_hw_ms_delay(100);
 	if(Cur < 1)
 	{
 		rt_mutex_release(wifi_uart_lock);
@@ -1741,7 +1741,7 @@ int AT(void)
 	//接着发送a
 	clear_WIFI();
 	WIFI_SendData("U", 1);
-	rt_hw_ms_delay(350);
+	rt_hw_ms_delay(500);
 	if(Cur < 2)
 	{
 		rt_mutex_release(wifi_uart_lock);
@@ -1894,7 +1894,7 @@ int AT_TCPADDB(char *IP)
 	sprintf(AT,"at+write_config=%d,socketB_destip=%s\r\n",length,IP);
 	printf("%s\n",AT);
 	WIFI_SendData(AT,strlen(AT));
-	
+	rt_hw_ms_delay(500);
 	if(Cur < 2)
 	{
 		rt_mutex_release(wifi_uart_lock);
@@ -1925,7 +1925,7 @@ int AT_TCPPTB(int port)
 	sprintf(AT,"at+write_config=%d,socketB_destport=%d\r\n",length,port);
 	printf("%s\n",AT);
 	WIFI_SendData(AT, strlen(AT));
-	
+	rt_hw_ms_delay(500);
 	if(Cur < 2)
 	{
 		rt_mutex_release(wifi_uart_lock);
@@ -1957,7 +1957,7 @@ int AT_TCPADDC(char *IP)
 	sprintf(AT,"at+write_config=%d,socketC_destip=%s\r\n",length,IP);
 	printf("%s\n",AT);
 	WIFI_SendData(AT, strlen(AT));
-	
+	rt_hw_ms_delay(500);
 	if(Cur < 2)
 	{
 		rt_mutex_release(wifi_uart_lock);
@@ -1984,10 +1984,10 @@ int AT_TCPPTC(int port)
 	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
 	clear_WIFI();
 	length = 17 + int_length(port);
-	sprintf(AT,"at+write_config=%d,socketC_destport=%d\n",length,port);
+	sprintf(AT,"at+write_config=%d,socketC_destport=%d\r\n",length,port);
 	printf("%s\n",AT);
 	WIFI_SendData(AT, strlen(AT));
-	
+	rt_hw_ms_delay(500);
 	if(Cur < 2)
 	{
 		rt_mutex_release(wifi_uart_lock);

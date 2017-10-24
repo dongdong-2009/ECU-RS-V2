@@ -21,6 +21,8 @@
 #include "rtthread.h"
 #include "version.h"
 #include "inverter.h"
+#include "dfs_posix.h"
+#include "serverfile.h"
 
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
@@ -87,24 +89,48 @@ int inverter_msg(char *sendbuffer, char* id)
 /* add inverter ID */
 int add_id(const char *msg, int num)
 {
-
-
-
-	return num;
+	int i, count = 0;
+	char inverter_id[13] = {'\0'};
+	int fd;
+	char buff[50];
+	fd = open("/home/data/id", O_WRONLY | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{	
+		for(i=0; i<num; i++)
+		{
+			strncpy(inverter_id, &msg[i*15], 12);
+			inverter_id[12] = '\0';
+			sprintf(buff,"%s,,,,,,\n",inverter_id);
+			write(fd,buff,strlen(buff));
+			count++;
+		}
+		
+		close(fd);
+	}
+	echo("/yuneng/limiteid.con","1");
+	return count;
 }
 
 /* delete inverter ID */
 int delete_id(const char *msg, int num)
 {
+	int i, count = 0;
+	char inverter_id[13] = {'\0'};
 
-	return num;
+	for(i=0; i<num; i++)
+	{
+		strncpy(inverter_id, &msg[i*15], 12);
+		inverter_id[12] = '\0';
+		delete_line("/home/data/id","/home/data/idtmp",inverter_id,12);
+		count++;
+	}
+	return count;
 }
 
 /* clear inverter ID */
 int clear_id()
 {
-
-	//Write_UID_NUM((char *)&UID_NUM);
+	unlink("/home/data/id");
 	init_inverter(inverterInfo);
 	return 0;
 
@@ -124,7 +150,7 @@ int response_inverter_id(const char *recvbuffer, char *sendbuffer)
 
 		for(i = 0; i < ecu.validNum;i++)
 		{
-			sprintf(UID,"%02x%02x%02x%02x%02x%02x",inverterInfo[i].uid[0],inverterInfo[i].uid[1],inverterInfo[i].uid[2],inverterInfo[i].uid[3],inverterInfo[i].uid[4],inverterInfo[i].uid[5]);
+			sprintf(UID,"%s",inverterInfo[i].uid);
 			UID[12] = '\0';
 			/* Inverter Message */
 			inverter_msg(sendbuffer,UID);		
@@ -178,7 +204,7 @@ int set_inverter_id(const char *recvbuffer, char *sendbuffer)
 					break;
 			}
 		}
-		
+		threadRestartTimer(10,TYPE_COMM);
 	}
 
 	//拼接应答消息

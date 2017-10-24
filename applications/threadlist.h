@@ -47,17 +47,17 @@ typedef enum THREADTYPE {
 
 #ifdef RAK475_MODULE
 //socket每次发送的字节数
-#define SIZE_PER_SEND		1000
+#define SIZE_PER_SEND		3800
 #endif 
 
 //网络通讯地址
 #if 1
-#define CLIENT_SERVER_DOMAIN			""
+#define CLIENT_SERVER_DOMAIN			"ecu.apsema.com"
 #define CLIENT_SERVER_IP					"60.190.131.190"
 #define CLIENT_SERVER_PORT1				8982
 #define CLIENT_SERVER_PORT2				8982
 
-#define CONTROL_SERVER_DOMAIN			""
+#define CONTROL_SERVER_DOMAIN			"ecu.apsema.com"
 #define CONTROL_SERVER_IP					"60.190.131.190"
 #define CONTROL_SERVER_PORT1			8981
 #define CONTROL_SERVER_PORT2			8981
@@ -113,5 +113,7 @@ typedef enum THREADTYPE {
 void tasks_new(void);
 //复位线程
 void restartThread(threadType type);
+void threadRestartTimer(int timeout,threadType Type);
+
 
 #endif

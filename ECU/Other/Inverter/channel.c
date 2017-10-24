@@ -40,7 +40,6 @@ int process_channel()
 		//获取变更前后的信道
 		oldChannel = getOldChannel();
 		newChannel = getNewChannel();
-		printf("%02x %02x\n",oldChannel,newChannel);
 		//修改信道
 		changeChannelOfInverters(oldChannel, newChannel);
 
@@ -116,7 +115,6 @@ int getOldChannel()
 
 	fp = fopen("/tmp/old_chan.con", "r");
 	if (fp) {
-		printf("getOldChannel:%s\n",buffer);
 		fgets(buffer, 4, fp);
 		fclose(fp);
 		return atoi(buffer);
@@ -130,7 +128,6 @@ int getNewChannel()
 
 	fp = fopen("/tmp/new_chan.con", "r");
 	if (fp) {
-		printf("getNewChannel:%s\n",buffer);
 		fgets(buffer, 4, fp);
 		fclose(fp);
 		return atoi(buffer);

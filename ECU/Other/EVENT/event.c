@@ -91,14 +91,13 @@ void add_APP_functions(void)
 void process_WIFI(unsigned char * ID)
 {
 	ResolveFlag =  Resolve_RecvData((char *)WIFI_RecvSocketAData,&Data_Len,&Command_Id);
-	printf("%d %d %s\n",ResolveFlag,Command_Id,WIFI_RecvSocketAData);
 	if(ResolveFlag == 0)
 	{
 		add_APP_functions();
 		//函数指针不为空，则运行对应的函数
 		if(pfun_Phone[Command_Id%100])
 		{
-			printf("pfun_Phone ID:%d\n",Command_Id);
+			//printf("pfun_Phone ID:%d\n",Command_Id);
 			(*pfun_Phone[Command_Id%100])(ID,Data_Len,(char *)WIFI_RecvSocketAData);
 		}
 		
@@ -228,8 +227,6 @@ void process_KEYEvent(void)
 {
 	int ret =0,i = 0;
 	SEGGER_RTT_printf(0, "KEY_FormatWIFI_Event Start\n");
-		rt_hw_ms_delay(5000);
-
 
 	for(i = 0;i<3;i++)
 	{
@@ -239,7 +236,11 @@ void process_KEYEvent(void)
 	}
 	
 	if(ret == 0) 	//写入WIFI密码
+	{
+		initPath();
 		Write_WIFI_PW("88888888",8);	//WIFI密码	
+	}
+		
 	
 	SEGGER_RTT_printf(0, "KEY_FormatWIFI_Event End\n");
 }

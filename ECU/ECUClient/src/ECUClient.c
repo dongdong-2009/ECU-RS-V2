@@ -135,7 +135,7 @@ void ECUClient_thread_entry(void* parameter)
 			ClientDurabletime = acquire_time();
 			ClientThistime = acquire_time();
 			//1点或者2点需要清标志位
-			if((2 == get_hour())||(1 == get_hour()))
+			if(1 == get_hour())
 			{
 				preprocess();
 				resend_record();

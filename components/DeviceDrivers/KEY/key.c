@@ -29,7 +29,6 @@
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
-int FirstStart = 1;
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -73,30 +72,15 @@ void EXTIX_Init(void)
 
 }
 signed char KEY_FormatWIFI_Event = 0;
-int keyflag = 0;
 //外部中断9_5服务程序
 void EXTI9_5_IRQHandler(void)
 {
 	rt_hw_ms_delay(20);
-
-if(FirstStart == 1)
-	{
-		FirstStart = 0;
-		EXTI_ClearITPendingBit(EXTI_Line9); //清除LINE9上的中断标志位  
-		return;
-	}
 	if(KEY_Reset==1)	 	 
 	{
-		keyflag++;
-		if(keyflag > 1)
-		{
-			//将配置文件恢复成出厂设置
-			//SEGGER_RTT_printf(0, "EXTI9_5_IRQHandler \n");
-			keyflag = 0;
-			KEY_FormatWIFI_Event = 1;
-			
-		}
-		
+		printf("KEY_FormatWIFI_Event\n");
+		KEY_FormatWIFI_Event = 1;
+
 	}
 	EXTI_ClearITPendingBit(EXTI_Line9); //清除LINE9上的中断标志位 
 }

@@ -44,13 +44,15 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 int updateECUByVersion(void)
 {
 	int ret = 0;
+	char domain[100]={'\0'};
 	char IPFTPadd[50] = {'\0'};
 	char remote_path[100] = {'\0'};
 	int port=0;
 	char user[20]={'\0'};
 	char password[20]={'\0'};
-	getFTPConf(IPFTPadd,&port,user,password);
+	getFTPConf(domain,IPFTPadd,&port,user,password);
 
+	print2msg(ECU_DBG_UPDATE,"Domain",domain);
 	print2msg(ECU_DBG_UPDATE,"FTPIP",IPFTPadd);
 	printdecmsg(ECU_DBG_UPDATE,"port",port);
 	print2msg(ECU_DBG_UPDATE,"user",user);
@@ -60,7 +62,7 @@ int updateECUByVersion(void)
 	sprintf(remote_path,"/ECU_R_RS/V%s.%s/%s",MAJORVERSION,MINORVERSION,UPDATE_PATH_SUFFIX);
 	print2msg(ECU_DBG_UPDATE,"VER Path",remote_path);
 	rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
-	ret=ftpgetfile(IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
+	ret=ftpgetfile(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
 	if(!ret)
 	{
 		//获取到文件，进行更新
@@ -80,6 +82,7 @@ int updateECUByVersion(void)
 int updateECUByID(void)
 {
 	int ret = 0;
+	char domain[100]={'\0'};		//服务器域名
 	char IPFTPadd[50] = {'\0'};
 	char remote_path[100] = {'\0'};
 	char ecuID[13] = {'\0'};
@@ -87,8 +90,9 @@ int updateECUByID(void)
 	char user[20]={'\0'};
 	char password[20]={'\0'};
 	
-	getFTPConf(IPFTPadd,&port,user,password);
-
+	
+	getFTPConf(domain,IPFTPadd,&port,user,password);
+	print2msg(ECU_DBG_UPDATE,"Domain",domain);
 	print2msg(ECU_DBG_UPDATE,"FTPIP",IPFTPadd);
 	printdecmsg(ECU_DBG_UPDATE,"port",port);
 	print2msg(ECU_DBG_UPDATE,"user",user);
@@ -101,7 +105,7 @@ int updateECUByID(void)
 	sprintf(remote_path,"/ECU_R_RS/%s/%s",ecuID,UPDATE_PATH_SUFFIX);
 	print2msg(ECU_DBG_UPDATE,"ID Path",remote_path);
 	rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
-	ret=ftpgetfile(IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
+	ret=ftpgetfile(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
 	if(!ret)
 	{
 		//获取到文件，进行更新

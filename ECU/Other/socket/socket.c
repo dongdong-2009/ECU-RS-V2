@@ -41,6 +41,8 @@ int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
 	int port[2]={CLIENT_SERVER_PORT1, CLIENT_SERVER_PORT2};	//服务器端口号
 	struct sockaddr_in serv_addr;
 	struct hostent * host;
+	char buff[512] = {'\0'};
+	FILE *fp;
 
 	//不存在有线连接，直接关闭socket
 	if(rt_hw_GetWiredNetConnect() == 0)
@@ -50,6 +52,36 @@ int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
 	}
 	strcpy(domain, CLIENT_SERVER_DOMAIN);
 	strcpy(ip, CLIENT_SERVER_IP);
+
+	fp = fopen("/config/datacent.con", "r");
+	if(fp)
+	{
+		while(1)
+		{
+			memset(buff, '\0', sizeof(buff));
+			fgets(buff, sizeof(buff), fp);
+			if(!strlen(buff))
+				break;
+			if(!strncmp(buff, "Domain", 6))
+			{
+				strcpy(domain, &buff[7]);
+				if('\n' == domain[strlen(domain)-1])
+					domain[strlen(domain)-1] = '\0';
+			}
+			if(!strncmp(buff, "IP", 2))
+			{
+				strcpy(ip, &buff[3]);
+				if('\n' == ip[strlen(ip)-1])
+					ip[strlen(ip)-1] = '\0';
+			}
+			if(!strncmp(buff, "Port1", 5))
+				port[0]=atoi(&buff[6]);
+			if(!strncmp(buff, "Port2", 5))
+				port[1]=atoi(&buff[6]);
+		}
+		fclose(fp);
+	}
+
 
 
 	host = gethostbyname(domain);
@@ -91,6 +123,8 @@ int connect_control_socket(int fd_sock)				//通过有线的方式连接服务器
 	int port[2]={CONTROL_SERVER_PORT1, CONTROL_SERVER_PORT2};	//服务器端口号
 	struct sockaddr_in serv_addr;
 	struct hostent * host;
+	char buff[512] = {'\0'};
+	FILE *fp;
 
 	//不存在有线连接，直接关闭socket
 	if(rt_hw_GetWiredNetConnect() == 0)
@@ -100,6 +134,35 @@ int connect_control_socket(int fd_sock)				//通过有线的方式连接服务器
 	}
 	strcpy(domain, CONTROL_SERVER_DOMAIN);
 	strcpy(ip, CONTROL_SERVER_IP);
+
+	fp = fopen("/config/control.con", "r");
+		if(fp)
+		{
+			while(1)
+			{
+				memset(buff, '\0', sizeof(buff));
+				fgets(buff, sizeof(buff), fp);
+				if(!strlen(buff))
+					break;
+				if(!strncmp(buff, "Domain", 6))
+				{
+					strcpy(domain, &buff[7]);
+					if('\n' == domain[strlen(domain)-1])
+						domain[strlen(domain)-1] = '\0';
+				}
+				if(!strncmp(buff, "IP", 2))
+				{
+					strcpy(ip, &buff[3]);
+					if('\n' == ip[strlen(ip)-1])
+						ip[strlen(ip)-1] = '\0';
+				}
+				if(!strncmp(buff, "Port1", 5))
+					port[0]=atoi(&buff[6]);
+				if(!strncmp(buff, "Port2", 5))
+					port[1]=atoi(&buff[6]);
+			}
+			fclose(fp);
+		}
 
 
 	host = gethostbyname(domain);
@@ -451,7 +514,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 			{
 				memset(readbuff, '\0', sizeof(readbuff));
 				readbytes = recv(socketfd, readbuff, *recvLength, 0);
-				if(0 == readbytes)
+				if(readbytes <= 0)
 				{
 					free(readbuff);
 					readbuff = NULL;
@@ -472,7 +535,14 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 						readbuff = NULL;
 						close_socket(socketfd);
 						return *recvLength;
-					}		
+					}else if(recvbuff[0] != '1')
+					{
+						free(readbuff);
+						readbuff = NULL;
+						close_socket(socketfd);
+						*recvLength = 0;
+						return *recvLength;
+					}
 				}
 
 			}
