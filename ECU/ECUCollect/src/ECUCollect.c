@@ -379,7 +379,7 @@ void ECUCollect_thread_entry(void* parameter)
 		if(compareTime(CollectClientDurabletime ,CollectClientThistime,CollectClientReportinterval))
 		//if(compareTime(CollectClientDurabletime ,CollectClientThistime,30))
 		{
-			optimizeFileSystem();
+			optimizeFileSystem(300);
 			printmsg(ECU_DBG_COLLECT,"Collect DATA Start");
 			//5分钟采集相关的发电量数据
 			CollectClientThistime = acquire_time();
@@ -391,7 +391,7 @@ void ECUCollect_thread_entry(void* parameter)
 		
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
-			optimizeFileSystem();
+			optimizeFileSystem(300);
 			//采集心跳相关远程控制数据
 			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  Start");
 			CollectControlThistime = acquire_time();

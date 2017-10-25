@@ -48,7 +48,7 @@ void save_collect_info(char *curTime);
 int delete_line(char* filename,char* temfilename,char* compareData,int len);
 int search_line(char* filename,char* compareData,int len);
 int insert_line(char * filename,char *str);
-int optimizeFileSystem(void);
+int optimizeFileSystem(int capsize);
 void splitSpace(char *data,char *sourcePath,char *destPath);
 void save_dbg(char sendbuff[]);
 int read_RSD_info(char *date_time,char * UID,char *rsd_buff,int *length);

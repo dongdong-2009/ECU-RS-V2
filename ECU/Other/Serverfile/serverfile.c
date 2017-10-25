@@ -472,7 +472,7 @@ static int checkOldFile(char *dir,char *oldFile)
 
 
 //检索整个文件系统，判断剩余空间存储量，如果剩余可存储空间过小，则检索相应的目录，并进行相应的删除操作
-int optimizeFileSystem(void)
+int optimizeFileSystem(int capsize)
 {
   int result;
   long long cap;
@@ -489,7 +489,7 @@ int optimizeFileSystem(void)
 	
 	printdecmsg(ECU_DBG_FILE,"disk free size",(unsigned long)cap);
 	//当flash芯片所剩下的容量小于40KB的时候进行一些必要的文件删除操作。
-	if (cap < 40) 
+	if (cap < capsize) 
 	{
 		//删除最前面一天的ECU级别处理结果数据    如果该目录下存在文件的话
 		if(1 == checkOldFile("/home/record/almdata",oldFile))
