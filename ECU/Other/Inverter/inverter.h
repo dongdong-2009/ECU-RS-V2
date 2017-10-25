@@ -27,4 +27,6 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /*****************************************************************************/
 int init_ecu(void);
 int init_inverter(inverter_info *inverter);
+int init_inverter_A103(inverter_info *inverter);
+
 #endif /*__INVERTER_H__*/

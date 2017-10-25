@@ -86,6 +86,7 @@ int WIFI_SoftReset(void);
 
 int WIFI_Test(void);
 int WIFI_Factory(char *ECUID12);
+int WIFI_Factory_Passwd(void);
 
 int WIFI_Create(eSocketType Type);
 int WIFI_Close(eSocketType Type);

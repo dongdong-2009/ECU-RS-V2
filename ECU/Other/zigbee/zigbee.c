@@ -71,11 +71,11 @@ int selectZigbee(int timeout)			// 参数为1表示10ms zigbee串口数据检测 返回0 表示
 			return 0;
 		}else 
 		{
-			rt_hw_ms_delay(10);
+			rt_thread_delay(1);
 			if(zigbeeReadFlag == 1)	//串口数据监测,如果有数据则返回1
 			{
 				rt_timer_delete(readtimer);
-				rt_hw_ms_delay(80);
+				rt_thread_delay(8);
 				return 1;
 			}
 		}
@@ -87,11 +87,11 @@ void clear_zbmodem(void)		//清空串口缓冲区的数据
 	char data[256];
 	//清空缓冲器代码	通过将接收缓冲区的所有数据都读取出来，从而清空数据
 	ZIGBEE_SERIAL.read(&ZIGBEE_SERIAL,0, data, 255);
-	rt_hw_ms_delay(10);
+	rt_thread_delay(1);
 	ZIGBEE_SERIAL.read(&ZIGBEE_SERIAL,0, data, 255);
-	rt_hw_ms_delay(10);
+	rt_thread_delay(1);
 	ZIGBEE_SERIAL.read(&ZIGBEE_SERIAL,0, data, 255);
-	rt_hw_ms_delay(10);
+	rt_thread_delay(1);
 
 }
 
@@ -137,7 +137,7 @@ void zigbee_reset(void)
   GPIO_Init(GPIOC, &GPIO_InitStructure);
 	
 	GPIO_ResetBits(GPIOC, GPIO_Pin_7);		//设置引脚为低电平输出
-	rt_hw_ms_delay(1000);
+	rt_thread_delay(100);
 	GPIO_SetBits(GPIOC, GPIO_Pin_7);		//设置引脚为高电平输出
 
 	printmsg(ECU_DBG_COMM,"zigbee reset successful");
@@ -288,7 +288,7 @@ int zb_change_inverter_channel_one(char *inverter_id, int channel)
 	char sendbuff[512] = {'\0'};
 	int i;
 	int check=0;
-	rt_hw_ms_delay(300); 
+	rt_thread_delay(30); 
 
 	clear_zbmodem();
 	sendbuff[0]  = 0xAA;
@@ -333,7 +333,7 @@ int zb_off_report_id_and_bind(int short_addr)
 	int check=0;
 
 	do {
-		rt_hw_ms_delay(200);
+		rt_thread_delay(20);
 		//发送关闭逆变器ID上报+绑定操作
 		clear_zbmodem();
 		sendbuff[0]  = 0xAA;

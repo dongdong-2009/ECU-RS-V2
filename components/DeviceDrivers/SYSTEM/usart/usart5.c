@@ -1712,6 +1712,69 @@ int WIFI_Factory(char *ECUID12)
 	return 0;
 
 }
+
+int WIFI_Factory_Passwd(void)
+{
+	int ret = 0,index;
+	for(index = 0;index<3;index++)
+	{
+		rt_hw_ms_delay(500);
+		ret = AT();
+		if(ret == 0) break;
+	}
+	if(ret == -1)
+	{
+		for(index = 0;index<3;index++)
+		{
+			rt_hw_ms_delay(200);
+			ret =AT_ENTM();
+			if(ret == 0) break;
+		}
+	
+		return -1;
+	}	
+	
+	rt_hw_ms_delay(200);
+	
+	for(index = 0;index<3;index++)
+	{
+		rt_hw_ms_delay(200);
+		ret = AT_WAKEY("88888888");
+		if(ret == 0) break;
+	}
+	if(ret == -1)
+	{
+		for(index = 0;index<3;index++)
+		{
+			rt_hw_ms_delay(200);
+			ret =AT_ENTM();
+			if(ret == 0) break;
+		}
+	
+		return -1;
+	}		
+	
+	for(index = 0;index<3;index++)
+	{
+		rt_hw_ms_delay(200);
+		ret =AT_Z();
+		if(ret == 0) return 0;
+	}
+	
+	for(index = 0;index<3;index++)
+	{
+		rt_hw_ms_delay(200);
+		ret =AT_ENTM();;
+		if(ret == 0) break;
+	}
+	if(ret == -1) return -1;
+	
+	WIFI_Reset();	
+	return 0;
+
+}
+
+
 #endif
 
 
@@ -2443,6 +2506,66 @@ int WIFI_Factory(char *ECUID12)
 
 }
 
+int WIFI_Factory_Passwd(void)
+{
+	int ret = 0,index;
+	for(index = 0;index<3;index++)
+	{
+		rt_hw_ms_delay(500);
+		ret = AT();
+		if(ret == 0) break;
+	}
+	if(ret == -1)
+	{
+		for(index = 0;index<3;index++)
+		{
+			rt_hw_ms_delay(200);
+			ret =AT_ENTM();
+			if(ret == 0) break;
+		}
+	
+		return -1;
+	}	
+	
+	rt_hw_ms_delay(200);
+	
+	for(index = 0;index<3;index++)
+	{
+		rt_hw_ms_delay(200);
+		ret = AT_WAKEY("88888888");
+		if(ret == 0) break;
+	}
+	if(ret == -1)
+	{
+		for(index = 0;index<3;index++)
+		{
+			rt_hw_ms_delay(200);
+			ret =AT_ENTM();
+			if(ret == 0) break;
+		}
+	
+		return -1;
+	}		
+	
+	for(index = 0;index<3;index++)
+	{
+		rt_hw_ms_delay(200);
+		ret =AT_Z();
+		if(ret == 0) return 0;
+	}
+	
+	for(index = 0;index<3;index++)
+	{
+		rt_hw_ms_delay(200);
+		ret =AT_ENTM();;
+		if(ret == 0) break;
+	}
+	if(ret == -1) return -1;
+	
+	WIFI_Reset();	
+	return 0;
+
+}
 
 #endif 
 

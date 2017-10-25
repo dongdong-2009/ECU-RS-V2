@@ -231,7 +231,7 @@ void process_KEYEvent(void)
 	for(i = 0;i<3;i++)
 	{
 		
-		ret = WIFI_Factory(ecu.ECUID12);
+		ret = WIFI_Factory_Passwd();
 		if(ret == 0) break;
 	}
 	

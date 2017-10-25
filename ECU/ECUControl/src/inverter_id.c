@@ -40,28 +40,22 @@ int ecu_msg(char *sendbuffer, int num, const char *recvbuffer)
 	char version_msg[16] = {'\0'};	//版本信息
 	char version[16] = {'\0'};		//版本号
 	char area[16] = {'\0'};
-	char version_number[2] = {'\0'};//数字版本号
 	char timestamp[16] = {'\0'};	//时间戳
 
 	/* 处理数据 */
 	memcpy(ecuid,ecu.ECUID12,12);
 	ecuid[12] = '\0';
-	sprintf(version,"%s_%s.%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
-	memcpy(version_number,VERSION_NUM,VERSION_NUM_LEN);
-	version_number[VERSION_NUM_LEN] = '\0';
-	memcpy(area,ECU_AREA,ECU_AREA_LEN);
-	area[ECU_AREA_LEN] = '\0';
+	sprintf(version,"%s%s.%s",ECU_EMA_VERSION,MAJORVERSION,MINORVERSION);
+
+	memcpy(area,ECU_AREA,strlen(ECU_AREA));
+	area[strlen(ECU_AREA)] = '\0';
 	
-	if(strlen(version_number)){
-		sprintf(version_msg, "%02d%s%s--%s",
-				strlen(version) + strlen(area) + 2 + strlen(version_number),
-				version,
-				area,
-				version_number);
-	}
-	else{
-		sprintf(version_msg, "%02d%s%s", strlen(version), version, area);
-	}
+
+	sprintf(version_msg, "%02d%s%s",
+			strlen(version) + strlen(area) ,
+			version,
+			area);
+
 	strncpy(timestamp, &recvbuffer[34], 14);
 
 	/* 鎷兼帴ECU淇℃伅 */
@@ -107,7 +101,8 @@ int add_id(const char *msg, int num)
 		
 		close(fd);
 	}
-	echo("/yuneng/limiteid.con","1");
+
+	echo("/config/limiteid.con","1");
 	return count;
 }
 
@@ -202,6 +197,7 @@ int set_inverter_id(const char *recvbuffer, char *sendbuffer)
 					break;
 			}
 		}
+		init_inverter_A103(inverterInfo);
 		threadRestartTimer(10,TYPE_COMM);
 
 	}
