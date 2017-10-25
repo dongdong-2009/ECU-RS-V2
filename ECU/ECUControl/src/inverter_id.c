@@ -131,7 +131,6 @@ int delete_id(const char *msg, int num)
 int clear_id()
 {
 	unlink("/home/data/id");
-	init_inverter(inverterInfo);
 	return 0;
 
 }
@@ -173,7 +172,6 @@ int set_inverter_id(const char *recvbuffer, char *sendbuffer)
 	num = msg_get_int(&recvbuffer[31], 3);
 	//获取时间戳
 	strncpy(timestamp, &recvbuffer[34], 14);
-
 	//检查格式
 	if(!msg_num_check(&recvbuffer[51], num, 12, 1))
 	{
@@ -205,8 +203,8 @@ int set_inverter_id(const char *recvbuffer, char *sendbuffer)
 			}
 		}
 		threadRestartTimer(10,TYPE_COMM);
-	}
 
+	}
 	//拼接应答消息
 	msg_ACK(sendbuffer, "A103", timestamp, ack_flag);
 	return 102; //返回下一条命令的命令号
