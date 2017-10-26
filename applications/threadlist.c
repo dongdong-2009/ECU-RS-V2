@@ -199,8 +199,10 @@ void rt_init_thread_entry(void* parameter)
 	rt_hw_rtc_init();		
 	cpu_usage_init();	
 	
-	EXTIX_Init();									//恢复出厂设置IO中断初始化
 	KEY_Init();										//恢复出厂设置按键初始化
+	rt_hw_ms_delay(200);
+	EXTIX_Init();									//恢复出厂设置IO中断初始化
+	
 	//RFM_init();
 	//RFM_off();
 	rt_hw_led_init();

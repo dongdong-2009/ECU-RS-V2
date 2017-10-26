@@ -60,7 +60,7 @@ void EXTIX_Init(void)
  	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB,GPIO_PinSource9);
  	EXTI_InitStructure.EXTI_Line=EXTI_Line9;	//KEY_RESET
 	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;	
- 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+ 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
  	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
  	EXTI_Init(&EXTI_InitStructure);	 	//根据EXTI_InitStruct中指定的参数初始化外设EXTI寄存器
 
@@ -76,7 +76,7 @@ signed char KEY_FormatWIFI_Event = 0;
 void EXTI9_5_IRQHandler(void)
 {
 	rt_hw_ms_delay(20);
-	if(KEY_Reset==1)	 	 
+	if(KEY_Reset==0)
 	{
 		printf("KEY_FormatWIFI_Event\n");
 		KEY_FormatWIFI_Event = 1;
