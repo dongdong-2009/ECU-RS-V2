@@ -36,6 +36,7 @@
 #include "watchdog.h"
 #include "serverfile.h"
 #include "socket.h"
+#include "rtc.h"
 
 #ifdef RT_USING_DFS
 #include <dfs_fs.h>
@@ -273,19 +274,27 @@ static void led_thread_entry(void* parameter)
 #ifdef THREAD_PRIORITY_LAN8720_RST
 static void lan8720_rst_thread_entry(void* parameter)
 {
-    int value;
-	
-	  while (1)
-    {
-			value = ETH_ReadPHYRegister(0x00, 0);
+	int value;
+	char Time[15] = {'\0'};
+	while (1)
+	{
+		value = ETH_ReadPHYRegister(0x00, 0);
 			
-			if(0 == value)	//判断控制寄存器是否变为0  表示断开
-			{
-				//printf("reg 0:%x\n",value);
-				rt_hw_lan8720_rst();
-			}
-      rt_thread_delay( RT_TICK_PER_SECOND*60 );
-    }
+		if(0 == value)	//判断控制寄存器是否变为0  表示断开
+		{
+			//printf("reg 0:%x\n",value);
+			rt_hw_lan8720_rst();
+		}
+
+		apstime(Time);
+		if(!memcmp(&Time[8],"0200",4))
+		{
+			printf("reboot :%s\n",Time);
+			reboot();
+		}
+			
+      	rt_thread_delay( RT_TICK_PER_SECOND*50 );
+	}
 
 }
 #endif

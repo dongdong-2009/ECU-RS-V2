@@ -52,12 +52,12 @@ typedef enum THREADTYPE {
 
 //ÍøÂçÍ¨Ñ¶µØÖ·
 #if 1
-#define CLIENT_SERVER_DOMAIN			"ecu.apsema.com"
+#define CLIENT_SERVER_DOMAIN			""		//"ecu.apsema.com"
 #define CLIENT_SERVER_IP					"60.190.131.190"
 #define CLIENT_SERVER_PORT1				8982
 #define CLIENT_SERVER_PORT2				8982
 
-#define CONTROL_SERVER_DOMAIN			"ecu.apsema.com"
+#define CONTROL_SERVER_DOMAIN			""		//"ecu.apsema.com"
 #define CONTROL_SERVER_IP					"60.190.131.190"
 #define CONTROL_SERVER_PORT1			8981
 #define CONTROL_SERVER_PORT2			8981
