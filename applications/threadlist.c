@@ -237,25 +237,20 @@ void rt_init_thread_entry(void* parameter)
 #ifdef THREAD_PRIORITY_LED
 static void led_thread_entry(void* parameter)
 {
-    unsigned int count=0;	
-		rt_uint8_t major,minor;
-		/* Initialize led */
-    rt_hw_led_init();
+	rt_uint8_t major,minor;
+	/* Initialize led */
+	rt_hw_led_init();
 	rt_hw_watchdog_init();
-		while (1)
+	while (1)
     {
-				kickwatchdog();
-        /* led1 on */
-        count++;
-        rt_hw_led_on();
-				//rt_kprintf("rt_hw_led_on:%d\n",count);
-        rt_thread_delay( RT_TICK_PER_SECOND/2 ); /* sleep 0.5 second and switch to other thread */
-			
-        rt_hw_led_off();
-				//rt_kprintf("rt_hw_led_off:%d\n",count);
+		kickwatchdog();
+		/* led1 on */
+		rt_hw_led_on();
+		rt_thread_delay( RT_TICK_PER_SECOND/2 ); /* sleep 0.5 second and switch to other thread */
+		rt_hw_led_off();
         rt_thread_delay( RT_TICK_PER_SECOND/2 );
-				cpu_usage_get(&major, &minor);
-				//printf("CPU : %d.%d%\n", major, minor);
+		cpu_usage_get(&major, &minor);
+		//printf("CPU : %d.%d%\n", major, minor);
     }
 }
 #endif
