@@ -65,7 +65,7 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 
 	inverter->version = inverter_data[36]*256 + inverter_data[37];
 	
-	if((inverter_data[38] == 0xD0))	//监控设备
+	if((inverter_data[38] == 0xD0) || (inverter_data[38] == 0xFF))	//监控设备
 	{
 		inverter->status.device_Type = 1;		//监控设备
 	}else if((inverter_data[38] == 0xD1))

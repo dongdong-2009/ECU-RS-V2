@@ -35,10 +35,13 @@ int init_ecu(void)
 	ecu.panid = get_panid();
 	ecu.channel = get_channel();
 	ecu.today_energy = get_today_energy();
-
+	ecu.count = 0;
+	ecu.validNum = 0;
+	ecu.curSequence = 0;
 	Read_IO_INIT_STATU(&ecu.IO_Init_Status);
 	ecu.life_energy = get_lifetime_power();
 	zb_change_ecu_panid();
+	
 	return 0;
 }
 

@@ -36,6 +36,43 @@ static int zigbeereadtimeoutflag = 0;
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
+
+const unsigned short CRC_table_16[256] =
+{
+	0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7, 
+	0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF, 
+	0x1231, 0x0210, 0x3273, 0x2252, 0x52B5, 0x4294, 0x72F7, 0x62D6, 
+	0x9339, 0x8318, 0xB37B, 0xA35A, 0xD3BD, 0xC39C, 0xF3FF, 0xE3DE, 
+	0x2462, 0x3443, 0x0420, 0x1401, 0x64E6, 0x74C7, 0x44A4, 0x5485, 
+	0xA56A, 0xB54B, 0x8528, 0x9509, 0xE5EE, 0xF5CF, 0xC5AC, 0xD58D, 
+	0x3653, 0x2672, 0x1611, 0x0630, 0x76D7, 0x66F6, 0x5695, 0x46B4, 
+	0xB75B, 0xA77A, 0x9719, 0x8738, 0xF7DF, 0xE7FE, 0xD79D, 0xC7BC, 
+	0x48C4, 0x58E5, 0x6886, 0x78A7, 0x0840, 0x1861, 0x2802, 0x3823, 
+	0xC9CC, 0xD9ED, 0xE98E, 0xF9AF, 0x8948, 0x9969, 0xA90A, 0xB92B, 
+	0x5AF5, 0x4AD4, 0x7AB7, 0x6A96, 0x1A71, 0x0A50, 0x3A33, 0x2A12, 
+	0xDBFD, 0xCBDC, 0xFBBF, 0xEB9E, 0x9B79, 0x8B58, 0xBB3B, 0xAB1A, 
+	0x6CA6, 0x7C87, 0x4CE4, 0x5CC5, 0x2C22, 0x3C03, 0x0C60, 0x1C41, 
+	0xEDAE, 0xFD8F, 0xCDEC, 0xDDCD, 0xAD2A, 0xBD0B, 0x8D68, 0x9D49, 
+	0x7E97, 0x6EB6, 0x5ED5, 0x4EF4, 0x3E13, 0x2E32, 0x1E51, 0x0E70, 
+	0xFF9F, 0xEFBE, 0xDFDD, 0xCFFC, 0xBF1B, 0xAF3A, 0x9F59, 0x8F78, 
+	0x9188, 0x81A9, 0xB1CA, 0xA1EB, 0xD10C, 0xC12D, 0xF14E, 0xE16F, 
+	0x1080, 0x00A1, 0x30C2, 0x20E3, 0x5004, 0x4025, 0x7046, 0x6067, 
+	0x83B9, 0x9398, 0xA3FB, 0xB3DA, 0xC33D, 0xD31C, 0xE37F, 0xF35E, 
+	0x02B1, 0x1290, 0x22F3, 0x32D2, 0x4235, 0x5214, 0x6277, 0x7256, 
+	0xB5EA, 0xA5CB, 0x95A8, 0x8589, 0xF56E, 0xE54F, 0xD52C, 0xC50D, 
+	0x34E2, 0x24C3, 0x14A0, 0x0481, 0x7466, 0x6447, 0x5424, 0x4405, 
+	0xA7DB, 0xB7FA, 0x8799, 0x97B8, 0xE75F, 0xF77E, 0xC71D, 0xD73C, 
+	0x26D3, 0x36F2, 0x0691, 0x16B0, 0x6657, 0x7676, 0x4615, 0x5634, 
+	0xD94C, 0xC96D, 0xF90E, 0xE92F, 0x99C8, 0x89E9, 0xB98A, 0xA9AB, 
+	0x5844, 0x4865, 0x7806, 0x6827, 0x18C0, 0x08E1, 0x3882, 0x28A3, 
+	0xCB7D, 0xDB5C, 0xEB3F, 0xFB1E, 0x8BF9, 0x9BD8, 0xABBB, 0xBB9A, 
+	0x4A75, 0x5A54, 0x6A37, 0x7A16, 0x0AF1, 0x1AD0, 0x2AB3, 0x3A92, 
+	0xFD2E, 0xED0F, 0xDD6C, 0xCD4D, 0xBDAA, 0xAD8B, 0x9DE8, 0x8DC9, 
+	0x7C26, 0x6C07, 0x5C64, 0x4C45, 0x3CA2, 0x2C83, 0x1CE0, 0x0CC1, 
+	0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8, 
+	0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
+};
+
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
@@ -45,6 +82,21 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
+//CRC校验，用于FBFB后的数据校验
+unsigned short GetCrc_16(unsigned char * pData, unsigned short nLength, unsigned short init, const unsigned short *ptable)
+{
+  unsigned short cRc_16 = init;
+  unsigned char  temp;
+
+  while(nLength-- > 0)
+  {
+    temp = cRc_16 >> 8; 
+    cRc_16 = (cRc_16 << 8) ^ ptable[(temp ^ *pData++) & 0xFF];
+  }
+
+  return cRc_16;
+}
+
 //定时器超时函数
 static void readtimeout_Zigbee(void* parameter)
 {
@@ -417,7 +469,7 @@ int zb_send_cmd(inverter_info *inverter, char *buff, int length)		//zigbee包头
 	if(0!=inverter->shortaddr)
 	{
 		ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL,0, sendbuff, length+15);
-		//printhexmsg("Send", (char *)sendbuff, length+15);
+		printhexmsg(ECU_DBG_COMM,"Send", (char *)sendbuff, length+15);
 		return 1;
 	}
 	else
@@ -453,7 +505,7 @@ int zb_broadcast_cmd(char *buff, int length)		//zigbee广播包头
 	}
 
 	ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL,0, sendbuff, length+15);
-
+	printhexmsg(ECU_DBG_COMM,"Send", (char *)sendbuff, length+15);
 	return 1;
 }
 
@@ -577,7 +629,7 @@ int zb_query_heart_data(inverter_info *inverter)		//请求逆变器实时数据
 	int i=0, ret;
 	char sendbuff[256];
 	char data[256];
-
+	unsigned short crc16 = 0;
 	//print2msg(ECU_DBG_COMM,"Query inverter data",inverter->uid);
 	clear_zbmodem();			//发送指令前,先清空缓冲区
 	sendbuff[i++] = (inverter->uid[0] - '0') * 0x10 + (inverter->uid[1] - '0');
@@ -606,12 +658,20 @@ int zb_query_heart_data(inverter_info *inverter)		//请求逆变器实时数据
 	zb_send_heart_cmd(inverter, sendbuff, i);
 	ret = zb_get_heart_reply(data,inverter);
 
-	if((74 == ret)&&(0xFB == data[0])&&(0xFB == data[1])&&(0xFE == data[72])&&(0xFE == data[73]))
+	if((ret != 0)&&(ret%74 == 0)&&(0xFB == data[0])&&(0xFB == data[1])&&(0xFE == data[72])&&(0xFE == data[73]))
 	{
-		inverter->status.dataflag = 1;	//接收到数据置为1
-		resolvedata_OPT700_RS(&data[4], inverter);
-		
-		return 1;
+		crc16 = GetCrc_16((unsigned char *)&data[2],68,0,CRC_table_16);
+		if((data[70] == crc16/256)&&(data[71] == crc16%256))
+		{
+			inverter->status.dataflag = 1;	//接收到数据置为1
+			resolvedata_OPT700_RS(&data[4], inverter);
+			return 1;
+		}else
+		{
+			inverter->status.dataflag = 0;		//没有接收到数据就置为0
+			return -1;
+		}
+
 	}
 	else
 	{
@@ -631,10 +691,10 @@ int zb_set_heartSwitch_boardcast(unsigned char functionStatus)
 	clear_zbmodem();			//发送指令前,先清空缓冲区
 	sendbuff[i++] = 0xFB;
 	sendbuff[i++] = 0xFB;
-	sendbuff[i++] = 0x01;
 	sendbuff[i++] = 0x02;
+	sendbuff[i++] = 0x01;
 	sendbuff[i++] = 0x06;
-	sendbuff[i++] = 0xC5;
+	sendbuff[i++] = 0xCC;
 	sendbuff[i++] = 0x01;
 	sendbuff[i++] = 0x00;
 	if(functionStatus == 0x00)
@@ -643,8 +703,8 @@ int zb_set_heartSwitch_boardcast(unsigned char functionStatus)
 		sendbuff[i++] = 0x00;
 		sendbuff[i++] = 0x00;
 		//校验值
-		sendbuff[i++] = 0xFC;
-		sendbuff[i++] = 0xA0;
+		sendbuff[i++] = 0x51;
+		sendbuff[i++] = 0x73;
 		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","2");
 	}else
 	{
@@ -652,8 +712,8 @@ int zb_set_heartSwitch_boardcast(unsigned char functionStatus)
 		sendbuff[i++] = 0x00;
 		sendbuff[i++] = 0x00;
 		//校验值
-		sendbuff[i++] = 0xA5;
-		sendbuff[i++] = 0xF0;
+		sendbuff[i++] = 0x08;
+		sendbuff[i++] = 0x23;
 		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","1");
 	}
 	
@@ -670,14 +730,14 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 	int i=0, ret;
 	char sendbuff[256];
 	char data[256];
-	
+	unsigned short crc16 = 0;
 	clear_zbmodem();			//发送指令前,先清空缓冲区
 	sendbuff[i++] = 0xFB;
 	sendbuff[i++] = 0xFB;
-	sendbuff[i++] = 0x01;
 	sendbuff[i++] = 0x02;
+	sendbuff[i++] = 0x01;
 	sendbuff[i++] = 0x06;
-	sendbuff[i++] = 0xC6;
+	sendbuff[i++] = 0xCD;
 	sendbuff[i++] = 0x01;
 	sendbuff[i++] = 0x00;
 	
@@ -687,16 +747,16 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 		sendbuff[i++] = 0x00;
 		sendbuff[i++] = 0x00;
 		//校验值
-		sendbuff[i++] = 0x32;
-		sendbuff[i++] = 0x40;
+		sendbuff[i++] = 0x14;
+		sendbuff[i++] = 0xD3;
 	}else
 	{
 		sendbuff[i++] = 0x01;
 		sendbuff[i++] = 0x00;
 		sendbuff[i++] = 0x00;
 		//校验值
-		sendbuff[i++] = 0x6B;
-		sendbuff[i++] = 0x10;
+		sendbuff[i++] = 0x4D;
+		sendbuff[i++] = 0x83;
 	}
 
 	sendbuff[i++] = 0xFE;
@@ -707,15 +767,23 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 
 	if((15 == ret)&&(0xFB == data[0])&&(0xFB == data[1])&&(0xFE == data[13])&&(0xFE == data[14]))
 	{
-		if(data[5] == 0xDE)
+		crc16 = GetCrc_16((unsigned char *)&data[2],9,0,CRC_table_16);
+		if((data[11] == crc16/256)&&(data[12] == crc16%256))
 		{
-			print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_single success",inverter->uid);
-			return 1;
-		}
-		else
+			if(data[5] == 0xDE)
+			{
+				print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_single success",inverter->uid);
+				return 1;
+			}
+			else
+			{
+				return -1;
+			}
+		}else
 		{
 			return -1;
 		}
+
 	}
 	else
 	{
