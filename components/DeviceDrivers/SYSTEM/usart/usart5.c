@@ -23,6 +23,7 @@
 #include "socket.h"
 #include "stdlib.h"
 #include "threadlist.h"
+#include "debug.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -2871,7 +2872,19 @@ int SendToSocketC(char *data ,int length)
 {
 	//每次最多发送4000个字节
 	int send_length = 0;
+	char msg_length[6] = {'\0'};
+
+	if(data[strlen(data)-1] == '\n'){
+		sprintf(msg_length, "%05d", strlen(data)-1);
+	}
+	else{
+		sprintf(msg_length, "%05d", strlen(data));
+		strcat(data, "\n");
+		length++;
+	}
+	strncpy(&data[5], msg_length, 5);
 	clear_WIFI();
+	print2msg(ECU_DBG_CONTROL_CLIENT,"Sent", data);
 	if((1 == WIFI_QueryStatus(SOCKET_C)) || (0 == WIFI_Create(SOCKET_C)))
 	{
 		while(length > 0)
