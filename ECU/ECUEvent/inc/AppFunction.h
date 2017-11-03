@@ -18,6 +18,7 @@ void APP_GetRSDHistoryInfo(unsigned char * ID,int Data_Len,const char *recvbuffe
 void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer);
 void App_GetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer);
 void App_GetFlashSize(unsigned char * ID,int Data_Len,const char *recvbuffer);
+void APP_GetShortAddrInfo(unsigned char * ID,int Data_Len,const char *recvbuffer);
 
 
 #endif	/*__APP_FUNCTION_H__*/

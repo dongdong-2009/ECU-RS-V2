@@ -78,6 +78,7 @@ void add_APP_functions(void)
 	pfun_Phone[P0015] = App_SetChannel; 				//设置信道
 	pfun_Phone[P0016] = App_SetIOInitStatus; 			//设置IO初始状态
 	pfun_Phone[P0017] = APP_GetRSDHistoryInfo; 		//功率电流电压曲线
+	pfun_Phone[P0018] = APP_GetShortAddrInfo;		//功率电流电压曲线
 
 
 

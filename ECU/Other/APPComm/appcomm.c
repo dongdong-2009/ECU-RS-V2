@@ -653,3 +653,51 @@ void APP_Response_GetRSDHistoryInfo(char mapping,unsigned char *ID,char *date_ti
 
 }
 
+void APP_Response_GetShortAddrInfo(char mapping,unsigned char *ID,inverter_info *inverter)
+{
+	int packlength = 0,index = 0;
+	inverter_info *curinverter = inverter;
+	char uid[7];
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
+
+	if(mapping == 0x00)
+	{
+		sprintf(SendData,"APS110018001100");
+		packlength = 15;
+		for(index=0; (index<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); index++, curinverter++)
+		{
+			
+			uid[0] = (curinverter->uid[0] - '0')*16+(curinverter->uid[1] - '0');
+			uid[1] = (curinverter->uid[2] - '0')*16+(curinverter->uid[3] - '0');
+			uid[2] = (curinverter->uid[4] - '0')*16+(curinverter->uid[5] - '0');
+			uid[3] = (curinverter->uid[6] - '0')*16+(curinverter->uid[7] - '0');
+			uid[4] = (curinverter->uid[8] - '0')*16+(curinverter->uid[9] - '0');
+			uid[5] = (curinverter->uid[10] - '0')*16+(curinverter->uid[11] - '0');
+			memcpy(&SendData[packlength],uid,6);	
+			packlength += 6;
+			SendData[packlength++] = curinverter->shortaddr/256;
+			SendData[packlength++] = curinverter->shortaddr%256;
+		}
+		
+		SendData[packlength++] = 'E';
+		SendData[packlength++] = 'N';
+		SendData[packlength++] = 'D';
+		
+		SendData[5] = (packlength/1000) + '0';
+		SendData[6] = ((packlength/100)%10) + '0';
+		SendData[7] = ((packlength/10)%10) + '0';
+		SendData[8] = ((packlength)%10) + '0';
+		SendData[packlength++] = '\n';
+
+		
+	}else
+	{
+		sprintf(SendData,"APS110018001101\n");
+		packlength = 16;
+	}		
+	SendToSocketA(SendData ,packlength,ID);
+
+}
+
+
+

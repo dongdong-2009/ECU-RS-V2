@@ -492,3 +492,19 @@ void APP_GetRSDHistoryInfo(unsigned char * ID,int Data_Len,const char *recvbuffe
 	}
 }
 
+
+void APP_GetShortAddrInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//获取ID信息
+{
+	
+	
+	printf("WIFI_Recv_Event%d %s\n",18,recvbuffer);
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{
+		APP_Response_GetShortAddrInfo(0x00,ID,inverterInfo);
+	}else
+	{
+		APP_Response_GetShortAddrInfo(0x01,ID,inverterInfo);
+	}
+	
+}
+
