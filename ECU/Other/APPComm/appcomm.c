@@ -28,6 +28,7 @@
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
 static char SendData[MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9] = {'\0'};
+extern unsigned char rateOfProgress;
 
 
 /*****************************************************************************/
@@ -662,8 +663,9 @@ void APP_Response_GetShortAddrInfo(char mapping,unsigned char *ID,inverter_info 
 
 	if(mapping == 0x00)
 	{
-		sprintf(SendData,"APS110018001100");
+		sprintf(SendData,"APS110015001800");
 		packlength = 15;
+		SendData[packlength++] = rateOfProgress;
 		for(index=0; (index<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); index++, curinverter++)
 		{
 			
@@ -692,7 +694,7 @@ void APP_Response_GetShortAddrInfo(char mapping,unsigned char *ID,inverter_info 
 		
 	}else
 	{
-		sprintf(SendData,"APS110018001101\n");
+		sprintf(SendData,"APS110015001801\n");
 		packlength = 16;
 	}		
 	SendToSocketA(SendData ,packlength,ID);

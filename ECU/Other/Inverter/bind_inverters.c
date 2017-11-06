@@ -39,6 +39,7 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
 extern struct rt_device serial4;	
 
+unsigned char rateOfProgress = 0;		//��ǰ����
 #define ZIGBEE_SERIAL (serial4)
 
 /*****************************************************************************/
@@ -187,7 +188,9 @@ void bind_inverters()
 	unsigned short temppanid=ecu.panid;int k;
 	char recvbuff[256];
    //0.设置信道
+   rateOfProgress = 0;
    process_channel();
+   rateOfProgress = 40;
    zb_change_ecu_panid(); //将ECU的PANID和信道设置成配置文件中的
 
 	//1.绑定已经有短地址的逆变器,如绑定失败，则需要重新获取短地址	
@@ -204,7 +207,7 @@ void bind_inverters()
 		}
 	}	
 
-
+	rateOfProgress = 41;
 	//***新组网方案
 	
 	curinverter = inverterInfo;
@@ -217,8 +220,10 @@ void bind_inverters()
 
 	if(num>0)
 	{
+		rateOfProgress = 42;
 		//清空短地址
 		zb_restore_ecu_panid_0xffff(ecu.channel);
+		rateOfProgress = 43;
 		for(i=0;i<5;i++)
 		{
 			
@@ -250,13 +255,19 @@ void bind_inverters()
 				{
 					for(k=0;k<3;k++){
 						if(1==getaddrOldOrNew(curinverter->uid))
+						{
+							rateOfProgress += 1;
+							if(rateOfProgress >= 64) rateOfProgress = 64;
 							break;
+						}
+							
 						rt_hw_s_delay(2);
 					}
 				
 				}
 			}
 		}
+		rateOfProgress=65;
 		for(i=0;i<3;i++)			//新组网
 		{
 			curinverter = inverterInfo;
@@ -276,10 +287,13 @@ void bind_inverters()
 					send11order(curinverter->uid,num);
 					if(-1!=zigbeeRecvMsg(recvbuff,5))
 						getshortadd(recvbuff);
+					rateOfProgress += 1;
+					if(rateOfProgress >= 89) rateOfProgress = 89;
 				}
 			}
 		}
 		//旧组网
+		rateOfProgress=90;
 		ecu.panid=temppanid;
 		curinverter = inverterInfo;
 		for(index=0; (index<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); index++, curinverter++)			//有效逆变器轮训
@@ -297,13 +311,14 @@ void bind_inverters()
 		}			
 		
 		ecu.panid=0xFFFF;
+		rateOfProgress = 95;
 		send22order();
 		rt_hw_s_delay(10);
 		ecu.panid=temppanid;
 		zb_change_ecu_panid();
 	}
 	rt_hw_s_delay(10);
-	
+	rateOfProgress = 100;
 	updateID();
 
 }

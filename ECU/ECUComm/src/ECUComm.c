@@ -18,14 +18,16 @@
 #include "threadlist.h"
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
-
+extern unsigned char rateOfProgress;
 int init_all(inverter_info *inverter)
 {
+	rateOfProgress = 0;
 	openzigbee();
 	zigbee_reset();
 	zb_test_communication();
 	init_ecu();
 	init_inverter(inverter);
+	rateOfProgress = 100;
 	init_tmpdb(inverter);
 	return 0;
 }
