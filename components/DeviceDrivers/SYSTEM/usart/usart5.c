@@ -2079,7 +2079,7 @@ int AT_WMODE(char *WMode)
 	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
 	clear_WIFI();
 	
-	sprintf(AT,"at+write_config=11,wlan_mode=2\r\n");
+	sprintf(AT,"at+write_config=82,wlan_mode=2&socket_multi_en=1&socketA_localport=8899&socketB_type=0&socketC_type=0\r\n");
 	printf("%s\n",AT);
 	WIFI_SendData(AT, (strlen(AT)));
 	

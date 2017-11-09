@@ -629,9 +629,9 @@ char get_channel(void)
 	} else {
 		fd = open("/config/CHANNEL.CON", O_WRONLY | O_CREAT | O_TRUNC, 0);
 		if (fd >= 0) {
-			write(fd, "0x10", 5);
+			write(fd, "0x17", 5);
 			close(fd);
-			ret = 0x10;
+			ret = 0x17;
 		}
 	}
 	return ret;

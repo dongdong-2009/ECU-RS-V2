@@ -26,7 +26,7 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
 int switchChannel(unsigned char *buff)
 {
-	int ret=0x10;
+	int ret=0x17;
 	if((buff[0]>='0') && (buff[0]<='9'))
 			buff[0] -= 0x30;
 	if((buff[0]>='A') && (buff[0]<='F'))

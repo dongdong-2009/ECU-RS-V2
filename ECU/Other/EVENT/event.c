@@ -280,7 +280,7 @@ int setECUID(char *ECUID)
 		printf("ECU ID Write EEPROM Failed\n");
 		return -1;
 	}
-	echo("/config/channel.con","0x10");
+	echo("/config/channel.con","0x17");
 	ecu.IO_Init_Status= '1';
 	Write_IO_INIT_STATU(&ecu.IO_Init_Status);
 	//…Ë÷√WIFI√‹¬Î
