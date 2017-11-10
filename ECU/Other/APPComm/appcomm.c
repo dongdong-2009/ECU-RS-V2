@@ -178,7 +178,8 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 			inverter_data[4] = (curinverter->uid[8] - '0')*0x10 + (curinverter->uid[9] - '0');
 			inverter_data[5] = (curinverter->uid[10] - '0')*0x10 + (curinverter->uid[11] - '0');
 
-			inverter_data[6] = curinverter->status.device_Type;
+			//inverter_data[6] = curinverter->status.device_Type;
+			inverter_data[6] = 1;
 				
 			inverter_data[7] |=  curinverter->status.comm_failed3_status;
 			inverter_data[7] |=  (curinverter->status.function_status << 1);
