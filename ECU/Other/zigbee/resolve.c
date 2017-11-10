@@ -73,7 +73,7 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 		inverter->status.device_Type = 0;		//开关设备
 	}else
 	{
-		;											//如果是其他值，保持原来的不变
+		inverter->status.device_Type = 1;		//如果是其他值，监控设备
 	}
 
 	//采集功能状态
