@@ -416,6 +416,7 @@ void APP_Response_GetECUHardwareStatus(unsigned char *ID,unsigned char mapping)
 		SendData[117] = 'E';
 		SendData[118] = 'N';
 		SendData[119] = 'D';
+		SendData[120] = '\n';
 		packlength = 121;
 	}else
 	{
