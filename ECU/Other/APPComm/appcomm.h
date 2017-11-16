@@ -46,6 +46,8 @@ void APP_Response_SetNetwork(unsigned char *ID,unsigned char result);
 void APP_Response_SetTime(unsigned char *ID,char mapping);
 //07 命令回应
 void APP_Response_SetWiredNetwork(char mapping,unsigned char *ID);
+//08 命令回应
+void APP_Response_GetECUHardwareStatus(unsigned char *ID,unsigned char mapping);
 //10 命令回应
 void APP_Response_SetWifiPassword(unsigned char *ID,unsigned char result);
 //11 命令回应

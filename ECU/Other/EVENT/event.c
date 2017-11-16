@@ -70,6 +70,7 @@ void add_APP_functions(void)
 	pfun_Phone[P0005] = App_SetNetwork; 				//设置组网
 	pfun_Phone[P0006] = App_SetTime; 			//ECU时间设置
 	pfun_Phone[P0007] = App_SetWiredNetwork; 	//有线网络设置
+	pfun_Phone[P0008] = App_GetECUHardwareStatus; 	//查看当前ECU硬件状态
 	pfun_Phone[P0010] = App_SetWIFIPasswd; 			//设置WIFI密码
 	pfun_Phone[P0011] = App_GetIDInfo; 			//获取ID信息
 	pfun_Phone[P0012] = App_GetTime; 			//获取时间

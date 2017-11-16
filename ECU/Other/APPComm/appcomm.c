@@ -19,6 +19,7 @@
 #include "stdio.h"
 #include "serverfile.h"
 #include "rtc.h"
+#include "threadlist.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -402,6 +403,28 @@ void APP_Response_SetWiredNetwork(char mapping,unsigned char *ID)
 	
 	SendToSocketA(SendData ,packlength,ID);
 }
+
+//08 查看ECU当前硬件状态
+void APP_Response_GetECUHardwareStatus(unsigned char *ID,unsigned char mapping)
+{
+	int packlength = 0;
+	
+	if(mapping == 0x00)
+	{
+		sprintf(SendData,"APS110120000800%02d",WIFI_MODULE_TYPE);
+		memset(&SendData[17],'0',100);
+		SendData[117] = 'E';
+		SendData[118] = 'N';
+		SendData[119] = 'D';
+		packlength = 121;
+	}else
+	{
+		sprintf(SendData,"APS110015000801\n");
+		packlength = 16;
+	}
+	SendToSocketA(SendData ,packlength,ID);
+}
+
 
 //ECU-RS设置WIFI密码
 void APP_Response_SetWifiPassword(unsigned char *ID,unsigned char result)

@@ -273,6 +273,18 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 
 }
 
+void App_GetECUHardwareStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
+{
+	printf("WIFI_Recv_Event%d %s\n",8,WIFI_RecvSocketAData);
+	if(!memcmp(&WIFI_RecvSocketAData[13],ecu.ECUID12,12))
+	{	//匹配成功进行相应的操作
+		APP_Response_GetECUHardwareStatus(ID,0x00);
+	}else
+	{
+		APP_Response_GetECUHardwareStatus(ID,0x01);
+	}
+}
+
 
 void App_SetWIFIPasswd(unsigned char * ID,int Data_Len,const char *recvbuffer)
 {
