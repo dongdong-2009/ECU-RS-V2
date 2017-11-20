@@ -558,7 +558,7 @@ int zb_get_heart_reply(char *data,inverter_info *inverter)			//¶ÁÈ¡Äæ±äÆ÷µÄ·µ»ØÖ
 
 	if(selectZigbee(100) <= 0)
 	{
-		printmsg(ECU_DBG_COMM,"Get reply time out");
+		//printmsg(ECU_DBG_COMM,"Get reply time out");
 		inverter->RSSI=0;
 		return -1;
 	}
@@ -571,7 +571,7 @@ int zb_get_heart_reply(char *data,inverter_info *inverter)			//¶ÁÈ¡Äæ±äÆ÷µÄ·µ»ØÖ
 		{
 			data[i]=data_all[i+12];
 		}
-		printhexmsg(ECU_DBG_COMM,"Reply", data_all, temp_size);
+		//printhexmsg(ECU_DBG_COMM,"Reply", data_all, temp_size);
 		rt_sprintf(inverterid,"%02x%02x%02x%02x%02x%02x",data_all[6],data_all[7],data_all[8],data_all[9],data_all[10],data_all[11]);
 		if((size>0)&&(0xFC==data_all[0])&&(0xFC==data_all[1])&&(0==rt_strcmp(inverter->uid,inverterid)))
 		{
@@ -637,7 +637,7 @@ int zb_query_heart_data(inverter_info *inverter)		//ÇëÇóÄæ±äÆ÷ÊµÊ±Êı¾İ
 	char sendbuff[256];
 	char data[256];
 	unsigned short crc16 = 0;
-	print2msg(ECU_DBG_COMM,"Query inverter data",inverter->uid);
+	//print2msg(ECU_DBG_COMM,"Query inverter data",inverter->uid);
 	clear_zbmodem();			//·¢ËÍÖ¸ÁîÇ°,ÏÈÇå¿Õ»º³åÇø
 	sendbuff[i++] = (inverter->uid[0] - '0') * 0x10 + (inverter->uid[1] - '0');
 	sendbuff[i++] = (inverter->uid[2] - '0') * 0x10 + (inverter->uid[3] - '0');
@@ -668,7 +668,7 @@ int zb_query_heart_data(inverter_info *inverter)		//ÇëÇóÄæ±äÆ÷ÊµÊ±Êı¾İ
 	if((ret != 0)&&(ret%74 == 0)&&(0xFB == data[0])&&(0xFB == data[1])&&(0xFE == data[72])&&(0xFE == data[73]))
 	{
 		crc16 = GetCrc_16((unsigned char *)&data[2],68,0,CRC_table_16);
-		printf("%02x %02x\n",crc16/256,crc16%256);
+		//printf("%02x %02x\n",crc16/256,crc16%256);
 		if((data[70] == crc16/256)&&(data[71] == crc16%256))
 		{
 			inverter->status.dataflag = 1;	//½ÓÊÕµ½Êı¾İÖÃÎª1
