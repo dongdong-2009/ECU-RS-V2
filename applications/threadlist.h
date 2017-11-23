@@ -27,6 +27,7 @@ typedef enum THREADTYPE {
 	TYPE_LANRST = 2,
 	TYPE_UPDATE = 3,
 	TYPE_COMM = 4,
+	TYPE_DATACOLLECT = 5
 }threadType;
 
 #define ALARM_RECORD_ON
@@ -92,7 +93,7 @@ typedef enum THREADTYPE {
 //LED thread priority
 #define THREAD_PRIORITY_EVENT            	12			//其他相关事件线程
 //LED thread priority
-#define THREAD_PRIORITY_COMM              16			//OPT700-RS通信线程
+#define THREAD_PRIORITY_COMM              17			//OPT700-RS通信线程
 //Data Collection thread priority
 #define THREAD_PRIORITY_DATACOLLECT       18			//OPT700-RS相关数据采集
 //Client thread priority
@@ -104,7 +105,7 @@ typedef enum THREADTYPE {
 //thread start time
 #define START_TIME_UPDATE									15
 #define START_TIME_COMM										2	
-#define START_TIME_COLLECT								120			
+#define START_TIME_COLLECT								0			
 #define START_TIME_CONTROL_CLIENT					20 	//150
 #define START_TIME_CLIENT									30			//180
 

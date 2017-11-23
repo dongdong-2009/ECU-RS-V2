@@ -420,6 +420,15 @@ void restartThread(threadType type)
 		  if (result == RT_EOK) rt_thread_startup(&comm_thread);
 			break;
 #endif
+#ifdef THREAD_PRIORITY_DATACOLLECT
+		case TYPE_DATACOLLECT:
+			rt_thread_detach(&collect_thread);
+			/* init Communication thread */
+			result = rt_thread_init(&collect_thread,"collect",ECUCollect_thread_entry,RT_NULL,(rt_uint8_t*)&collect_stack[0],sizeof(collect_stack),THREAD_PRIORITY_DATACOLLECT,5);
+			if (result == RT_EOK) rt_thread_startup(&collect_thread);
+
+			break;
+#endif
 
 		default:
 			break;

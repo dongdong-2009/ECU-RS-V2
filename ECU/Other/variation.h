@@ -103,13 +103,16 @@ typedef struct ecu_info_t{
 	char IO_Init_Status;	//IO初始状态
 	int count;					//系统当前一轮有数据的逆变器数
 	int validNum;			//当前有效台数
-	int curSequence;		//心跳轮训机器号
+	int curSequence;		//采集轮训机器号
+	int curHeartSequence;   //心跳轮训机器号
 	char MacAddress[7];			//ECU  MAC地址
 	float life_energy;			//系统历史总电量
 	float current_energy;		//系统当前一轮电量
 	float today_energy;			//当天的发电量
 	int system_power;			//系统总功率
 	int lastCommNum;
+	char curTime[15];			//最近一次采集的时间
+
 	
 }ecu_info;
 

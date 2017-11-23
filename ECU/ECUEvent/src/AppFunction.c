@@ -190,7 +190,7 @@ void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		
 		get_id_from_file(inverterInfo);
 		//重启main线程
-		restartThread(TYPE_COMM);
+		restartThread(TYPE_DATACOLLECT);
 	}	else
 	{	//不匹配
 		APP_Response_SetNetwork(ID,0x01);
@@ -224,7 +224,7 @@ void App_SetTime(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//EC
 		//设置时间
 		set_time(setTime);
 		//重启main线程
-		restartThread(TYPE_COMM);	
+		restartThread(TYPE_DATACOLLECT);	
 		APP_Response_SetTime(ID,0x00);
 	}
 	else
@@ -453,7 +453,7 @@ void App_SetChannel(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		saveNewChannel(new_channel);
 		saveChannel_change_flag();
 		//重启main线程
-		restartThread(TYPE_COMM);
+		restartThread(TYPE_DATACOLLECT);
 	}	else
 	{	//不匹配
 		APP_Response_SetChannel(ID,0x01,NULL,NULL);
@@ -475,7 +475,7 @@ void App_SetIOInitStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		saveChangeFunctionStatus(WIFI_RecvSocketAData[25]);
 		save_rsdFunction_change_flag();
 		//重启main线程
-		restartThread(TYPE_COMM);
+		restartThread(TYPE_DATACOLLECT);
 	}else
 	{
 		APP_Response_IOInitStatus(ID,0x01);

@@ -2576,11 +2576,11 @@ int clear_control_send_flag(char *readbuff)
 				{
 					if(1 == change_control_resendflag(recv_date_time,'0'))
 					{
-						print2msg(ECU_DBG_CLIENT,"Clear send flag into database", "1");
+						print2msg(ECU_DBG_CONTROL_CLIENT,"Clear 1 send flag into database", "1");
 						break;
 					}
 					else
-						print2msg(ECU_DBG_CLIENT,"Clear send flag into database", "0");
+						print2msg(ECU_DBG_CONTROL_CLIENT,"Clear 1 send flag into database", "0");
 				}
 			}
 		}
@@ -2596,7 +2596,7 @@ int update_control_send_flag(char *send_date_time)
 	{
 		if(1 == change_control_resendflag(send_date_time,'2'))
 		{
-			print2msg(ECU_DBG_CLIENT,"Update send flag into database", "1");
+			print2msg(ECU_DBG_CONTROL_CLIENT,"Update 1 send flag into database", "1");
 			break;
 		}
 		rt_hw_ms_delay(5);
@@ -3054,11 +3054,11 @@ int clear_alarm_send_flag(char *readbuff)
 				{
 					if(1 == change_alarm_resendflag(recv_date_time,'0'))
 					{
-						print2msg(ECU_DBG_CLIENT,"Clear send flag into database", "1");
+						print2msg(ECU_DBG_CONTROL_CLIENT,"Clear 2 send flag into database", "1");
 						break;
 					}
 					else
-						print2msg(ECU_DBG_CLIENT,"Clear send flag into database", "0");
+						print2msg(ECU_DBG_CONTROL_CLIENT,"Clear 2 send flag into database", "0");
 				}
 			}
 		}
@@ -3074,7 +3074,7 @@ int update_alarm_send_flag(char *send_date_time)
 	{
 		if(1 == change_alarm_resendflag(send_date_time,'2'))
 		{
-			print2msg(ECU_DBG_CLIENT,"Update send flag into database", "1");
+			print2msg(ECU_DBG_CONTROL_CLIENT,"Update 2 send flag into database", "1");
 			break;
 		}
 		rt_hw_ms_delay(5);

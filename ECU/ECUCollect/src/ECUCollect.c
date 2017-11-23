@@ -11,11 +11,13 @@
 #include "serverfile.h"
 #include "threadlist.h"
 #include <dfs_posix.h>
+#include "zigbee.h"
+#include "timer.h"
 
-
+extern unsigned char rateOfProgress;
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
-
+unsigned char ECUCommThreadFlag = 0;
 
 void inverter_Info(inverter_info *curinverter)
 {
@@ -35,6 +37,18 @@ void inverter_Info(inverter_info *curinverter)
 
 }
 
+int init_all(inverter_info *inverter)
+{
+	rateOfProgress = 0;
+	openzigbee();
+	zigbee_reset();
+	zb_test_communication();
+	init_ecu();
+	init_inverter(inverter);
+	rateOfProgress = 100;
+	init_tmpdb(inverter);
+	return 0;
+}
 
 
 void Collect_Client_Record(void)
@@ -47,7 +61,7 @@ void Collect_Client_Record(void)
 	char curTime[15] = {'\0'};
 	unsigned int CurEnergy = 0;
 	unsigned int SysPower = 0;
-	apstime(curTime);
+	memcpy(curTime,ecu.curTime,14);
 	curTime[14] = '\0';
 	if(ecu.validNum > 0)
 	{
@@ -261,7 +275,6 @@ void Collect_Client_Record(void)
 			delete_system_power_2_month_ago(curTime);		//删除两个月前的数据
 			save_record(client_Data,curTime);				//保存需要发送给服务器的报文
 			//print2msg(ECU_DBG_COLLECT,"client Data:",client_Data);
-
 			//保存数据到文件中 该数据为最后一次的发电量
 			save_last_collect_info();
 			//保存07命令相关数据到文件中  
@@ -365,44 +378,113 @@ void Collect_Control_Record(void)
 }
 
 
+
 //该线程主要用于相关数据的采集工作
 void ECUCollect_thread_entry(void* parameter)
 {
-
+	int i = 0,ret = 0;
+	unsigned short comm_failed_Num = 0;
+	unsigned short pre_heart_rate = 0;
 	int CollectClientThistime=0, CollectClientDurabletime=65535, CollectClientReportinterval=300;			//采集数据相关时间参数
 	int CollectControlThistime=0, CollectControlDurabletime=65535, CollectControlReportinterval=900;	//采集远程控制数据时间参数
-	
+	ECUCommThreadFlag = 0;
+	ecu.curHeartSequence = 0;
+	init_all(inverterInfo); //初始化所有逆变器
 	rt_thread_delay(RT_TICK_PER_SECOND * START_TIME_COLLECT);
 	while(1)
 	{
-		
 		if(compareTime(CollectClientDurabletime ,CollectClientThistime,CollectClientReportinterval))
-		//if(compareTime(CollectClientDurabletime ,CollectClientThistime,30))
 		{
-			optimizeFileSystem(300);
-			printmsg(ECU_DBG_COLLECT,"Collect DATA Start");
+			ECUCommThreadFlag = 1;
 			//5分钟采集相关的发电量数据
 			CollectClientThistime = acquire_time();
-			//采集实时数据
-			Collect_Client_Record();
-			printmsg(ECU_DBG_COLLECT,"Collect DATA End");
+			apstime(ecu.curTime);
+			if(	ecu.validNum >0	)
+			{
+				ECUCommThreadFlag = 0;
+				//采集数据到结构体中
+				for(ecu.curSequence = 0;ecu.curSequence<ecu.validNum;ecu.curSequence++)
+				{
+					ret = 0;
+					for(i=0;i<8;i++)
+					{
+						pre_heart_rate = inverterInfo[ecu.curSequence].heart_rate;
+						ret = zb_query_heart_data(&inverterInfo[ecu.curSequence]);	
+						if(ret == 1) 
+						{
+							if(inverterInfo[ecu.curSequence].heart_rate < pre_heart_rate)
+							{
+								//当前一轮重启次数+1
+								if(inverterInfo[ecu.curSequence].restartNum < 255)
+									inverterInfo[ecu.curSequence].restartNum++;
+							}
+
+							break;
+						}
+						
+					}
+					if(ret != 1)
+					{
+						inverterInfo[ecu.curSequence].status.comm_failed3_status = 0;
+						comm_failed_Num += 7;
+
+						if(comm_failed_Num > (ecu.validNum * 7 *12))
+						{
+							for(ecu.curSequence = 0;ecu.curSequence < ecu.validNum;ecu.curSequence++)
+							{
+								inverterInfo[ecu.curSequence].restartNum = 0;
+							}
+							comm_failed_Num = 0;
+							ecu.curSequence = 0;
+						}
+					}
+
+				}
+				ECUCommThreadFlag = 1;
+				optimizeFileSystem(300);
+				printmsg(ECU_DBG_COLLECT,"Collect DATA Start");
+				
+				
+				//采集实时数据
+				Collect_Client_Record();
+				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
+			}
+	
 
 		}
-		
+		if((CollectClientDurabletime-CollectClientThistime)<=305)
+			CollectClientReportinterval = 300;
+		else if((CollectClientDurabletime-CollectClientThistime)<=600)
+			CollectClientReportinterval = 600;
+		else
+			CollectClientReportinterval = 900;
+		rt_thread_delay(RT_TICK_PER_SECOND/10);
+		ECUCommThreadFlag = 0;
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
-			optimizeFileSystem(300);
-			//采集心跳相关远程控制数据
-			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  Start");
-			CollectControlThistime = acquire_time();
-			//采集远程控制数据
-			Collect_Control_Record();
-			printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
-
+			ECUCommThreadFlag = 1;
+			if(	ecu.validNum >0	)
+			{
+				optimizeFileSystem(300);
+				//采集心跳相关远程控制数据
+				printmsg(ECU_DBG_COLLECT,"Collect Control DATA  Start");
+				CollectControlThistime = acquire_time();
+				//采集远程控制数据
+				Collect_Control_Record();
+				printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
+			}
+			
 		}
-		
-
-		rt_thread_delay(RT_TICK_PER_SECOND);
+		if(COMM_Timeout_Event == 1)
+		{
+			if(ecu.curHeartSequence >= ecu.validNum)
+			{
+				ecu.curHeartSequence = 0;
+			}
+			zb_sendHeart(inverterInfo[ecu.curHeartSequence].uid);
+			ecu.curHeartSequence++;
+			COMM_Timeout_Event = 0;
+		}
 		CollectClientDurabletime = acquire_time();		
 		CollectControlDurabletime = acquire_time();			
 	}

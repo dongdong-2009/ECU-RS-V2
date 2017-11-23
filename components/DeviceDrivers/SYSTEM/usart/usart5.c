@@ -24,6 +24,7 @@
 #include "stdlib.h"
 #include "threadlist.h"
 #include "debug.h"
+#include "zigbee.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -34,6 +35,7 @@
 
 
 rt_mutex_t wifi_uart_lock = RT_NULL;
+extern rt_mutex_t usr_wifi_lock;
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -2621,7 +2623,7 @@ int WIFI_Create(eSocketType Type)
 					}
 					
 				}
-				rt_hw_ms_delay(10);
+				rt_thread_delay(1);
 		}
 		printf("WIFI_CreateSocket %d WIFI Get reply time out 1\n",Type);
 	}	
@@ -2682,7 +2684,7 @@ int WIFI_Close(eSocketType Type)
 					}
 					
 				}
-				rt_hw_ms_delay(10);
+				rt_thread_delay(1);
 		}
 		printf("WIFI_CreateSocket %d WIFI Get reply time out 1\n",Type);
 	}	
@@ -2771,11 +2773,7 @@ int WIFI_QueryStatus(eSocketType Type)
 							return -1;
 						}
 
-#endif
-
-
-						
-						
+#endif		
 					}else
 					{
 						//查询SOCKET 失败
@@ -2786,7 +2784,7 @@ int WIFI_QueryStatus(eSocketType Type)
 					}
 					
 				}
-				rt_hw_ms_delay(10);
+				rt_thread_delay(1);
 		}
 		printf("WIFI_CreateSocket WIFI Get reply time out 1\n");
 	}	
@@ -2838,6 +2836,7 @@ int SendToSocketB(char *data ,int length)
 	//每次最多发送4000个字节
 	int send_length = 0;	//需要发送的字节位置
 	clear_WIFI();
+	rt_mutex_take(usr_wifi_lock, RT_WAITING_FOREVER);
 	//if((1 == WIFI_QueryStatus(SOCKET_B)) || (0 == WIFI_Create(SOCKET_B)))
 	if(1 == WIFI_QueryStatus(SOCKET_B))
 	{
@@ -2865,6 +2864,7 @@ int SendToSocketB(char *data ,int length)
 				
 				WIFI_SendData(sendbuff, (length+9));
 				length -= length;
+				rt_mutex_release(usr_wifi_lock);
 				return 0;
 			}
 			
@@ -2873,7 +2873,7 @@ int SendToSocketB(char *data ,int length)
 		
 	
 	}
-	
+	rt_mutex_release(usr_wifi_lock);
 	return -1;
 }
 
@@ -2894,13 +2894,14 @@ int SendToSocketC(char *data ,int length)
 	}
 	strncpy(&data[5], msg_length, 5);
 	clear_WIFI();
+	rt_mutex_take(usr_wifi_lock, RT_WAITING_FOREVER);
 	print2msg(ECU_DBG_CONTROL_CLIENT,"Sent", data);
 	//if((1 == WIFI_QueryStatus(SOCKET_C)) || (0 == WIFI_Create(SOCKET_C)))
 	if(1 == WIFI_QueryStatus(SOCKET_C))
 	{
 		WIFI_Close(SOCKET_C);
 	}
-
+	
 	if((0 == WIFI_Create(SOCKET_C)))
 	{
 		while(length > 0)
@@ -2921,6 +2922,7 @@ int SendToSocketC(char *data ,int length)
 			
 				WIFI_SendData(sendbuff, (length+9));
 				length -= length;
+				rt_mutex_release(usr_wifi_lock);
 				return 0;
 			}
 			
@@ -2928,7 +2930,7 @@ int SendToSocketC(char *data ,int length)
 		}
 		
 	}
-
+	rt_mutex_release(usr_wifi_lock);
 	return -1;
 }
 

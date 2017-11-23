@@ -41,6 +41,8 @@ int init_ecu(void)
 	Read_IO_INIT_STATU(&ecu.IO_Init_Status);
 	ecu.life_energy = get_lifetime_power();
 	zb_change_ecu_panid();
+	memset(ecu.curTime,'0',14);
+	ecu.curTime[14] = '\0';
 	
 	return 0;
 }

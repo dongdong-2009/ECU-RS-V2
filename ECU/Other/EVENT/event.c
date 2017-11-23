@@ -34,8 +34,7 @@
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
-unsigned short comm_failed_Num = 0;
-unsigned short pre_heart_rate;
+
 extern rt_mutex_t wifi_uart_lock;
 int Data_Len = 0,Command_Id = 0;
 int ResolveFlag = 0;
@@ -164,12 +163,13 @@ void process_WIFIEvent(void)
 
 }
 
-
+/*
 //心跳事件处理
 void process_HeartBeatEvent(void)
 {
 	int ret = 0;
-	
+	unsigned short comm_failed_Num = 0;
+	unsigned short pre_heart_rate = 0;
 	if(	ecu.validNum >0	)
 	{
 		if(ecu.curSequence >= ecu.validNum)		//当轮训的序号大于最后一台时，更换到第0台
@@ -223,7 +223,7 @@ void process_HeartBeatEvent(void)
 	}
 
 }
-
+*/
 //按键初始化密码事件处理
 void process_KEYEvent(void)
 {

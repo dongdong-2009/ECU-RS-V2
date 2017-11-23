@@ -198,7 +198,7 @@ int set_inverter_id(const char *recvbuffer, char *sendbuffer)
 			}
 		}
 		init_inverter_A103(inverterInfo);
-		threadRestartTimer(10,TYPE_COMM);
+		threadRestartTimer(10,TYPE_DATACOLLECT);
 
 	}
 	//拼接应答消息
