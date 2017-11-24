@@ -19,6 +19,7 @@
 #include <string.h>
 #include "serverfile.h"
 #include "rtc.h"
+#include "variation.h"
 
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
@@ -31,17 +32,13 @@
 int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 {
 	char status = 0;
-	unsigned short last_PV_output;		//最后一次开关机状态
-	unsigned char last_function_status;	//最后一次功能状态
-	unsigned char last_pv1_low_voltage_pritection;	//最后一次PV1欠压状态
-	unsigned char last_pv2_low_voltage_pritection;	//最后一次PV2欠压状态
 	
 	//保存上一轮报警状态数据
-	last_PV_output = inverter->PV_Output;
-	last_function_status = inverter->status.function_status;
-	last_pv1_low_voltage_pritection = inverter->status.pv1_low_voltage_pritection;
-	last_pv2_low_voltage_pritection = inverter->status.pv2_low_voltage_pritection;
-
+	inverter->status.last_mos_status = inverter->status.mos_status;
+	inverter->status.last_function_status = inverter->status.function_status;
+	inverter->status.last_pv1_low_voltage_pritection = inverter->status.pv1_low_voltage_pritection;
+	inverter->status.last_pv2_low_voltage_pritection = inverter->status.pv2_low_voltage_pritection;
+	
 	inverter->status.comm_failed3_status = 1;	//设置为开机状态
 	apstime(inverter->LastCommTime);
 	inverter->LastCommTime[14] = '\0';
@@ -91,8 +88,11 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	inverter->heart_rate = inverter_data[42]*256 + inverter_data[43];
 	inverter->off_times = inverter_data[44]*256 + inverter_data[45];
 	inverter->Mos_CloseNum = inverter_data[46];
+	
+	if(inverter->PV_Output > 0) 
+		inverter->status.mos_status = 1;
+	else
+		inverter->status.mos_status = 0;
 
-
-	create_alarm_record(last_PV_output,last_function_status,last_pv1_low_voltage_pritection,last_pv2_low_voltage_pritection,inverter);
 	return 0;
 }

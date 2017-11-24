@@ -2607,32 +2607,33 @@ int update_control_send_flag(char *send_date_time)
 }
 
 //创建报警信息	mos_status状态通过输出电压判断。输出电压大于0 表示MOS管开启，输出电压小于0 表示MOS管关闭。
-void create_alarm_record(unsigned short last_PV_output,unsigned char last_function_status,unsigned char last_pv1_low_voltage_pritection,unsigned char last_pv2_low_voltage_pritection,inverter_info *curinverter)
+void create_alarm_record(inverter_info *inverter)
 {
 #ifdef ALARM_RECORD_ON
+	inverter_info *curinverter = inverter;
 	int create_flag = 0;
 	char *alarm_data = 0;
 	char curTime[15] = {'\0'};
 	int length = 0;
-	unsigned char last_mos_status = 0,mos_status = 0;
-	if(last_PV_output > 0) 
-		last_mos_status = 1;
-	else 
-		last_mos_status = 0;
-
-	if(curinverter->PV_Output > 0)
-		mos_status = 1;
-	else
-		mos_status = 0;
-	
+	int num = 0;
+	int i = 0;
 	alarm_data = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
-	
-	if((last_mos_status != mos_status) || (last_function_status != curinverter->status.function_status) || (last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection)))
+
+	for(i = 0;i<ecu.validNum;i++)
 	{
-		//存在与最后一轮不同的状态，需要生成状态告警信息
-		create_flag = 1;
+		if(curinverter->status.comm_status == 1)
+		{
+			if((curinverter->status.last_mos_status != curinverter->status.mos_status) || (curinverter->status.last_function_status != curinverter->status.function_status) || (curinverter->status.last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((curinverter->status.last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection)))
+			{
+				//存在与最后一轮不同的状态，需要生成状态告警信息
+				create_flag = 1;
+				num++;
+			}
+		}
+		curinverter++;
 	}
 
+	curinverter = inverter;
 	if(create_flag == 1)
 	{
 		apstime(curTime);
@@ -2641,24 +2642,35 @@ void create_alarm_record(unsigned short last_PV_output,unsigned char last_functi
 		memcpy(alarm_data,"APS13AAAAAA156AAA1",18);
 		//ECU头信息
 		memcpy(&alarm_data[18],ecu.ECUID12,12);
-		memcpy(&alarm_data[30],"0001",4);
+		sprintf(&alarm_data[30],"%04d",num);
 		memcpy(&alarm_data[34],curTime,14);
 		memcpy(&alarm_data[48],"END",3);
 		
 		length = 51;
-		memcpy(&alarm_data[length],curinverter->uid,12);
-		length += 12;
-		alarm_data[length++] = mos_status + '0';
-		alarm_data[length++] = curinverter->status.function_status + '0';
-		alarm_data[length++] = curinverter->status.pv1_low_voltage_pritection+ '0';
-		alarm_data[length++] = curinverter->status.pv2_low_voltage_pritection+ '0';
-		
-		memcpy(&alarm_data[length],"000000",6);
-		length += 6;
+		for(i = 0;i<ecu.validNum;i++)
+		{
+			if(curinverter->status.comm_status == 1)
+			{
+				if((curinverter->status.last_mos_status != curinverter->status.mos_status) || (curinverter->status.last_function_status != curinverter->status.function_status) || (curinverter->status.last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((curinverter->status.last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection)))
+				{
+					memcpy(&alarm_data[length],curinverter->uid,12);
+					length += 12;
+					alarm_data[length++] = curinverter->status.mos_status + '0';
+					alarm_data[length++] = curinverter->status.function_status + '0';
+					alarm_data[length++] = curinverter->status.pv1_low_voltage_pritection+ '0';
+					alarm_data[length++] = curinverter->status.pv2_low_voltage_pritection+ '0';
+					
+					memcpy(&alarm_data[length],"000000",6);
+					length += 6;
 
-		alarm_data[length++] = 'E';
-		alarm_data[length++] = 'N';
-		alarm_data[length++] = 'D';
+					alarm_data[length++] = 'E';
+					alarm_data[length++] = 'N';
+					alarm_data[length++] = 'D';
+				}
+			}
+			curinverter++;
+		}
+		
 
 		alarm_data[5] = (length/10000)%10 + 0x30;
 		alarm_data[6] = (length/1000)%10+ 0x30;

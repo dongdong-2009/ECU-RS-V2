@@ -26,6 +26,7 @@ extern unsigned char ECUCommThreadFlag;
 
 void ECUComm_thread_entry(void* parameter)
 {
+	ECUCommThreadFlag = 0;
 	rt_thread_delay(RT_TICK_PER_SECOND * START_TIME_COMM);
 	while(1)
 	{

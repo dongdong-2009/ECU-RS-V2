@@ -235,6 +235,7 @@ int zb_test_communication(void)		//zigbee测试通信有没有断开
 	int check=0;
 
 	printmsg(ECU_DBG_COMM,"test zigbee communication");
+	rt_thread_delay(RT_TICK_PER_SECOND*2);
 	clear_zbmodem();			//发送指令前,先清空缓冲区
 	sendbuff[0]  = 0xAA;
 	sendbuff[1]  = 0xAA;
@@ -681,19 +682,16 @@ int zb_query_heart_data(inverter_info *inverter)		//请求逆变器实时数据
 		//printf("%02x %02x\n",crc16/256,crc16%256);
 		if((data[70] == crc16/256)&&(data[71] == crc16%256))
 		{
-			inverter->status.dataflag = 1;	//接收到数据置为1
 			resolvedata_OPT700_RS(&data[4], inverter);
 			return 1;
 		}else
 		{
-			inverter->status.dataflag = 0;		//没有接收到数据就置为0
 			return -1;
 		}
 
 	}
 	else
 	{
-		inverter->status.dataflag = 0;		//没有接收到数据就置为0
 		return -1;
 	}
 

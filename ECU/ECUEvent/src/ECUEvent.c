@@ -17,7 +17,7 @@
 #include "serverfile.h"
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
-
+#include "threadlist.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -92,7 +92,7 @@ void ECUEvent_thread_entry(void* parameter)
 	MyArray array[5];
 	int fileflag = 0; 
 	IPConfig_t IPconfig;
-	rt_thread_delay(RT_TICK_PER_SECOND);
+	rt_thread_delay(RT_TICK_PER_SECOND*START_TIME_EVENT);
 	add_APP_functions();
 	get_mac((unsigned char*)ecu.MacAddress);			//ECU ”–œﬂMacµÿ÷∑
 	fileflag = file_get_array(array, 5, "/config/staticIP.con");

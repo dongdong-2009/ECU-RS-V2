@@ -186,20 +186,7 @@ void Collect_Client_Record(void)
 				client_Data[length++] = 'N';
 				client_Data[length++] = 'D';
 				//打印相关信息
-				//inverter_Info(curinverter);
-
-#if 0
-				if((curinverter->EnergyPV1 > 80000) || (curinverter->EnergyPV2 > 80000))  //如果发电量大于 1 度  表示异常数据   存储
-				{
-					char *data = NULL;
-					data = malloc(4096);
-					sprintf(data,"LastCommTime:%s LastCollectTime:%s uid:%s PV1:%d PV2:%d PI:%d PV_output:%d Power1:%d Power2:%d off_time:%d heart_rate:%d pv1_energy:%d pv2_energy:%d mos_close:%d Last_PV1_Energy:%d Last_PV2_Energy:%d",curinverter->LastCommTime,curinverter->LastCollectTime,UID,
-							curinverter->PV1,curinverter->PV2,curinverter->PI,curinverter->PV_Output,curinverter->Power1,curinverter->Power2,curinverter->off_times,curinverter->heart_rate,curinverter->PV1_Energy,curinverter->PV2_Energy,curinverter->Mos_CloseNum,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
-					save_dbg(data);
-					free(data);
-					data = NULL;
-				}
-#endif 				
+				//inverter_Info(curinverter);			
 				
 				memcpy(curinverter->LastCollectTime,curinverter->LastCommTime,15);
 				curinverter->LastCollectTime[14] = '\0';
@@ -277,6 +264,7 @@ void Collect_Client_Record(void)
 			//print2msg(ECU_DBG_COLLECT,"client Data:",client_Data);
 			//保存数据到文件中 该数据为最后一次的发电量
 			save_last_collect_info();
+			create_alarm_record(inverterInfo);
 			//保存07命令相关数据到文件中  
 			//save_collect_info(curTime);	
 			//最多保存2天的数据
