@@ -125,6 +125,6 @@ void ECUEvent_thread_entry(void* parameter)
 			SEGGER_RTT_printf(0,"WIFI_RST_Event end\n");
 		}
 		
-		rt_thread_delay(RT_TICK_PER_SECOND/30);
+		rt_thread_delay(RT_TICK_PER_SECOND/100);
 	}	
 }

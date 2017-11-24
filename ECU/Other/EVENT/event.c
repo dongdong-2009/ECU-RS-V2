@@ -98,7 +98,6 @@ void process_WIFI(unsigned char * ID)
 		//函数指针不为空，则运行对应的函数
 		if(pfun_Phone[Command_Id%100])
 		{
-			//printf("pfun_Phone ID:%d\n",Command_Id);
 			(*pfun_Phone[Command_Id%100])(ID,Data_Len,(char *)WIFI_RecvSocketAData);
 		}
 		

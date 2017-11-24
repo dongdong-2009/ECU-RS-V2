@@ -185,6 +185,10 @@ unsigned char WIFI_RecvSocketCData[SOCKETC_LEN] = {'\0'};
 unsigned char WIFI_Recv_SocketC_Event = 0;
 unsigned int WIFI_Recv_SocketC_LEN =0;
 
+//WIFI SOCKET 连接 断开 查询 帧
+unsigned char WIFI_RecvSocketData[SOCKET_LEN] = {'\0'};
+unsigned char WIFI_Recv_Socket_Event = 0;
+
 //wifi  串口当前收到的数据 
 unsigned char USART_RX_BUF[USART_REC_LEN];     			//接收缓冲,最大USART_REC_LEN个字节.
 unsigned short Cur = 0;															//当前采值位置
@@ -214,10 +218,10 @@ void WIFI_GetEvent(void)
 		if(eStateMachine == EN_RECV_ST_GET_SCOKET_HEAD)
 		{
 			while(pos < Cur)
-      {
+      		{
 				if(1 == pos)   //'a'
 				{
-						if((USART_RX_BUF[0] != 'a') && (USART_RX_BUF[0] != 'b') && (USART_RX_BUF[0] != 'c'))
+						if((USART_RX_BUF[0] != 'a') && (USART_RX_BUF[0] != 'b') && (USART_RX_BUF[0] != 'c') && (USART_RX_BUF[0] != 0x65))
 						{
 							Cur = 0;
 							pos = 0;
@@ -243,17 +247,51 @@ void WIFI_GetEvent(void)
 							eTypeMachine = EN_RECV_TYPE_C;
 							//SEGGER_RTT_printf(0, "c %d\n",eTypeMachine);
 							eStateMachine = EN_RECV_ST_GET_SCOKET_ID;
+						}else if(USART_RX_BUF[0] == 0x65)
+						{
+							
+							eTypeMachine = EN_RECV_TYPE_SOCKET;
+							eStateMachine = EN_RECV_ST_GET_SOCKET_DATA;
 						}
 				}
 				pos++;
 			}
 		}		
+
+
+		//接收数据
+		if(eStateMachine == EN_RECV_ST_GET_SOCKET_DATA)
+		{
+			delayMS(1);
+			TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+			while(pos < Cur)
+			{
+				if(5 == pos)
+				{
+					memset(WIFI_RecvSocketData,0x00,SOCKET_LEN);
+					memcpy(WIFI_RecvSocketData,&USART_RX_BUF[0],SOCKET_LEN);
+					WIFI_Recv_Socket_Event = 1;
+	
+
+					eTypeMachine = EN_RECV_TYPE_UNKNOWN;
+					eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+					Cur = 0;
+					pos = 0;		
+					TIM3_Int_Deinit();
+					break;
+				}
+				pos++;
+			}
+			
+		}
+
+
 	
 		//接收ID
 		if(eStateMachine == EN_RECV_ST_GET_SCOKET_ID)
 		{
-      while(pos < Cur)
-      {
+      		while(pos < Cur)
+      		{
 				if(2 == pos)
 				{
 					ID[0] = USART_RX_BUF[1];
@@ -328,9 +366,9 @@ void WIFI_GetEvent(void)
 		{
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_A_HEAD\n");
 			// check for the start character(SYNC_CHARACTER)
-      // also check it's not arriving the end of valid data
-      while(pos < Cur)
-      {
+      		// also check it's not arriving the end of valid data
+      		while(pos < Cur)
+      		{
 
 				if(10 == pos)   //'A'
 				{
@@ -381,7 +419,7 @@ void WIFI_GetEvent(void)
 		{
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_LEN\n");
 			while(pos < Cur)
-      {
+      		{
 				//判断是否有a出现  如果出现了判断后面8个字节
 				if(18 == pos)   //接收数据长度结束
 				{
@@ -403,7 +441,7 @@ void WIFI_GetEvent(void)
 		{
 			pos = 0;
 			while(pos < Cur)
-      {
+      		{
 
 				if((PackLen - 3) == pos)   //接收数据长度结束
 				{
@@ -420,7 +458,7 @@ void WIFI_GetEvent(void)
 			pos = 0;
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_END\n");
 			while(pos <= Cur)
-      {
+      		{
 				
 				if((PackLen - 2) == pos)   //'A'
 				{
@@ -485,8 +523,8 @@ void WIFI_GetEvent(void)
 		if(eStateMachine == EN_RECV_ST_GET_B_HEAD)    //接收报文头部
 		{
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_B_HEAD\n");
-      while(pos < Cur)
-      {	
+      		while(pos < Cur)
+      		{	
 				if(10 == pos)   // 101   14字节的时间点
 				{
 					if(USART_RX_BUF[9] != '1')
@@ -637,7 +675,7 @@ void WIFI_GetEvent(void)
 		{
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_C_LEN\n");
 			while(pos < Cur)
-      {
+      		{
 				//判断是否有a出现  如果出现了判断后面8个字节
 				if(19 == pos)   //接收数据长度结束
 				{
@@ -675,7 +713,7 @@ void WIFI_GetEvent(void)
 			pos = 0;
 			//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_C_END\n");
 			while(pos <= Cur)
-      {
+      		{
 				
 				if((PackLen - 2) == pos)   //'A'
 				{
@@ -2579,9 +2617,7 @@ int WIFI_Factory_Passwd(void)
 int WIFI_Create(eSocketType Type)
 {
 	char send[50] = {'\0'};
-	char recv[255] = { '\0' };
 	int i = 0,j = 0;
-	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
 	send[0]= 0x65;
 	if(Type == SOCKET_B)
 		send[1]= 0x62;
@@ -2597,37 +2633,37 @@ int WIFI_Create(eSocketType Type)
 	for(i = 0;i<2;i++)
 	{
 		clear_WIFI();
+		WIFI_Recv_Socket_Event = 0;
 		WIFI_SendData(send, 6);
+		
 		for(j = 0;j <300;j++)
 		{
-				if(Cur >= 6)
+			if(WIFI_Recv_Socket_Event == 1)
+			{
+				WIFI_Recv_Socket_Event = 0;
+				if((WIFI_RecvSocketData[0] == 0x65)&&
+					(WIFI_RecvSocketData[1] == send[1])&&
+					(WIFI_RecvSocketData[2] == 0x06)&&
+					(WIFI_RecvSocketData[4] == 0x01))
 				{
-					memcpy(recv,USART_RX_BUF,6);
-					if((recv[0] == 0x65)&&
-						(recv[1] == send[1])&&
-						(recv[2] == 0x06)&&
-						(recv[4] == 0x01))
-					{
-						//创建 SOCKET 成功
-						printf("WIFI_CreateSocket %d Successful\n",Type);
-						rt_mutex_release(wifi_uart_lock);
-						clear_WIFI();
-						return 0;
-					}else
-					{
-						//创建SOCKET 失败
-						printf("WIFI_CreateSocket %d Failed\n",Type);
-						rt_mutex_release(wifi_uart_lock);
-						clear_WIFI();
-						return -1;
-					}
-					
+					//创建 SOCKET 成功
+					printdecmsg(ECU_DBG_WIFI,"WIFI_CreateSocket Successful ",Type);
+					clear_WIFI();
+					return 0;
+				}else
+				{
+					//创建SOCKET 失败
+					printdecmsg(ECU_DBG_WIFI,"WIFI_CreateSocket Failed ",Type);
+					clear_WIFI();
+					return -1;
 				}
+			}
+					
+					
 				rt_thread_delay(1);
 		}
-		printf("WIFI_CreateSocket %d WIFI Get reply time out 1\n",Type);
+		printdecmsg(ECU_DBG_WIFI,"WIFI_CreateSocket WIFI Get reply time out ",Type);
 	}	
-	rt_mutex_release(wifi_uart_lock);
 	clear_WIFI();
 	return -1;
 }
@@ -2637,12 +2673,10 @@ int WIFI_Create(eSocketType Type)
 int WIFI_Close(eSocketType Type)
 {
 	char send[50] = {'\0'};
-	char recv[255] = { '\0' };
 	int i = 0,j = 0;
 	if(1 != WIFI_QueryStatus(Type))
 		return -1;
 
-	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
 	send[0]= 0x65;
 	if(Type == SOCKET_B)
 		send[1]= 0x62;
@@ -2658,37 +2692,35 @@ int WIFI_Close(eSocketType Type)
 	for(i = 0;i<2;i++)
 	{
 		clear_WIFI();
+		WIFI_Recv_Socket_Event = 0;
 		WIFI_SendData(send, 6);
 		for(j = 0;j <300;j++)
 		{
-				if(Cur >= 6)
+			if(WIFI_Recv_Socket_Event == 1)
+			{
+				WIFI_Recv_Socket_Event = 0;
+				if((WIFI_RecvSocketData[0] == 0x65)&&
+					(WIFI_RecvSocketData[1] == send[1])&&
+					(WIFI_RecvSocketData[2] == 0x06)&&
+					(WIFI_RecvSocketData[4] == 0x01))
 				{
-					memcpy(recv,USART_RX_BUF,6);
-					if((recv[0] == 0x65)&&
-					(recv[1] == send[1])&&
-					(recv[2] == 0x06)&&
-					(recv[4] == 0x01))
-					{
-						//关闭SOCKET 成功
-						printf("WIFI_CloseSocket %d Successful\n",Type);
-						rt_mutex_release(wifi_uart_lock);
-						clear_WIFI();
-						return 0;
-					}else
-					{
-						//关闭SOCKET 失败
-						printf("WIFI_CloseSocket %d Failed\n",Type);
-						rt_mutex_release(wifi_uart_lock);
-						clear_WIFI();
-						return -1;
-					}
-					
+					//关闭SOCKET 成功
+					printdecmsg(ECU_DBG_WIFI,"WIFI_CloseSocket Successful ",Type);
+					clear_WIFI();
+					return 0;
+				}else
+				{
+					//关闭SOCKET 失败
+					printdecmsg(ECU_DBG_WIFI,"WIFI_CloseSocket Failed ",Type);
+					clear_WIFI();
+					return -1;
 				}
-				rt_thread_delay(1);
+				
+			}
+			rt_thread_delay(1);
 		}
-		printf("WIFI_CreateSocket %d WIFI Get reply time out 1\n",Type);
+		printdecmsg(ECU_DBG_WIFI,"WIFI_CloseSocket WIFI Get reply time out ",Type);
 	}	
-	rt_mutex_release(wifi_uart_lock);
 	clear_WIFI();
 	return -1;
 
@@ -2698,10 +2730,8 @@ int WIFI_Close(eSocketType Type)
 int WIFI_QueryStatus(eSocketType Type)
 {
 	char send[50] = {'\0'};
-	char recv[255] = { '\0' };
 	int i = 0,j = 0;
 	clear_WIFI();
-	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
 	send[0]= 0x65;
 	if(Type == SOCKET_B)
 		send[1]= 0x62;
@@ -2718,77 +2748,68 @@ int WIFI_QueryStatus(eSocketType Type)
 	for(i = 0;i<2;i++)
 	{
 		clear_WIFI();
+		WIFI_Recv_Socket_Event = 0;
 		WIFI_SendData(send, 6);
 		for(j = 0;j <300;j++)
 		{
-				if(Cur >= 6)
+			if(WIFI_Recv_Socket_Event == 1)
+			{
+				WIFI_Recv_Socket_Event = 0;
+				if((WIFI_RecvSocketData[0] == 0x65)&&
+					(WIFI_RecvSocketData[1] == send[1])&&
+					(WIFI_RecvSocketData[2] == 0x06))
 				{
-					memcpy(recv,USART_RX_BUF,6);
-					if((recv[0] == 0x65)&&
-					(recv[1] == send[1])&&
-					(recv[2] == 0x06))
-					{
 #ifdef USR_MODULE					
-						//查询SOCKET 成功
-						if(recv[4] == 0x01)	//在线
-						{
-							printf("WIFI_QueryStatus %d Online\n",Type);
-							rt_mutex_release(wifi_uart_lock);
-							clear_WIFI();
-							return 1;
-						}else if(recv[4] == 0x00)	//离线
-						{
-							printf("WIFI_QueryStatus %d not Online\n",Type);
-							rt_mutex_release(wifi_uart_lock);
-							clear_WIFI();
-							return 0;
-						}else	//未知
-						{
-							printf("WIFI_QueryStatus %d unknown\n",Type);
-							rt_mutex_release(wifi_uart_lock);
-							clear_WIFI();
-							return -1;
-						}
-#endif
-
-#ifdef RAK475_MODULE
-						//查询SOCKET 成功
-						if(recv[4] == 0x01)			//离线
-						{
-							printf("WIFI_QueryStatus %d Online\n",Type);
-							rt_mutex_release(wifi_uart_lock);
-							clear_WIFI();
-							return 0;
-						}else if(recv[4] == 0x00)	//在线
-						{
-							printf("WIFI_QueryStatus %d not Online\n",Type);
-							rt_mutex_release(wifi_uart_lock);
-							clear_WIFI();
-							return 1;
-						}else	//未知
-						{
-							printf("WIFI_QueryStatus %d unknown\n",Type);
-							rt_mutex_release(wifi_uart_lock);
-							clear_WIFI();
-							return -1;
-						}
-
-#endif		
-					}else
+					//查询SOCKET 成功
+					if(WIFI_RecvSocketData[4] == 0x01)	//在线
 					{
-						//查询SOCKET 失败
-						printf("WIFI_QueryStatus Failed\n");
-						rt_mutex_release(wifi_uart_lock);
+						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Online ",Type);
+						clear_WIFI();
+						return 1;
+					}else if(WIFI_RecvSocketData[4] == 0x00)	//离线
+					{
+						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus not Online ",Type);
+						clear_WIFI();
+						return 0;
+					}else	//未知
+					{
+						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus unknown ",Type);
 						clear_WIFI();
 						return -1;
 					}
-					
+#endif
+#ifdef RAK475_MODULE
+					//查询SOCKET 成功
+					if(WIFI_RecvSocketData[4] == 0x01)			//离线
+					{
+						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Online ",Type);
+						clear_WIFI();
+						return 0;
+					}else if(WIFI_RecvSocketData[4] == 0x00)	//在线
+					{
+						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus not Online ",Type);
+						clear_WIFI();
+						return 1;
+					}else	//未知
+					{
+						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus unknown ",Type);
+						clear_WIFI();
+						return -1;
+					}
+#endif		
+				}else
+				{
+					//查询SOCKET 失败
+					printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Failed ",Type);
+					clear_WIFI();
+					return -1;
 				}
-				rt_thread_delay(1);
+				
+			}
+			rt_thread_delay(1);
 		}
-		printf("WIFI_CreateSocket WIFI Get reply time out 1\n");
+		printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus WIFI Get reply time out ",Type);
 	}	
-	rt_mutex_release(wifi_uart_lock);
 	clear_WIFI();
 	return -1;
 }

@@ -199,6 +199,7 @@ void init_tmpdb(inverter_info *firstinverter)
 			memcpy(UID12,list[0],12);
 			UID12[12] = '\0';
 			curinverter = firstinverter;
+			
 			for(j=0; (j<ecu.validNum); j++)	
 			{
 
@@ -209,7 +210,7 @@ void init_tmpdb(inverter_info *firstinverter)
 					curinverter->Last_PV1_Energy = atoi(list[2]);
 					curinverter->Last_PV2_Energy = atoi(list[3]);
 					curinverter->Last_PV_Output_Energy = atoi(list[4]);
-					printf("UID %02x%02x%02x%02x%02x%02x ,LastCollectTime: %s ,Last_PV1_Energy: %d ,Last_PV2_Energy: %d \n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
+					printf("UID %s ,LastCollectTime: %s ,Last_PV1_Energy: %d ,Last_PV2_Energy: %d \n",curinverter->uid,curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
 					break;
 				}
 				curinverter++;
@@ -1772,7 +1773,7 @@ void save_last_collect_info(void)
 	{
 		if(curinverter->status.comm_status == 1)
 		{
-			sprintf(str,"%02x%02x%02x%02x%02x%02x,%s,%d,%d,%d\n",curinverter->uid[0],curinverter->uid[1],curinverter->uid[2],curinverter->uid[3],curinverter->uid[4],curinverter->uid[5],curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy,curinverter->Last_PV_Output_Energy);
+			sprintf(str,"%s,%s,%d,%d,%d\n",curinverter->uid,curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy,curinverter->Last_PV_Output_Energy);
 			fileWrite(fd,str,strlen(str));
 		}
 		curinverter++;

@@ -31,6 +31,8 @@ typedef enum
     EN_RECV_ST_GET_C_LEN        = 11,	//接收报文数据长度   其中数据部分的长度为接收到长度减去12个字节
     EN_RECV_ST_GET_C_DATA       = 12,	//接收报文数据部分数据
     EN_RECV_ST_GET_C_END        = 13,	//接收报文END结尾标志
+
+	EN_RECV_ST_GET_SOCKET_DATA      	= 14,
 	
 } eRecvSM;// receive state machin
 
@@ -40,6 +42,7 @@ typedef enum
 	EN_RECV_TYPE_A    		= 1,				//采集的是SOCKET A的数据
 	EN_RECV_TYPE_B    		= 2,				//采集的是SOCKET B的数据
 	EN_RECV_TYPE_C    		= 3,				//采集的是SOCKET C的数据
+	EN_RECV_TYPE_SOCKET		= 4,
 } eRecvType;
 
 typedef enum 
@@ -53,6 +56,7 @@ typedef enum
 #define SOCKETA_LEN						2048
 #define SOCKETB_LEN						1408		
 #define SOCKETC_LEN						2048
+#define SOCKET_LEN						6
 
 extern unsigned char WIFI_RecvSocketAData[SOCKETA_LEN];
 extern unsigned char WIFI_Recv_SocketA_Event;

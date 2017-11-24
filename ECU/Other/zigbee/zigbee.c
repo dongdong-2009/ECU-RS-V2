@@ -703,7 +703,7 @@ int zb_sendHeart(char uid[13])
 {
 	int i=0;
 	char sendbuff[256];
-	print2msg(ECU_DBG_COMM,"Query XXX inverter data",uid);
+	//print2msg(ECU_DBG_COMM,"Query XXX inverter data",uid);
 	
 	sendbuff[i++] = (uid[0] - '0') * 0x10 + (uid[1] - '0');
 	sendbuff[i++] = (uid[2] - '0') * 0x10 + (uid[3] - '0');

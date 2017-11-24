@@ -395,7 +395,6 @@ void ECUCollect_thread_entry(void* parameter)
 	{
 		if(compareTime(CollectClientDurabletime ,CollectClientThistime,CollectClientReportinterval))
 		{
-			ECUCommThreadFlag = 1;
 			//5分钟采集相关的发电量数据
 			CollectClientThistime = acquire_time();
 			apstime(ecu.curTime);
@@ -448,6 +447,7 @@ void ECUCollect_thread_entry(void* parameter)
 				//采集实时数据
 				Collect_Client_Record();
 				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
+				ECUCommThreadFlag = 0;
 			}
 	
 
@@ -462,9 +462,10 @@ void ECUCollect_thread_entry(void* parameter)
 		ECUCommThreadFlag = 0;
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
-			ECUCommThreadFlag = 1;
+			
 			if(	ecu.validNum >0	)
 			{
+				ECUCommThreadFlag = 1;
 				optimizeFileSystem(300);
 				//采集心跳相关远程控制数据
 				printmsg(ECU_DBG_COLLECT,"Collect Control DATA  Start");
@@ -472,7 +473,9 @@ void ECUCollect_thread_entry(void* parameter)
 				//采集远程控制数据
 				Collect_Control_Record();
 				printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
+				ECUCommThreadFlag = 0;
 			}
+			
 			
 		}
 		if(COMM_Timeout_Event == 1)
