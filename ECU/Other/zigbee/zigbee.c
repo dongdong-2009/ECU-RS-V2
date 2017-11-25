@@ -581,6 +581,7 @@ int zb_get_heart_reply(char *data,inverter_info *inverter)			//¶ÁÈ¡Äæ±äÆ÷µÄ·µ»ØÖ
 			data[i]=data_all[i+12];
 		}
 		printhexmsg(ECU_DBG_COMM,"Reply", data_all, temp_size);
+		rt_thread_delay(60);
 		rt_sprintf(inverterid,"%02x%02x%02x%02x%02x%02x",data_all[6],data_all[7],data_all[8],data_all[9],data_all[10],data_all[11]);
 		if((size>0)&&(0xFC==data_all[0])&&(0xFC==data_all[1])&&(0==rt_strcmp(inverter->uid,inverterid)))
 		{
