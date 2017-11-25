@@ -221,12 +221,14 @@ void WIFI_GetEvent(void)
       		{
 				if(1 == pos)   //'a'
 				{
+						TIM3_Int_Init(399,7199);
 						if((USART_RX_BUF[0] != 'a') && (USART_RX_BUF[0] != 'b') && (USART_RX_BUF[0] != 'c') && (USART_RX_BUF[0] != 0x65))
 						{
 							Cur = 0;
 							pos = 0;
 							eTypeMachine = EN_RECV_TYPE_UNKNOWN;
 							eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+							TIM3_Int_Deinit();
 							break;
 						}else if(USART_RX_BUF[0] == 'a')
 						{
@@ -234,6 +236,7 @@ void WIFI_GetEvent(void)
 							delayMS(2);
 							eStateMachine = EN_RECV_ST_GET_SCOKET_ID;
 							eTypeMachine = EN_RECV_TYPE_A;
+							TIM3_Int_Deinit();							
 							break;
 						}else if(USART_RX_BUF[0] == 'b')
 						{
@@ -241,17 +244,34 @@ void WIFI_GetEvent(void)
 							eTypeMachine = EN_RECV_TYPE_B;
 							//SEGGER_RTT_printf(0, "b %d\n",eTypeMachine);
 							eStateMachine = EN_RECV_ST_GET_SCOKET_ID;
+							TIM3_Int_Deinit();
+							break;
 						}else if(USART_RX_BUF[0] == 'c')
 						{
 							delayMS(2);
 							eTypeMachine = EN_RECV_TYPE_C;
 							//SEGGER_RTT_printf(0, "c %d\n",eTypeMachine);
 							eStateMachine = EN_RECV_ST_GET_SCOKET_ID;
+							TIM3_Int_Deinit();
+							break;
 						}else if(USART_RX_BUF[0] == 0x65)
 						{
-							
+							delayMS(2);
 							eTypeMachine = EN_RECV_TYPE_SOCKET;
 							eStateMachine = EN_RECV_ST_GET_SOCKET_DATA;
+							TIM3_Int_Deinit();
+							if(Cur >= 2)
+							{
+								if(USART_RX_BUF[1] == 'd')
+								{
+									Cur = 0;
+									pos = 0;
+									eTypeMachine = EN_RECV_TYPE_UNKNOWN;
+									eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
+								}
+							}
+							
+							break;
 						}
 				}
 				pos++;
@@ -263,7 +283,7 @@ void WIFI_GetEvent(void)
 		if(eStateMachine == EN_RECV_ST_GET_SOCKET_DATA)
 		{
 			delayMS(1);
-			TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+			TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 			while(pos < Cur)
 			{
 				if(5 == pos)
@@ -428,7 +448,7 @@ void WIFI_GetEvent(void)
 					//计算长度
 					eStateMachine = EN_RECV_ST_GET_A_DATA;
 					delayMS(20);
-					TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
 				}
@@ -558,7 +578,7 @@ void WIFI_GetEvent(void)
       					PackLen = packetlen_B(&USART_RX_BUF[10]);
 						eStateMachine = EN_RECV_ST_GET_B_DATA;
 						delayMS(10);
-						TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+						TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
       				}
@@ -572,7 +592,7 @@ void WIFI_GetEvent(void)
 					//计算长度
 					eStateMachine = EN_RECV_ST_GET_B_DATA;
 					delayMS(10);
-					TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
 				}
@@ -684,7 +704,7 @@ void WIFI_GetEvent(void)
 					//计算长度
 					eStateMachine = EN_RECV_ST_GET_C_DATA;
 					delayMS(10);
-					TIM3_Int_Init(499,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
+					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
 				}
