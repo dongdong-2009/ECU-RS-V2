@@ -34,8 +34,7 @@
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
-unsigned short comm_failed_Num = 0;
-unsigned short pre_heart_rate;
+
 extern rt_mutex_t wifi_uart_lock;
 int Data_Len = 0,Command_Id = 0;
 int ResolveFlag = 0;
@@ -99,7 +98,6 @@ void process_WIFI(unsigned char * ID)
 		//函数指针不为空，则运行对应的函数
 		if(pfun_Phone[Command_Id%100])
 		{
-			//printf("pfun_Phone ID:%d\n",Command_Id);
 			(*pfun_Phone[Command_Id%100])(ID,Data_Len,(char *)WIFI_RecvSocketAData);
 		}
 		
@@ -160,66 +158,6 @@ void process_WIFIEvent(void)
 		process_WIFI(ID_A);
 		WIFI_Recv_SocketA_Event = 0;
 		SEGGER_RTT_printf(0,"WIFI_Recv_Event end\n");
-	}
-
-}
-
-
-//心跳事件处理
-void process_HeartBeatEvent(void)
-{
-	int ret = 0;
-	
-	if(	ecu.validNum >0	)
-	{
-		if(ecu.curSequence >= ecu.validNum)		//当轮训的序号大于最后一台时，更换到第0台
-		{
-			ecu.curSequence = 0;
-		}
-		pre_heart_rate = inverterInfo[ecu.curSequence].heart_rate;
-		//发送心跳命令
-		ret = zb_query_heart_data(&inverterInfo[ecu.curSequence]);
-		if(ret == -1)	//发送心跳包失败
-		{
-			inverterInfo[ecu.curSequence].status.heart_Failed_times++;
-			if(inverterInfo[ecu.curSequence].status.heart_Failed_times >= 3)
-			{
-				inverterInfo[ecu.curSequence].status.heart_Failed_times = 3;		
-				inverterInfo[ecu.curSequence].status.comm_failed3_status = 0;
-			}
-				
-			//通信失败，失败次数++
-			comm_failed_Num ++;
-		}else	//发送心跳包成功
-		{
-			//通信失败，失败次数++
-			comm_failed_Num  = 0;
-			inverterInfo[ecu.curSequence].status.heart_Failed_times = 0;
-		
-			//如果当前一轮心跳小于上一轮心跳,表示重启
-			if(inverterInfo[ecu.curSequence].heart_rate < pre_heart_rate)
-			{
-				//当前一轮重启次数+1
-				if(inverterInfo[ecu.curSequence].restartNum < 255)
-					inverterInfo[ecu.curSequence].restartNum++;
-			}
-			
-		}
-		
-		ecu.curSequence++;
-		
-		
-		//连续通讯不上1小时   表示关机状态
-		if(comm_failed_Num >= PERIOD_NUM)
-		{
-			//SEGGER_RTT_printf(0, "comm_failed_Num:%d   \n",comm_failed_Num);
-			for(ecu.curSequence = 0;ecu.curSequence < ecu.validNum;ecu.curSequence++)
-			{
-				inverterInfo[ecu.curSequence].restartNum = 0;
-			}
-			comm_failed_Num = 0;
-			ecu.curSequence = 0;
-		}
 	}
 
 }

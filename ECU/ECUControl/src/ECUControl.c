@@ -21,9 +21,6 @@
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
-extern rt_mutex_t usr_wifi_lock;
-
-
 enum CommandID{
 	A100, A101, A102, A103, A104, A105, A106, A107, A108, A109, //0-9
 	A110, A111, A112, A113, A114, A115, A116, A117, A118, A119, //10-19
@@ -72,11 +69,9 @@ int communication_with_EMA(int next_cmd_id)
 				{
 					//ECU向EMA发送请求命令指令
 					msg_REQ(send_buffer);
-					rt_mutex_take(usr_wifi_lock, RT_WAITING_FOREVER);
 					ret = SendToSocketC(send_buffer, strlen(send_buffer));
 					if(ret == -1)
 					{
-						rt_mutex_release(usr_wifi_lock);
 						rt_free(recv_buffer);
 						rt_free(send_buffer);
 						return -1;
@@ -92,7 +87,6 @@ int communication_with_EMA(int next_cmd_id)
 						}
 						rt_hw_ms_delay(10);
 					}
-					rt_mutex_release(usr_wifi_lock);
 					if(flag_failed == 0)
 					{
 						rt_free(recv_buffer);
@@ -423,7 +417,7 @@ int resend_control_record()
 void ECUControl_thread_entry(void* parameter)
 {
 	int ControlThistime=0, ControlDurabletime=65535, ControlReportinterval=900;
-	int AlarmThistime=0, AlarmDurabletime=65535, AlarmReportinterval=120;
+	int AlarmThistime=0, AlarmDurabletime=65535, AlarmReportinterval=180;
 	char *data = NULL;
 	int res,flag;
 	char time[15] = {'\0'};

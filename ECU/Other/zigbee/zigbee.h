@@ -31,6 +31,8 @@ int zigbeeRecvMsg(char *data, int timeout_sec);
 int zb_query_heart_data(inverter_info *inverter);
 int zb_set_heartSwitch_boardcast(unsigned char functionStatus);
 int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStatus);
+int zb_sendHeart(char uid[13]);
+
 
 #endif /*__ZIGBEE_H__*/
 

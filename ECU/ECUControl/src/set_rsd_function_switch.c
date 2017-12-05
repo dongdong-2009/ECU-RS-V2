@@ -48,7 +48,7 @@ int set_rsd_function_switch(const char *recvbuffer, char *sendbuffer)
 			saveChangeFunctionStatus('0');
 			save_rsdFunction_change_flag();
 			//重启main线程
-			restartThread(TYPE_COMM);
+			restartThread(TYPE_DATACOLLECT);
 
 			break;
 		case 1:
@@ -58,7 +58,7 @@ int set_rsd_function_switch(const char *recvbuffer, char *sendbuffer)
 			saveChangeFunctionStatus('1');
 			save_rsdFunction_change_flag();
 			//重启main线程
-			restartThread(TYPE_COMM);
+			restartThread(TYPE_DATACOLLECT);
 			
 
 			break;

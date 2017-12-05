@@ -30,7 +30,7 @@
 /*****************************************************************************/
 static char SendData[MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9] = {'\0'};
 extern unsigned char rateOfProgress;
-
+extern ecu_info ecu;
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -139,7 +139,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 	int i = 0;
 	int length = 0;
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
-	
+	memcpy(curTime,ecu.curTime,14);
 	if(mapflag == 1)	//∆•≈‰ ß∞‹£¨∑¢ÀÕ ß∞‹√¸¡Ó
 	{
 		sprintf(SendData,"APS110015000201\n");
@@ -155,7 +155,6 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 
 		SendData[17] = validNum/256;	
 		SendData[18] = validNum%256;
-		apstime(curTime);
 
 		SendData[19] = (curTime[0] - '0')*16+(curTime[1] - '0');
 		SendData[20] = (curTime[2] - '0')*16+(curTime[3] - '0');

@@ -567,12 +567,12 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 				recvbuff[*recvLength] = '\0';
 					print2msg(ECU_DBG_CLIENT,"serverCommunication_Client",recvbuff);
 				WIFI_Recv_SocketB_Event = 0;
-				WIFI_Close(SOCKET_B);
+				//WIFI_Close(SOCKET_B);
 				return 0;
 			}
 			rt_hw_ms_delay(10);
 		}
-		WIFI_Close(SOCKET_B);
+		//WIFI_Close(SOCKET_B);
 		return -1;
 #endif
 
@@ -671,12 +671,12 @@ int serverCommunication_Control(char *sendbuff,int sendLength,char *recvbuff,int
 				recvbuff[*recvLength] = '\0';
 				print2msg(ECU_DBG_CONTROL_CLIENT,"serverCommunication_Control:",recvbuff);
 				WIFI_Recv_SocketC_Event = 0;
-				WIFI_Close(SOCKET_C);
+				//WIFI_Close(SOCKET_C);
 				return 0;
 			}
 			rt_hw_ms_delay(10);
 		}
-		WIFI_Close(SOCKET_C);
+		//WIFI_Close(SOCKET_C);
 		return -1;
 #endif
 

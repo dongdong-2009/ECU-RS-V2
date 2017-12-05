@@ -41,6 +41,8 @@ int init_ecu(void)
 	Read_IO_INIT_STATU(&ecu.IO_Init_Status);
 	ecu.life_energy = get_lifetime_power();
 	zb_change_ecu_panid();
+	memset(ecu.curTime,'0',14);
+	ecu.curTime[14] = '\0';
 	
 	return 0;
 }
@@ -64,14 +66,19 @@ int init_inverter(inverter_info *inverter)
 		curinverter->off_times = 0;
 		curinverter->status.comm_failed3_status = 0;
 		curinverter->status.function_status = 1;
-		curinverter->status.heart_Failed_times = 0;
 		curinverter->status.pv1_low_voltage_pritection = 0;
 		curinverter->status.pv2_low_voltage_pritection = 0;
 		curinverter->status.device_Type = 0;
 		curinverter->status.comm_status = 0;
-		curinverter->status.dataflag = 0;
 		curinverter->status.bindflag = 0;
 		curinverter->status.flag = 0;
+		curinverter->status.mos_status = 1;
+		curinverter->status.last_mos_status= 1;
+		curinverter->status.last_function_status = 1;
+		curinverter->status.last_pv1_low_voltage_pritection = 0;
+		curinverter->status.last_pv2_low_voltage_pritection = 0;
+
+		
 		
 		curinverter->restartNum = 0;
 		curinverter->PV1 = 0;
@@ -154,14 +161,17 @@ int init_inverter_A103(inverter_info *inverter)
 		curinverter->off_times = 0;
 		curinverter->status.comm_failed3_status = 0;
 		curinverter->status.function_status = 1;
-		curinverter->status.heart_Failed_times = 0;
 		curinverter->status.pv1_low_voltage_pritection = 0;
 		curinverter->status.pv2_low_voltage_pritection = 0;
 		curinverter->status.device_Type = 0;
 		curinverter->status.comm_status = 0;
-		curinverter->status.dataflag = 0;
 		curinverter->status.bindflag = 0;
 		curinverter->status.flag = 0;
+		curinverter->status.mos_status = 1;
+		curinverter->status.last_mos_status= 1;
+		curinverter->status.last_function_status = 1;
+		curinverter->status.last_pv1_low_voltage_pritection = 0;
+		curinverter->status.last_pv2_low_voltage_pritection = 0;
 		
 		curinverter->restartNum = 0;
 		curinverter->PV1 = 0;
