@@ -146,101 +146,110 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 		SendToSocketA(SendData ,16,ID);
 		return;
 	}else{				//匹配成功，发送成功命令
-		
-		sprintf(SendData,"APS110015000200");   //13字节
 
-		SendData[15] = '0';	
-		SendData[16] = '2';
-
-
-		SendData[17] = validNum/256;	
-		SendData[18] = validNum%256;
-
-		SendData[19] = (curTime[0] - '0')*16+(curTime[1] - '0');
-		SendData[20] = (curTime[2] - '0')*16+(curTime[3] - '0');
-		SendData[21] = (curTime[4] - '0')*16+(curTime[5] - '0');
-		SendData[22] = (curTime[6] - '0')*16+(curTime[7] - '0');
-		SendData[23] = (curTime[8] - '0')*16+(curTime[9] - '0');
-		SendData[24] = (curTime[10] - '0')*16+(curTime[11] - '0');
-		SendData[25] = (curTime[12] - '0')*16+(curTime[13] - '0');
-	
-		length = 26;
-		for(i=0; (i<MAXINVERTERCOUNT)&&(i < validNum); i++)			
+		if(memcmp(curTime,"00000000000000",14))
 		{
-			memset(inverter_data,0x00,58);
+			sprintf(SendData,"APS110015000200");   //13字节
 
-			inverter_length = 57;
-			//拼接57字节数据包
-			inverter_data[0] = (curinverter->uid[0] - '0')*0x10 + (curinverter->uid[1] - '0');
-			inverter_data[1] = (curinverter->uid[2] - '0')*0x10 + (curinverter->uid[3] - '0');
-			inverter_data[2] = (curinverter->uid[4] - '0')*0x10 + (curinverter->uid[5] - '0');
-			inverter_data[3] = (curinverter->uid[6] - '0')*0x10 + (curinverter->uid[7] - '0');
-			inverter_data[4] = (curinverter->uid[8] - '0')*0x10 + (curinverter->uid[9] - '0');
-			inverter_data[5] = (curinverter->uid[10] - '0')*0x10 + (curinverter->uid[11] - '0');
+			SendData[15] = '0';	
+			SendData[16] = '2';
 
-			inverter_data[6] = curinverter->status.device_Type;
+
+			SendData[17] = validNum/256;	
+			SendData[18] = validNum%256;
+
+			SendData[19] = (curTime[0] - '0')*16+(curTime[1] - '0');
+			SendData[20] = (curTime[2] - '0')*16+(curTime[3] - '0');
+			SendData[21] = (curTime[4] - '0')*16+(curTime[5] - '0');
+			SendData[22] = (curTime[6] - '0')*16+(curTime[7] - '0');
+			SendData[23] = (curTime[8] - '0')*16+(curTime[9] - '0');
+			SendData[24] = (curTime[10] - '0')*16+(curTime[11] - '0');
+			SendData[25] = (curTime[12] - '0')*16+(curTime[13] - '0');
+		
+			length = 26;
+			for(i=0; (i<MAXINVERTERCOUNT)&&(i < validNum); i++)			
+			{
+				memset(inverter_data,0x00,58);
+
+				inverter_length = 57;
+				//拼接57字节数据包
+				inverter_data[0] = (curinverter->uid[0] - '0')*0x10 + (curinverter->uid[1] - '0');
+				inverter_data[1] = (curinverter->uid[2] - '0')*0x10 + (curinverter->uid[3] - '0');
+				inverter_data[2] = (curinverter->uid[4] - '0')*0x10 + (curinverter->uid[5] - '0');
+				inverter_data[3] = (curinverter->uid[6] - '0')*0x10 + (curinverter->uid[7] - '0');
+				inverter_data[4] = (curinverter->uid[8] - '0')*0x10 + (curinverter->uid[9] - '0');
+				inverter_data[5] = (curinverter->uid[10] - '0')*0x10 + (curinverter->uid[11] - '0');
+
+				inverter_data[6] = curinverter->status.device_Type;
+					
+				inverter_data[7] |=  curinverter->status.comm_failed3_status;
+				inverter_data[7] |=  (curinverter->status.function_status << 1);
+				inverter_data[7] |=  (curinverter->status.pv1_low_voltage_pritection << 2);
+				inverter_data[7] |=  (curinverter->status.pv2_low_voltage_pritection << 3);
+
+				inverter_data[8] = curinverter->heart_rate /256;
+				inverter_data[9] = curinverter->heart_rate %256;
+				inverter_data[10] = curinverter->off_times/256;
+				inverter_data[11] = curinverter->off_times%256;
 				
-			inverter_data[7] |=  curinverter->status.comm_failed3_status;
-			inverter_data[7] |=  (curinverter->status.function_status << 1);
-			inverter_data[7] |=  (curinverter->status.pv1_low_voltage_pritection << 2);
-			inverter_data[7] |=  (curinverter->status.pv2_low_voltage_pritection << 3);
+				inverter_data[12] = curinverter->restartNum;
 
-			inverter_data[8] = curinverter->heart_rate /256;
-			inverter_data[9] = curinverter->heart_rate %256;
-			inverter_data[10] = curinverter->off_times/256;
-			inverter_data[11] = curinverter->off_times%256;
-			
-			inverter_data[12] = curinverter->restartNum;
+				inverter_data[13] = curinverter->PV1/256;
+				inverter_data[14] = curinverter->PV1%256;
+				inverter_data[15] = curinverter->PV2/256;
+				inverter_data[16] = curinverter->PV2%256;
+				inverter_data[17] = curinverter->PI/256;
+				inverter_data[18] = curinverter->PI%256;
+				inverter_data[19] = curinverter->PI2/256;
+				inverter_data[20] = curinverter->PI2%256;
+				
+				inverter_data[21] = curinverter->Power1/256;
+				inverter_data[22] = curinverter->Power1%256;
+				inverter_data[23] = curinverter->Power2/256;
+				inverter_data[24] = curinverter->Power2%256;
+				
+				inverter_data[25] = curinverter->PV_Output/256;
+				inverter_data[26] = curinverter->PV_Output%256;
+				inverter_data[27] = curinverter->PI_Output/256;
+				inverter_data[28] = curinverter->PI_Output%256;
+				inverter_data[29] = curinverter->Power_Output/256;
+				inverter_data[30] = curinverter->Power_Output%256;
 
-			inverter_data[13] = curinverter->PV1/256;
-			inverter_data[14] = curinverter->PV1%256;
-			inverter_data[15] = curinverter->PV2/256;
-			inverter_data[16] = curinverter->PV2%256;
-			inverter_data[17] = curinverter->PI/256;
-			inverter_data[18] = curinverter->PI%256;
-			inverter_data[19] = curinverter->PI2/256;
-			inverter_data[20] = curinverter->PI2%256;
-			
-			inverter_data[21] = curinverter->Power1/256;
-			inverter_data[22] = curinverter->Power1%256;
-			inverter_data[23] = curinverter->Power2/256;
-			inverter_data[24] = curinverter->Power2%256;
-			
-			inverter_data[25] = curinverter->PV_Output/256;
-			inverter_data[26] = curinverter->PV_Output%256;
-			inverter_data[27] = curinverter->PI_Output/256;
-			inverter_data[28] = curinverter->PI_Output%256;
-			inverter_data[29] = curinverter->Power_Output/256;
-			inverter_data[30] = curinverter->Power_Output%256;
+				inverter_data[31] = curinverter->RSSI;
+				
+				Energy = curinverter->EnergyPV1/36;
+				inverter_data[32] = (Energy/16777216)%256;
+				inverter_data[33] = (Energy/65536)%256;
+				inverter_data[34] = (Energy/256)%256;
+				inverter_data[35] = Energy%256;
+				
+				Energy = curinverter->EnergyPV2/36;
+				inverter_data[36] = (Energy/16777216)%256;
+				inverter_data[37] = (Energy/65536)%256;
+				inverter_data[38] = (Energy/256)%256;
+				inverter_data[39] = Energy%256;
 
-			inverter_data[31] = curinverter->RSSI;
-			
-			Energy = curinverter->EnergyPV1/36;
-			inverter_data[32] = (Energy/16777216)%256;
-			inverter_data[33] = (Energy/65536)%256;
-			inverter_data[34] = (Energy/256)%256;
-			inverter_data[35] = Energy%256;
-			
-			Energy = curinverter->EnergyPV2/36;
-			inverter_data[36] = (Energy/16777216)%256;
-			inverter_data[37] = (Energy/65536)%256;
-			inverter_data[38] = (Energy/256)%256;
-			inverter_data[39] = Energy%256;
+				Energy = curinverter->EnergyPV_Output/36;
+				inverter_data[40] = (Energy/16777216)%256;
+				inverter_data[41] = (Energy/65536)%256;
+				inverter_data[42] = (Energy/256)%256;
+				inverter_data[43] = Energy%256;
 
-			Energy = curinverter->EnergyPV_Output/36;
-			inverter_data[40] = (Energy/16777216)%256;
-			inverter_data[41] = (Energy/65536)%256;
-			inverter_data[42] = (Energy/256)%256;
-			inverter_data[43] = Energy%256;
-
-			inverter_data[44] = curinverter->Mos_CloseNum;
-			inverter_data[45] = curinverter->version/256;
-			inverter_data[46] = curinverter->version%256;
-			memcpy(&SendData[length],inverter_data,inverter_length);
-			length += inverter_length;
-			
-			curinverter++;
+				inverter_data[44] = curinverter->Mos_CloseNum;
+				inverter_data[45] = curinverter->version/256;
+				inverter_data[46] = curinverter->version%256;
+				memcpy(&SendData[length],inverter_data,inverter_length);
+				length += inverter_length;
+				
+				curinverter++;
+			}
+		}else
+		{
+			sprintf(SendData,"APS110015000202\n");
+			SendToSocketA(SendData ,16,ID);	
+			return;
 		}
+		
 
 		if(validNum > 0)
 		{		

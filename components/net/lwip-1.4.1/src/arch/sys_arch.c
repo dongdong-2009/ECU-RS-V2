@@ -29,6 +29,7 @@
 #include "lwip/dns.h"
 #include <string.h>
 #include <stdio.h>
+#include "rtconfig.h"
 
 /*
  * Initialize the network interface device
@@ -75,9 +76,9 @@ static void tcpip_init_done_callback(void *arg)
 
     LWIP_ASSERT("invalid arg.\n",arg);
 
-    IP4_ADDR(&gw, 0,0,0,0);
-    IP4_ADDR(&ipaddr, 0,0,0,0);
-    IP4_ADDR(&netmask, 0,0,0,0);
+	IP4_ADDR(&ipaddr, RT_LWIP_IPADDR0, RT_LWIP_IPADDR1, RT_LWIP_IPADDR2, RT_LWIP_IPADDR3);
+	IP4_ADDR(&gw, RT_LWIP_GWADDR0, RT_LWIP_GWADDR1, RT_LWIP_GWADDR2, RT_LWIP_GWADDR3);
+	IP4_ADDR(&netmask, RT_LWIP_MSKADDR0, RT_LWIP_MSKADDR1, RT_LWIP_MSKADDR2, RT_LWIP_MSKADDR3);
 
     /* enter critical */
     rt_enter_critical();
@@ -144,9 +145,9 @@ void dhcp_reset(void)
 
   extern struct rt_object_information rt_object_container[];
 
-	IP4_ADDR(&gw, 0,0,0,0);
-  IP4_ADDR(&ipaddr, 0,0,0,0);
-  IP4_ADDR(&netmask, 0,0,0,0);
+  IP4_ADDR(&gw, RT_LWIP_GWADDR0,RT_LWIP_GWADDR1,RT_LWIP_GWADDR2,RT_LWIP_GWADDR3);
+  IP4_ADDR(&ipaddr, RT_LWIP_IPADDR0,RT_LWIP_IPADDR1,RT_LWIP_IPADDR2,RT_LWIP_IPADDR3);
+  IP4_ADDR(&netmask, RT_LWIP_MSKADDR0,RT_LWIP_MSKADDR1,RT_LWIP_MSKADDR2,RT_LWIP_MSKADDR3);
 
   /* enter critical */
   rt_enter_critical();
@@ -170,24 +171,24 @@ void dhcp_reset(void)
 			{
 				if(ethif->netif->dhcp != NULL)
 				{
-					//netif_set_addr(ethif->netif, &ipaddr, &netmask, &gw);
+					
 					netif_set_down(ethif->netif);
 					//netif_remove(ethif->netif);
  					dhcp_release(ethif->netif);
 					dhcp_stop(ethif->netif);
 					mem_free(ethif->netif->dhcp);
 					ethif->netif->dhcp=NULL;
-
+					netif_set_addr(ethif->netif, &ipaddr, &netmask, &gw);
 					/* if this interface uses DHCP, start the DHCP client */
 					dhcp_start(ethif->netif);
 					rt_kprintf("dhcp_start1\n");					
 				}else
 				{
-				  netif_add(ethif->netif, &ipaddr, &netmask, &gw,
-                 ethif, netif_device_init, tcpip_input);
+				  netif_add(ethif->netif, &ipaddr, &netmask, &gw,ethif, netif_device_init, tcpip_input);
 
-          if (netif_default == RT_NULL)
-            netif_set_default(ethif->netif);
+         		 if (netif_default == RT_NULL)
+            		netif_set_default(ethif->netif);
+				 	netif_set_addr(ethif->netif, &ipaddr, &netmask, &gw);
 					dhcp_start(ethif->netif);
 					rt_kprintf("dhcp_start2\n");
 				}

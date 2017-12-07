@@ -30,8 +30,8 @@
 
 #define CONTROL_RECORD_ALARM_ECU_HEAD						(14*99+36)
 
-
-
+#define JSON_RECORD_HEAD						200
+#define JSON_RECORD_PER_INFO					200
 
 #pragma pack(push)  
 #pragma pack(1) 

@@ -38,6 +38,7 @@
 #include "socket.h"
 #include "rtc.h"
 
+
 #ifdef RT_USING_DFS
 #include <dfs_fs.h>
 #include <dfs_init.h>
@@ -119,8 +120,17 @@ static rt_uint8_t control_stack[4096];
 static struct rt_thread control_thread;
 #endif 
 
+#ifdef THREAD_PRIORITY_JSON_SERVER
+#include "ECUJsonServer.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t json_server_stack[1024];
+static struct rt_thread json_server_thread;
+#endif 
+
+
 ecu_info ecu;	//ecu相关信息
 inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
+unsigned char LED_Status = 0;
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -243,12 +253,16 @@ static void led_thread_entry(void* parameter)
 	rt_hw_watchdog_init();
 	while (1)
     {
-		kickwatchdog();
-		/* led1 on */
-		rt_hw_led_on();
-		rt_thread_delay( RT_TICK_PER_SECOND/2 ); /* sleep 0.5 second and switch to other thread */
-		rt_hw_led_off();
-        rt_thread_delay( RT_TICK_PER_SECOND/2 );
+    	kickwatchdog();
+		if(LED_Status == 0)
+		{
+			rt_hw_led_off();
+		}else
+		{
+			rt_hw_led_on();
+		}
+		
+		rt_thread_delay( RT_TICK_PER_SECOND);
 		cpu_usage_get(&major, &minor);
 		//printf("CPU : %d.%d%\n", major, minor);
     }
@@ -336,6 +350,12 @@ void tasks_new(void)
   if (result == RT_EOK) rt_thread_startup(&update_thread);
 #endif
 
+#ifdef THREAD_PRIORITY_JSON_SERVER
+  /* init JSON Server thread */
+	result = rt_thread_init(&json_server_thread,"json",ECUJsonServer_thread_entry,RT_NULL,(rt_uint8_t*)&json_server_stack[0],sizeof(json_server_stack),THREAD_PRIORITY_JSON_SERVER,5);
+  if (result == RT_EOK)	rt_thread_startup(&json_server_thread);
+#endif
+
 #ifdef THREAD_PRIORITY_EVENT
   /* init Event thread */
   result = rt_thread_init(&event_thread,"event",ECUEvent_thread_entry,RT_NULL,(rt_uint8_t*)&event_stack[0],sizeof(event_stack),THREAD_PRIORITY_EVENT,5);
@@ -363,6 +383,8 @@ void tasks_new(void)
   result = rt_thread_init(&control_thread,"control",ECUControl_thread_entry,RT_NULL,(rt_uint8_t*)&control_stack[0],sizeof(control_stack),THREAD_PRIORITY_CONTROL_CLIENT,5);
   if (result == RT_EOK)	rt_thread_startup(&control_thread);
 #endif
+
+
 }
 
 /*****************************************************************************/

@@ -12,6 +12,7 @@
 #include "rtthread.h"
 
 rt_mutex_t usr_wifi_lock = RT_NULL;
+extern unsigned char LED_Status;
 
 
 //初始化USR锁
@@ -458,7 +459,11 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 	length = sendLength;
 	socketfd = createsocket();
 	if(socketfd == -1) 	//创建socket失败
+	{
+		LED_Status = 0;
 		return -1;
+	}
+		
 	//创建socket成功
 	if(1 == connect_client_socket(socketfd))
 	{	//连接服务器成功
@@ -484,6 +489,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 			if(-1 == sendbytes)
 			{
 				close_socket(socketfd);
+				LED_Status = 0;
 				return -1;
 			}
 			
@@ -509,6 +515,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 				close_socket(socketfd);
 				free(readbuff);
 				readbuff = NULL;
+				LED_Status = 0;
 				return -1;
 			}else
 			{
@@ -520,6 +527,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 					readbuff = NULL;
 					*recvLength = 0;
 					close_socket(socketfd);
+					LED_Status = 0;
 					return -1;
 				}	
 				strcat(recvbuff,readbuff);
@@ -534,6 +542,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 						free(readbuff);
 						readbuff = NULL;
 						close_socket(socketfd);
+						LED_Status = 1;
 						return *recvLength;
 					}else if(recvbuff[0] != '1')
 					{
@@ -541,6 +550,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 						readbuff = NULL;
 						close_socket(socketfd);
 						*recvLength = 0;
+						LED_Status = 0;
 						return *recvLength;
 					}
 				}
@@ -557,7 +567,11 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 		int ret = 0,i = 0;
 		ret = SendToSocketB(sendbuff, sendLength);
 		if(ret == -1)
+		{
+			LED_Status = 0;
 			return -1;
+		}
+
 		for(i = 0;i<(Timeout/10);i++)
 		{
 			if(WIFI_Recv_SocketB_Event == 1)
@@ -567,16 +581,19 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 				recvbuff[*recvLength] = '\0';
 					print2msg(ECU_DBG_CLIENT,"serverCommunication_Client",recvbuff);
 				WIFI_Recv_SocketB_Event = 0;
+				LED_Status = 1;
 				//WIFI_Close(SOCKET_B);
 				return 0;
 			}
 			rt_hw_ms_delay(10);
 		}
 		//WIFI_Close(SOCKET_B);
+		LED_Status = 0;
 		return -1;
 #endif
 
 #ifndef WIFI_USE
+		LED_Status = 0;
 		return -1;
 #endif
 	}
