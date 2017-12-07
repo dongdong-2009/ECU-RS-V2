@@ -3546,31 +3546,6 @@ static void GPIO_Configuration(void)
 #endif /* RMII_MODE */
     } /* RXD */
 
-#if (USE_MCO == 1)
-#if (RMII_MODE == 0) /* Mode MII. */
-    /* Get HSE clock = 25MHz on PA8 pin(MCO) */
-    RCC_MCOConfig(RCC_MCO_HSE);
-#elif (RMII_MODE == 1)  /* Mode RMII. */
-    /* Get HSE clock = 25MHz on PA8 pin(MCO) */
-    /* set PLL3 clock output to 50MHz (25MHz /5 *10 =50MHz) */
-    RCC_PLL3Config(RCC_PLL3Mul_10);
-    /* Enable PLL3 */
-    RCC_PLL3Cmd(ENABLE);
-    /* Wait till PLL3 is ready */
-    while (RCC_GetFlagStatus(RCC_FLAG_PLL3RDY) == RESET)
-    {}
-
-    /* Get clock PLL3 clock on PA8 pin */
-    RCC_MCOConfig(RCC_MCO_PLL3CLK);
-#endif /* RMII_MODE */
-
-    /* MCO pin configuration------------------------------------------------- */
-    /* Configure MCO (PA8) as alternate function push-pull */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-#endif /* USE_MCO */
 }
 
 void rt_hw_stm32_eth_init()
