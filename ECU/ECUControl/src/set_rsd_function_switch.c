@@ -60,8 +60,11 @@ int set_rsd_function_switch(const char *recvbuffer, char *sendbuffer)
 			//重启main线程
 			restartThread(TYPE_DATACOLLECT);
 			
-
 			break;
+		case 2:
+
+		case 3:
+				
 		default:
 			ack_flag = FORMAT_ERROR; //格式错误
 			break;
