@@ -80,6 +80,10 @@ typedef struct inverter_info_t{
 	unsigned int PV2_Energy;//当前一轮PV2发电量	精度 1焦耳
 	unsigned int PV_Output_Energy;//当前一轮PV2发电量	精度 1焦耳
 	unsigned char Mos_CloseNum;//设备上电后MOS管关断次数
+	unsigned char last_RSDTimeout;
+	unsigned char RSDTimeout;
+	unsigned short PV1_low_voltageNUM;
+	unsigned short PV2_low_voltageNUM;
 	char LastCommTime[15];	//RSD最后一次通讯上的时间	
 	
 	//上一轮相关的数据，这里的上一轮指的是5分钟一轮

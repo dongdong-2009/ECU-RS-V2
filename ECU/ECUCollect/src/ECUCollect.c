@@ -318,8 +318,10 @@ void Collect_Control_Record(void)
 				length += 3;
 				sprintf(&control_Data[length],"%03d",curinverter->RSSI);
 				length += 3;
-				memcpy(&control_Data[length],"0000000000",10);
-				length += 10;
+				sprintf(&control_Data[length],"%05d",curinverter->PV1_low_voltageNUM);
+				length += 5;
+				sprintf(&control_Data[length],"%05d",curinverter->PV2_low_voltageNUM);
+				length += 5;
 
 				control_Data[length++] = 'E';
 				control_Data[length++] = 'N';

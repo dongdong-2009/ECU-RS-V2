@@ -14,11 +14,13 @@
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
+int process_rsdFunction_all(void);
 int process_rsdFunction(void);
+void insertSetRSDInfo(unsigned short num,char *buff);
 int rsdFunction_need_change(void);
-int saveChangeFunctionStatus(unsigned char FunctionStatus);
+int saveChangeFunctionStatus(unsigned char FunctionStatus,unsigned char onoffstatus,unsigned char rsdTimeout);
 int save_rsdFunction_change_flag(void);
-int getChangeFunctionStatus(void);
-void changeRSDFunctionOfInverters(unsigned char curFunctionStatus, unsigned char changeFunctionStatus);
+int getChangeFunctionStatus(unsigned char *FunctionStatus,unsigned char *onoffstatus,unsigned char *rsdTimeout);
+void changeRSDFunctionOfInverters(unsigned char changeFunctionStatus,unsigned char onoffStatus,unsigned char rsdTimeout);
 
 #endif /*__RSD_FUNCTION_H__*/

@@ -34,7 +34,7 @@ void Json_Response_101(int connectSocket)
 	//时间点
 	if(memcmp(ecu.curTime,"00000000000000",14))
 	{
-		sprintf(&sendbuff[length],",\"time\":%12s",ecu.curTime);
+		sprintf(&sendbuff[length],",\"time\":\"%12s\"",ecu.curTime);
 		length = strlen(sendbuff);
 	}
 	
@@ -53,7 +53,7 @@ void Json_Response_101(int connectSocket)
 				sprintf(&sendbuff[length],",\"type\":1");
 				length = strlen(sendbuff);
 				//输出功率
-				sprintf(&sendbuff[length],",\"op\":null");
+				sprintf(&sendbuff[length],",\"op\":%.1f",inverterInfo[i].AveragePower_Output);
 				length = strlen(sendbuff);
 				//PV1输入功率
 				sprintf(&sendbuff[length],",\"ip1\":%.1f",inverterInfo[i].AveragePower1);
@@ -62,7 +62,7 @@ void Json_Response_101(int connectSocket)
 				sprintf(&sendbuff[length],",\"ip2\":%.1f",inverterInfo[i].AveragePower2);
 				length = strlen(sendbuff);
 				//输出电量
-				sprintf(&sendbuff[length],",\"oe\":null");
+				sprintf(&sendbuff[length],",\"oe\":%.6f",((float)inverterInfo[i].EnergyPV_Output)/3600000);
 				length = strlen(sendbuff);
 				//PV1输入电量
 				sprintf(&sendbuff[length],",\"ie1\":%.6f",((float)inverterInfo[i].EnergyPV1)/3600000);
@@ -80,7 +80,7 @@ void Json_Response_101(int connectSocket)
 				sprintf(&sendbuff[length],",\"iv2\":%.1f",((float)inverterInfo[i].PV2)/10);
 				length = strlen(sendbuff);
 				//输出电流
-				sprintf(&sendbuff[length],",\"oc\":null");
+				sprintf(&sendbuff[length],",\"oc\":%.1f",((float)inverterInfo[i].PI_Output)/10);
 				length = strlen(sendbuff);
 				//PV1输入电流
 				sprintf(&sendbuff[length],",\"ic1\":%.1f",((float)inverterInfo[i].PI)/10);
@@ -88,12 +88,12 @@ void Json_Response_101(int connectSocket)
 				if(i != ecu.validNum-1)
 				{
 					//PV2输入电流
-					sprintf(&sendbuff[length],",\"ic2\":null},");
+					sprintf(&sendbuff[length],",\"ic2\":%.1f},",((float)inverterInfo[i].PI2)/10);
 					length = strlen(sendbuff);
 				}else
 				{
 					//PV2输入电流
-					sprintf(&sendbuff[length],",\"ic2\":null}");
+					sprintf(&sendbuff[length],",\"ic2\":%.1f}",((float)inverterInfo[i].PI2)/10);
 					length = strlen(sendbuff);
 				}
 				

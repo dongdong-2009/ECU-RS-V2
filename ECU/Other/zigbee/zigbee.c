@@ -733,13 +733,17 @@ int zb_sendHeart(char uid[13])
 		
 }
 
-
+/*
+functionStatus:0不改变 1使能 2禁能
+onoff: 0开机 1关机 2不改变
+RSDTimeout:RSD超时时间 0-255 S
+*/
 //设置心跳状态开关
-int zb_set_heartSwitch_boardcast(unsigned char functionStatus)
+int zb_set_heartSwitch_boardcast(unsigned char functionStatus,unsigned char onoff,unsigned char RSDTimeout)
 {
 	int i=0;
 	char sendbuff[256];
-	
+	unsigned short crc16 = 0;
 	clear_zbmodem();			//发送指令前,先清空缓冲区
 	sendbuff[i++] = 0xFB;
 	sendbuff[i++] = 0xFB;
@@ -749,26 +753,37 @@ int zb_set_heartSwitch_boardcast(unsigned char functionStatus)
 	sendbuff[i++] = 0xCC;
 	sendbuff[i++] = 0x01;
 	sendbuff[i++] = 0x00;
-	if(functionStatus == 0x00)
+	if(functionStatus == 0x02)			//RSD功能状态禁能
 	{
 		sendbuff[i++] = 0x02;
-		sendbuff[i++] = 0x00;
-		sendbuff[i++] = 0x00;
-		//校验值
-		sendbuff[i++] = 0x51;
-		sendbuff[i++] = 0x73;
-		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","2");
-	}else
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","functionStatus : 2");
+	}else if(functionStatus == 0x01)	//RSD功能状态使能
 	{
 		sendbuff[i++] = 0x01;
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","functionStatus : 1");
+	}else								//RSD功能状态不改变
+	{
 		sendbuff[i++] = 0x00;
-		sendbuff[i++] = 0x00;
-		//校验值
-		sendbuff[i++] = 0x08;
-		sendbuff[i++] = 0x23;
-		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","1");
 	}
+
+	if(onoff == 0x00)				//开关机状态打开
+	{
+		sendbuff[i++] = 0x00;
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","onoff : 0");
+	}else							//关机或者不改变	
+	{
+		sendbuff[i++] = 0x01;
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","onoff : 1");
+	}
+
+
+
+	sendbuff[i++] = RSDTimeout;
 	
+	//校验值
+	crc16 = GetCrc_16((unsigned char *)&sendbuff[2],9,0,CRC_table_16);
+	sendbuff[i++] = crc16/256;
+	sendbuff[i++] = crc16%256;
 	sendbuff[i++] = 0xFE;
 	sendbuff[i++] = 0xFE;
 	zb_broadcast_cmd(sendbuff, i);
@@ -777,7 +792,7 @@ int zb_set_heartSwitch_boardcast(unsigned char functionStatus)
 }
 
 
-int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStatus)
+int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStatus,unsigned char onoff,unsigned char RSDTimeout)
 {
 	int i=0, ret;
 	char sendbuff[256];
@@ -793,24 +808,36 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 	sendbuff[i++] = 0x01;
 	sendbuff[i++] = 0x00;
 	
-	if(functionStatus == 0x00)
+	if(functionStatus == 0x02)			//RSD功能状态禁能
 	{
 		sendbuff[i++] = 0x02;
-		sendbuff[i++] = 0x00;
-		sendbuff[i++] = 0x00;
-		//校验值
-		sendbuff[i++] = 0x14;
-		sendbuff[i++] = 0xD3;
-	}else
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_single","functionStatus : 2");
+	}else if(functionStatus == 0x01)	//RSD功能状态使能
 	{
 		sendbuff[i++] = 0x01;
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_single","functionStatus : 1");
+	}else								//RSD功能状态不改变
+	{
 		sendbuff[i++] = 0x00;
-		sendbuff[i++] = 0x00;
-		//校验值
-		sendbuff[i++] = 0x4D;
-		sendbuff[i++] = 0x83;
 	}
 
+	if(onoff == 0x00)				//开关机状态打开
+	{
+		sendbuff[i++] = 0x00;
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_single","onoff : 0");
+	}else							//关机或者不改变	
+	{
+		sendbuff[i++] = 0x01;
+		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_single","onoff : 1");
+	}
+
+	sendbuff[i++] = RSDTimeout;
+	
+	
+	//校验值
+	crc16 = GetCrc_16((unsigned char *)&sendbuff[2],9,0,CRC_table_16);
+	sendbuff[i++] = crc16/256;
+	sendbuff[i++] = crc16%256;
 	sendbuff[i++] = 0xFE;
 	sendbuff[i++] = 0xFE;
 
@@ -842,8 +869,4 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 		return -1;
 	}
 }
-
-
-
-
 

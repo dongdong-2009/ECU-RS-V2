@@ -38,6 +38,7 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	inverter->status.last_function_status = inverter->status.function_status;
 	inverter->status.last_pv1_low_voltage_pritection = inverter->status.pv1_low_voltage_pritection;
 	inverter->status.last_pv2_low_voltage_pritection = inverter->status.pv2_low_voltage_pritection;
+	inverter->last_RSDTimeout = inverter->RSDTimeout;
 	
 	inverter->status.comm_failed3_status = 1;	//设置为开机状态
 	apstime(inverter->LastCommTime);
@@ -88,7 +89,11 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	inverter->heart_rate = inverter_data[42]*256 + inverter_data[43];
 	inverter->off_times = inverter_data[44]*256 + inverter_data[45];
 	inverter->Mos_CloseNum = inverter_data[46];
-	
+	//解析超时时间
+	inverter->RSDTimeout = inverter_data[50];
+	//解析PV1 PV2超时次数
+	inverter->PV1_low_voltageNUM = inverter_data[51]*256+inverter_data[52];
+	inverter->PV2_low_voltageNUM = inverter_data[53]*256+inverter_data[54];
 	if(inverter->PV_Output > 0) 
 		inverter->status.mos_status = 1;
 	else

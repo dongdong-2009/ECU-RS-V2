@@ -88,7 +88,7 @@ int search_control_readflag(char *data,char * time, int *flag,char sendflag);
 void delete_control_file_resendflag0(void);
 int clear_control_send_flag(char *readbuff);
 int update_control_send_flag(char *send_date_time);
-
+int splitString(char *data,char splitdata[][32]);
 
 //远程控制告警信息
 //生成告警标志
