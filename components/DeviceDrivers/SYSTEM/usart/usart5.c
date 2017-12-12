@@ -447,7 +447,7 @@ void WIFI_GetEvent(void)
 					//SEGGER_RTT_printf(0, "LENGTH11111 : %d\n",PackLen);
 					//计算长度
 					eStateMachine = EN_RECV_ST_GET_A_DATA;
-					delayMS(20);
+					delayMS(50);
 					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
@@ -703,7 +703,7 @@ void WIFI_GetEvent(void)
 					//SEGGER_RTT_printf(0, "EN_RECV_ST_GET_C_LEN LENGTH11111 : %d\n",PackLen);
 					//计算长度
 					eStateMachine = EN_RECV_ST_GET_C_DATA;
-					delayMS(10);
+					delayMS(30);
 					TIM3_Int_Init(299,7199);//10Khz的计数频率，计数到5000为500ms 打开定时器
 
 					break;
@@ -3002,6 +3002,8 @@ FINSH_FUNCTION_EXPORT(AT_WMODE, eg:AT_WMODE)
 FINSH_FUNCTION_EXPORT(InitTestMode , Init Test Mode.)
 FINSH_FUNCTION_EXPORT(InitWorkMode , Init Work Mode.)
 FINSH_FUNCTION_EXPORT(WIFI_Factory , Set WIFI ID .)
+FINSH_FUNCTION_EXPORT(WIFI_Reset , Reset WIFI Module .)
+
 FINSH_FUNCTION_EXPORT(SendToSocketB , Send SOCKET B.)
 FINSH_FUNCTION_EXPORT(SendToSocketC , Send SOCKET C.)
 
