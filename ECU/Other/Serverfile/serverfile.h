@@ -89,7 +89,7 @@ void delete_control_file_resendflag0(void);
 int clear_control_send_flag(char *readbuff);
 int update_control_send_flag(char *send_date_time);
 int splitString(char *data,char splitdata[][32]);
-
+void key_init(void);
 //远程控制告警信息
 //生成告警标志
 void create_alarm_record(inverter_info *inverter);

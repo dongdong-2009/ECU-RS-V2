@@ -260,6 +260,19 @@ void echo(const char* filename,const char* string)
 }
 
 
+void key_init(void)
+{
+	echo("/config/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
+	rt_hw_ms_delay(20);
+	echo("/config/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
+	rt_hw_ms_delay(20);
+	echo("/config/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
+	rt_hw_ms_delay(20);
+	unlink("/config/staticIP.con");
+	dhcp_reset();
+
+}
+
 int initPath(void)
 {
 	mkdir("/tmp",0x777);

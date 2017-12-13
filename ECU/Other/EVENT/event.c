@@ -177,7 +177,7 @@ void process_KEYEvent(void)
 	
 	if(ret == 0) 	//Ğ´ÈëWIFIÃÜÂë
 	{
-		initPath();
+		key_init();
 		Write_WIFI_PW("88888888",8);	//WIFIÃÜÂë	
 	}
 		
