@@ -225,15 +225,13 @@ int process_rsdFunction(void)
 	unsigned char onoffstatus = 0;
 	unsigned char rsdTimeout = 0;
 	inverter_info *curinverter = inverterInfo;
-	int i, j,k,ret = 0;
-	
-	for(j=0; j<MAXINVERTERCOUNT; j++)
+	int i,k,ret = 0;
+	while(1)
 	{
 		curinverter = inverterInfo;
-		memset(id, '\0', 256);
+		memset(id, '\0', 13);
 		if(!get_rsd_function_flag(id,&FunctionStatus,&onoffstatus,&rsdTimeout))
 			break;
-
 		clear_rsd_function_flag(id);
 		for(i=0; (i<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); i++)
 		{
