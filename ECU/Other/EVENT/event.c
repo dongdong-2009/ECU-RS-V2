@@ -199,10 +199,6 @@ int process_WIFI_RST(void)
 	return ret;
 }
 
-
-
-#ifdef RT_USING_FINSH
-#include <finsh.h>
 int setECUID(char *ECUID)
 {
 	char ret =0;
@@ -223,7 +219,6 @@ int setECUID(char *ECUID)
 	ecu.IO_Init_Status= '1';
 	Write_IO_INIT_STATU(&ecu.IO_Init_Status);
 	//…Ë÷√WIFI√‹¬Î
-	rt_hw_ms_delay(5000);
 	ret = WIFI_Factory(ECUID);
 	//–¥»ÎWIFI√‹¬Î
 	Write_WIFI_PW("88888888",8);	//WIFI√‹¬Î		
@@ -231,6 +226,11 @@ int setECUID(char *ECUID)
 	return 0;
 	
 }
+
+
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+
 FINSH_FUNCTION_EXPORT(setECUID, eg:set ECU ID("247000000001"));
 
 

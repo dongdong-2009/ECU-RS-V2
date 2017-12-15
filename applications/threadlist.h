@@ -88,12 +88,14 @@ typedef enum THREADTYPE {
 #define THREAD_PRIORITY_LAN8720_RST						11
 //LED thread priority
 #define THREAD_PRIORITY_LED               				11
+//ID Writethread priority
+#define THREAD_PRIORITY_IDWRITE							18
 //Update thread priority
 #define THREAD_PRIORITY_UPDATE							20
 //LED thread priority
 #define THREAD_PRIORITY_EVENT            				19			//其他相关事件线程
 //JSON Server thread priority
-#define THREAD_PRIORITY_JSON_SERVER							20
+#define THREAD_PRIORITY_JSON_SERVER						20
 //LED thread priority
 #define THREAD_PRIORITY_COMM              				24			//OPT700-RS通信线程
 //Data Collection thread priority
@@ -106,6 +108,7 @@ typedef enum THREADTYPE {
 
 //thread start time
 #define START_TIME_EVENT									5
+#define START_TIME_IDWRITE									1
 #define START_TIME_UPDATE									15
 #define START_TIME_COMM										2	
 #define START_TIME_COLLECT								0			

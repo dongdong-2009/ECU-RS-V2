@@ -130,6 +130,44 @@ int Read_WIFI_PW(char *WIFIPasswd,unsigned char Counter)
 	return 0;
 }
 
+void addInverter(char *inverter_id)
+{
+	int fd;
+	char buff[50];
+	fd = open("/home/data/id", O_WRONLY | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{		
+		sprintf(buff,"%s,,,,,,\n",inverter_id);
+		write(fd,buff,strlen(buff));
+		close(fd);
+	}
+}
+
+void rm_dir(char* dir)
+{
+	DIR *dirp;
+	struct dirent *d;
+	/* 打开dir目录*/
+	dirp = opendir(dir);
+	
+	if(dirp == RT_NULL)
+	{
+		printmsg(ECU_DBG_OTHER,"open directory error!");
+	}
+	else
+	{
+		/* 读取目录*/
+		while ((d = readdir(dirp)) != RT_NULL)
+		{
+			char buff[100];
+			print2msg(ECU_DBG_OTHER,"delete", d->d_name);
+			sprintf(buff,"%s/%s",dir,d->d_name);
+			unlink(buff);
+		}
+		/* 关闭目录 */
+		closedir(dirp);
+	}
+}
 
 
 
@@ -276,33 +314,20 @@ void key_init(void)
 int initPath(void)
 {
 	mkdir("/tmp",0x777);
-	rt_hw_ms_delay(20);
 	mkdir("/home",0x777);
-	rt_hw_ms_delay(20);
 	mkdir("/config",0x777);
-	rt_hw_ms_delay(20);
 	mkdir("/home/data",0x777);
-	rt_hw_ms_delay(20);
 	mkdir("/home/record",0x777);
-	rt_hw_ms_delay(20);
 	echo("/home/data/ltpower","0.000000");
-	rt_hw_ms_delay(20);
 	mkdir("/home/record/data",0x777);
-	rt_hw_ms_delay(20);
 	mkdir("/home/record/power",0x777);
 	mkdir("/home/record/energy",0x777);	
 	echo("/config/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
-	rt_hw_ms_delay(20);
 	echo("/config/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
-	rt_hw_ms_delay(20);
 	echo("/config/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
-	rt_hw_ms_delay(20);
 	mkdir("/ftp",0x777);
-	rt_hw_ms_delay(20);
 	mkdir("/home/record/ctldata/",0x777);
-	rt_hw_ms_delay(20);
 	mkdir("/home/record/almdata/",0x777);
-	rt_hw_ms_delay(20);
 	mkdir("/home/record/rsdinfo/",0x777);	
 	
 	return 0;

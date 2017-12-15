@@ -26,7 +26,7 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /*  Function Declarations                                                    */
 /*****************************************************************************/
 void add_APP_functions(void);	//添加手机APP相应函数组
-
+int setECUID(char *ECUID);
 void process_WIFIEvent(void);		//处理WIFI时间
 void process_HeartBeatEvent(void);		//处理心跳时间
 void process_WIFI(unsigned char * ID);	//处理WIFI事件

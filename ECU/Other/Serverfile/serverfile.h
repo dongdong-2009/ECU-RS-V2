@@ -88,6 +88,7 @@ int search_control_readflag(char *data,char * time, int *flag,char sendflag);
 void delete_control_file_resendflag0(void);
 int clear_control_send_flag(char *readbuff);
 int update_control_send_flag(char *send_date_time);
+void addInverter(char *inverter_id);
 int splitString(char *data,char splitdata[][32]);
 void key_init(void);
 //远程控制告警信息
@@ -100,5 +101,6 @@ int search_alarm_readflag(char *data,char * time, int *flag,char sendflag);
 void delete_alarm_file_resendflag0(void);
 int clear_alarm_send_flag(char *readbuff);
 int update_alarm_send_flag(char *send_date_time);
+void rm_dir(char* dir);
 
 #endif /*__SERVERFILE_H__*/

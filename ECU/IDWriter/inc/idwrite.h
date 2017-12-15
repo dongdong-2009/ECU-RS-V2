@@ -1,23 +1,20 @@
-#ifndef __INVERTER_ID_H__
-#define __INVERTER_ID_H__
+#ifndef __IDWRITE_H__
+#define __IDWRITE_H__
 /*****************************************************************************/
-/* File      : inverter_id.h                                                 */
+/* File      : idwrite.h                                                     */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-04-03 * Shengfeng Dong  * Creation of the file                      */
+/*  2017-04-05 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-int clear_id(void);
-int response_inverter_id(const char *recvbuffer, char *sendbuffer);
-int set_inverter_id(const char *recvbuffer, char *sendbuffer);
 
-#endif	/*__INVERTER_ID_H__*/
+void idwrite_thread_entry(void* parameter);
 
-
+#endif /*__IDWRITE_H__*/

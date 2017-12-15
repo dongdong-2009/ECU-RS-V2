@@ -33,7 +33,6 @@
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
-extern rt_mutex_t record_data_lock; 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
@@ -61,7 +60,7 @@ int updateECUByVersion(void)
 	//获取服务器IP地址
 	sprintf(remote_path,"/ECU_R_RS/V%s.%s/%s",MAJORVERSION,MINORVERSION,UPDATE_PATH_SUFFIX);
 	print2msg(ECU_DBG_UPDATE,"VER Path",remote_path);
-	rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+
 	ret=ftpgetfile(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
 	if(!ret)
 	{
@@ -75,7 +74,6 @@ int updateECUByVersion(void)
 	{
 		unlink(UPDATE_PATH);
 	}
-	rt_mutex_release(record_data_lock);	
 	return ret;
 }
 
@@ -104,7 +102,6 @@ int updateECUByID(void)
 	//获取服务器IP地址
 	sprintf(remote_path,"/ECU_R_RS/%s/%s",ecuID,UPDATE_PATH_SUFFIX);
 	print2msg(ECU_DBG_UPDATE,"ID Path",remote_path);
-	rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	ret=ftpgetfile(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
 	if(!ret)
 	{
@@ -119,7 +116,6 @@ int updateECUByID(void)
 	{
 		unlink(UPDATE_PATH);
 	}
-	rt_mutex_release(record_data_lock);	
 	return ret;
 }
 

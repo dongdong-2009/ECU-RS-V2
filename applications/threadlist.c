@@ -127,6 +127,12 @@ static rt_uint8_t json_server_stack[1024];
 static struct rt_thread json_server_thread;
 #endif 
 
+#ifdef THREAD_PRIORITY_IDWRITE
+#include "idwrite.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t idwrite_stack[2048];
+static struct rt_thread idwrite_thread;
+#endif
 
 ecu_info ecu;	//ecu相关信息
 inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
@@ -348,6 +354,12 @@ void tasks_new(void)
   /* init update thread */
 	result = rt_thread_init(&update_thread,"update",remote_update_thread_entry,RT_NULL,(rt_uint8_t*)&update_stack[0],sizeof(update_stack),THREAD_PRIORITY_UPDATE,5);
   if (result == RT_EOK) rt_thread_startup(&update_thread);
+#endif
+
+#ifdef THREAD_PRIORITY_IDWRITE	
+  /* init idwrite thread */
+	result = rt_thread_init(&idwrite_thread,"idwrite",idwrite_thread_entry,RT_NULL,(rt_uint8_t*)&idwrite_stack[0],sizeof(idwrite_stack),THREAD_PRIORITY_IDWRITE,5);
+  if (result == RT_EOK) rt_thread_startup(&idwrite_thread);
 #endif
 
 #ifdef THREAD_PRIORITY_JSON_SERVER
