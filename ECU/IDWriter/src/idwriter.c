@@ -237,7 +237,7 @@ void idwrite_thread_entry(void* parameter)
 	int row;
 	char sendbuff[3];
 	char gettime[14]={'\0'};
-
+	int ret = 0;
 	
 	rt_thread_delay(START_TIME_IDWRITE * RT_TICK_PER_SECOND);
 	sockfd=create_socket_idwrite();
@@ -264,14 +264,28 @@ void idwrite_thread_entry(void* parameter)
 			print2msg(ECU_DBG_OTHER,"ECU id",ecu.ECUID12);
 			printdecmsg(ECU_DBG_OTHER,"length",strlen(ecu.ECUID12));
 			ecu.ECUID12[12] = '\0';
-			InitWorkMode();
-			setECUID(ecu.ECUID12);
+			ret = 0;
+			if(InitWorkMode() < 0){
+				ret = -1;
+			}
+			if(setECUID(ecu.ECUID12) < 0){
+				ret = -2;
+			}
 			
 			fp=fopen("/config/ecuid.con","r");
 			fgets(ecu.ECUID12,13,fp);
 			fclose(fp);
 			restartThread(TYPE_DATACOLLECT);
-			printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd,ecu.ECUID12,strlen(ecu.ECUID12),0));
+			if(ret == 0)
+			{
+				printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd,ecu.ECUID12,strlen(ecu.ECUID12),0));
+			}else if (ret == -1)
+			{
+				printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd,"error code: -1",14,0));
+			}else if (ret == -2)
+			{
+				printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd,"error code: -2",14,0));
+			}
 		}
 		if(!strncmp(recvbuff, "get_ecu_id", 10)){
 			memset(ecu.ECUID12,'\0',sizeof(ecu.ECUID12));
