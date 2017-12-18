@@ -387,6 +387,7 @@ void ECUCollect_thread_entry(void* parameter)
 		{
 			//5分钟采集相关的发电量数据
 			CollectClientThistime = acquire_time();
+			apstime(ecu.curTime);
 			
 			if(	ecu.validNum >0	)
 			{
@@ -435,7 +436,6 @@ void ECUCollect_thread_entry(void* parameter)
 				
 				
 				//采集实时数据
-				apstime(ecu.curTime);
 				Collect_Client_Record();
 				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
 				ECUCommThreadFlag = 0;
