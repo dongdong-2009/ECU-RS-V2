@@ -14,7 +14,7 @@
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-#define MAXINVERTERCOUNT 								100	//最大的逆变器数
+#define MAXINVERTERCOUNT 								120	//最大的逆变器数
 #define INVERTERLENGTH 									56	//最大的逆变器数  //与手机通讯
 //Client 相关通信参数
 #define CLIENT_RECORD_HEAD							20
@@ -42,15 +42,16 @@ typedef struct
 	unsigned short function_status:1;	//功能开关状态: 1 开    0 关
 	unsigned short pv1_low_voltage_pritection:1;	// PV1欠压保护
 	unsigned short pv2_low_voltage_pritection:1;	// PV2欠压保护
-	unsigned short device_Type:4;					//设备类型  0:开关设备 1；监控设备
+	unsigned short device_Type:3;					//设备类型  0:开关设备 1；监控设备
 	unsigned short comm_status:1;					//1表示读到当前数据；0表示读取数据失败
 	unsigned short bindflag:1;					//逆变器绑定短地址标志，1表示绑定，0表示未绑定
 	unsigned short flag:1;					//id中的flag标志
-	unsigned short mos_status:1;
-	unsigned short last_mos_status:1;
+	unsigned short mos_status:1;			//MOS管状态
+	unsigned short last_mos_status:1;		//最后一次MOS管状态
 	unsigned short last_function_status:1;	//功能开关状态: 1 开    0 关
 	unsigned short last_pv1_low_voltage_pritection:1;	// PV1欠压保护
 	unsigned short last_pv2_low_voltage_pritection:1;	// PV2欠压保护
+	unsigned short collect_ret:1;
 }status_t;
 
 
@@ -118,6 +119,7 @@ typedef struct ecu_info_t{
 	int system_power;			//系统总功率
 	int lastCommNum;
 	char curTime[15];			//最近一次采集的时间
+	char JsonTime[15];			//最近一次采集的时间
 
 	
 }ecu_info;

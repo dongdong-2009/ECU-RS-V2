@@ -413,9 +413,10 @@ void ECUCollect_thread_entry(void* parameter)
 						}
 						
 					}
+
 					if(ret != 1)
 					{
-						inverterInfo[ecu.curSequence].status.comm_failed3_status = 0;
+						inverterInfo[ecu.curSequence].status.collect_ret = 0;
 						comm_failed_Num += 7;
 
 						if(comm_failed_Num > (ecu.validNum * 7 *12))
@@ -427,16 +428,32 @@ void ECUCollect_thread_entry(void* parameter)
 							comm_failed_Num = 0;
 							ecu.curSequence = 0;
 						}
+					}else{
+						inverterInfo[ecu.curSequence].status.collect_ret = 1;
 					}
+						
+
 
 				}
+				
 				ECUCommThreadFlag = 1;
 				optimizeFileSystem(300);
 				printmsg(ECU_DBG_COLLECT,"Collect DATA Start");
 				
-				
 				//采集实时数据
+				
 				Collect_Client_Record();
+				for(ecu.curSequence = 0;ecu.curSequence<ecu.validNum;ecu.curSequence++)
+				{
+					if(0 == inverterInfo[ecu.curSequence].status.collect_ret)
+					{
+						inverterInfo[ecu.curSequence].status.comm_failed3_status = 0;
+					}else{
+						inverterInfo[ecu.curSequence].status.comm_failed3_status = 1;
+					}
+				
+				}
+				memcpy(ecu.JsonTime,ecu.curTime,15);
 				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
 				ECUCommThreadFlag = 0;
 			}

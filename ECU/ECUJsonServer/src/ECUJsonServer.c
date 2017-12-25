@@ -32,15 +32,15 @@ void Json_Response_101(int connectSocket)
 	sprintf(&sendbuff[length],",\"dev_no\":%d",ecu.count);
 	length = strlen(sendbuff);
 	//Ê±¼äµã
-	if(memcmp(ecu.curTime,"00000000000000",14))
+	if(memcmp(ecu.JsonTime,"00000000000000",14))
 	{
-		sprintf(&sendbuff[length],",\"time\":\"%12s\"",ecu.curTime);
+		sprintf(&sendbuff[length],",\"time\":\"%12s\"",ecu.JsonTime);
 		length = strlen(sendbuff);
 	}
 	
 	sprintf(&sendbuff[length],",\"opts\":[");
 	length = strlen(sendbuff);
-	if(memcmp(ecu.curTime,"00000000000000",14))
+	if(memcmp(ecu.JsonTime,"00000000000000",14))
 	{
 		for(i = 0;i<ecu.validNum;i++)
 		{

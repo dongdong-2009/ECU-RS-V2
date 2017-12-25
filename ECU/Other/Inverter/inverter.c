@@ -42,7 +42,9 @@ int init_ecu(void)
 	ecu.life_energy = get_lifetime_power();
 	zb_change_ecu_panid();
 	memset(ecu.curTime,'0',14);
+	memset(ecu.JsonTime,'0',14);
 	ecu.curTime[14] = '\0';
+	ecu.JsonTime[14] = '\0';
 	
 	return 0;
 }

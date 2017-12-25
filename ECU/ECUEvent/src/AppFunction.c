@@ -50,15 +50,16 @@ int phone_add_inverter(int num,const char *uidstring)
 	int i = 0;
 	char buff[25] = { '\0' };
 	char *allbuff = NULL;
-	allbuff = malloc(2048);
-	memset(allbuff,0x00,2048);
+	allbuff = malloc(2500);
+	memset(allbuff,'\0',2500);
+	
 	for(i = 0; i < num; i++)
 	{
 		memset(buff,'\0',25);
 		sprintf(buff,"%02x%02x%02x%02x%02x%02x,,,,,,\n",uidstring[0+i*6],uidstring[1+i*6],uidstring[2+i*6],uidstring[3+i*6],uidstring[4+i*6],uidstring[5+i*6]);
 		memcpy(&allbuff[0+19*i],buff,19);
 	}
-	
+	printf("%s\n",allbuff);
 	echo("/home/data/id",allbuff);
 	echo("/config/limiteid.con","1");
 	free(allbuff);
@@ -180,6 +181,7 @@ void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		int i = 0;
 		inverter_info *curinverter = inverterInfo;
 		AddNum = (WIFI_Recv_SocketA_LEN - 31)/6;
+		printf("num:%d\n",AddNum);
 		APP_Response_SetNetwork(ID,0x00);
 		//将数据写入EEPROM
 		phone_add_inverter(AddNum,(char *)&recvbuffer[28]);	

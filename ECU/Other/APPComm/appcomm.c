@@ -139,7 +139,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 	int i = 0;
 	int length = 0;
 	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
-	memcpy(curTime,ecu.curTime,14);
+	memcpy(curTime,ecu.JsonTime,14);
 	if(mapflag == 1)	//∆•≈‰ ß∞‹£¨∑¢ÀÕ ß∞‹√¸¡Ó
 	{
 		sprintf(SendData,"APS110015000201\n");
@@ -270,7 +270,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 			SendToSocketA(SendData ,16,ID);			
 		}
 		
-#if 0
+#if 1
 	for(i=0;i<length+9;i++)
 	{
 		SEGGER_RTT_printf(0, "%02x ",SendData[i]);

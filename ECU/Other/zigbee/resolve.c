@@ -40,7 +40,6 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	inverter->status.last_pv2_low_voltage_pritection = inverter->status.pv2_low_voltage_pritection;
 	inverter->last_RSDTimeout = inverter->RSDTimeout;
 	
-	inverter->status.comm_failed3_status = 1;	//设置为开机状态
 	apstime(inverter->LastCommTime);
 	inverter->LastCommTime[14] = '\0';
 

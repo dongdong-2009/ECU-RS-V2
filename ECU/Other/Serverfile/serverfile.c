@@ -784,7 +784,7 @@ int get_id_from_file(inverter_info *firstinverter)
 			
 			inverter++;
 			num++;
-			if(num >= 100)
+			if(num >= MAXINVERTERCOUNT)
 			{
 				break;
 			}
@@ -2721,7 +2721,7 @@ void create_alarm_record(inverter_info *inverter)
 		alarm_data[length++] = '\0';
 		
 		save_alarm_record(alarm_data,curTime);
-		print2msg(ECU_DBG_COMM,"alarm Data:",alarm_data);
+		//print2msg(ECU_DBG_COMM,"alarm Data:",alarm_data);
 	}
 
 	free(alarm_data);

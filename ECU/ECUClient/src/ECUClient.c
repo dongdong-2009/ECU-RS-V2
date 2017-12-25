@@ -152,7 +152,7 @@ void ECUClient_thread_entry(void* parameter)
 				}
 				//if(1 == flag)		// 还存在需要上传的数据
 						//data[88] = '1';
-				printmsg(ECU_DBG_CLIENT,data);
+				//printmsg(ECU_DBG_CLIENT,data);
 				res = send_record( data, time);
 				if(-1 == res)
 					break;
