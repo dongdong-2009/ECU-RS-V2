@@ -130,6 +130,40 @@ int Read_WIFI_PW(char *WIFIPasswd,unsigned char Counter)
 	return 0;
 }
 
+//目录检测，如果不存在就创建对于的目录
+void dirDetection(char *path)
+{
+	DIR *dirp;
+
+	//先判断是否存在这个目录，如果不存在则创建该目录
+	dirp = opendir(path);
+	if(dirp == RT_NULL){	//打开目录失败，需要创建该目录
+		mkdir(path,0);
+	}else{					//打开目录成功，关闭目录继续操作
+		closedir(dirp);
+	}
+}
+
+
+void sysDirDetection(void)
+{
+	rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	dirDetection("/home");
+	dirDetection("/tmp");
+	dirDetection("/ftp");
+	dirDetection("/config");
+	dirDetection("/home/data");
+	dirDetection("/home/record");
+	dirDetection("/home/record/data");
+	dirDetection("/home/record/power");
+	dirDetection("/home/record/energy");
+	dirDetection("/home/record/CTLDATA");
+	dirDetection("/home/record/ALMDATA");
+	dirDetection("/home/record/RSDINFO");
+	rt_mutex_release(record_data_lock);
+}
+
+
 void addInverter(char *inverter_id)
 {
 	int fd;
@@ -477,6 +511,7 @@ static int checkOldFile(char *dir,char *oldFile)
 		if(dirp == RT_NULL)
 		{
 			printmsg(ECU_DBG_OTHER,"check Old File open directory error");
+			mkdir(dir,0);
 		}
 		else
 		{
@@ -867,7 +902,7 @@ void save_system_power(int system_power, char *date_time)
 	char date_time_tmp[14] = {'\0'};
 	rt_err_t result;
 	int fd;
-	if(system_power == 0) return;
+	//if(system_power == 0) return;
 	
 	memcpy(date_time_tmp,date_time,14);
 	memcpy(file,&date_time[0],6);
@@ -992,6 +1027,7 @@ void delete_collect_info_2_day_ago(char *date_time)
 	if(dirp == RT_NULL)
 	{
 		printmsg(ECU_DBG_CLIENT,"delete_collect_info_2_day_ago open directory error");
+		mkdir("/home/record/rsdinfo",0);
 	}
 	else
 	{
@@ -1029,10 +1065,12 @@ void delete_system_power_2_month_ago(char *date_time)
 	char fileTime[20] = {'\0'};
 
 	/* 打开dir目录*/
+	rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	dirp = opendir("/home/record/power");
 	if(dirp == RT_NULL)
 	{
 		printmsg(ECU_DBG_CLIENT,"delete_system_power_2_month_ago open directory error");
+		mkdir("/home/record/power",0);
 	}
 	else
 	{
@@ -1057,7 +1095,7 @@ void delete_system_power_2_month_ago(char *date_time)
 		/* 关闭目录 */
 		closedir(dirp);
 	}
-
+	rt_mutex_release(record_data_lock);
 
 }
 
@@ -1150,7 +1188,7 @@ void update_daily_energy(float current_energy, char *date_time)
 	float energy_tmp = current_energy;
 	int fd;
 	//当前一轮发电量为0 不更新发电量
-	if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
+	//if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
 	
 	memcpy(date_time_tmp,date_time,14);
 	memcpy(file,&date_time[0],6);
@@ -1636,7 +1674,7 @@ void update_monthly_energy(float current_energy, char *date_time)
 	float energy_tmp = current_energy;
 	int fd;
 	//当前一轮发电量为0 不更新发电量
-	if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
+	//if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
 	
 	memcpy(date_time_tmp,date_time,14);
 	memcpy(file,&date_time[0],4);
@@ -1716,7 +1754,7 @@ void update_yearly_energy(float current_energy, char *date_time)
 	float energy_tmp = current_energy;
 	int fd;
 	//当前一轮发电量为0 不更新发电量
-	if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
+	//if(current_energy <= EPSILON && current_energy >= -EPSILON) return;
 	
 	memcpy(date_time_tmp,date_time,14);
 	sprintf(dir,"%shistory.dat",dir);
@@ -1872,6 +1910,7 @@ int detection_resendflag2(void)		//存在返回1，不存在返回0
 		if(dirp == RT_NULL)
 		{
 			printmsg(ECU_DBG_CLIENT,"detection_resendflag2 open directory error");
+			mkdir("/home/record/data",0);
 		}
 		else
 		{
@@ -1941,6 +1980,7 @@ int change_resendflag(char *time,char flag)  //改变成功返回1，未找到该时间点返回
 		if(dirp == RT_NULL)
 		{
 			printmsg(ECU_DBG_CLIENT,"change_resendflag open directory error");
+			mkdir("/home/record/data",0);
 		}
 		else
 		{
@@ -2020,6 +2060,7 @@ int search_readflag(char *data,char * time, int *flag,char sendflag)
 		if(dirp == RT_NULL)
 		{
 			printmsg(ECU_DBG_CLIENT,"search_readflag open directory error");
+			mkdir("/home/record/data",0);
 		}
 		else
 		{
@@ -2134,6 +2175,7 @@ void delete_file_resendflag0(void)
 		if(dirp == RT_NULL)
 		{
 			printmsg(ECU_DBG_CLIENT,"delete_file_resendflag0 open directory error");
+			mkdir("/home/record/data",0);
 		}
 		else
 		{
@@ -2282,7 +2324,8 @@ int detection_control_resendflag2(void)		//存在返回1，不存在返回0
 		
 		if(dirp == RT_NULL)
 		{
-			printmsg(ECU_DBG_CLIENT,"detection_resendflag2 open directory error");
+			printmsg(ECU_DBG_CLIENT,"detection_control_resendflag2 open directory error");
+			mkdir("/home/record/ctldata",0);
 		}
 		else
 		{
@@ -2351,7 +2394,8 @@ int change_control_resendflag(char *time,char flag)  //改变成功返回1，未找到该时
 		
 		if(dirp == RT_NULL)
 		{
-			printmsg(ECU_DBG_CLIENT,"change_resendflag open directory error");
+			printmsg(ECU_DBG_CLIENT,"change_control_resendflag open directory error");
+			mkdir("/home/record/ctldata",0);
 		}
 		else
 		{
@@ -2430,7 +2474,8 @@ int search_control_readflag(char *data,char * time, int *flag,char sendflag)
 		dirp = opendir("/home/record/ctldata/");
 		if(dirp == RT_NULL)
 		{
-			printmsg(ECU_DBG_CLIENT,"search_readflag open directory error");
+			printmsg(ECU_DBG_CLIENT,"search_control_readflag open directory error");
+			mkdir("/home/record/ctldata",0);
 		}
 		else
 		{
@@ -2545,7 +2590,8 @@ void delete_control_file_resendflag0(void)
 		
 		if(dirp == RT_NULL)
 		{
-			printmsg(ECU_DBG_CLIENT,"delete_file_resendflag0 open directory error");
+			printmsg(ECU_DBG_CLIENT,"delete_control_file_resendflag0 open directory error");
+			mkdir("/home/record/ctldata",0);
 		}
 		else
 		{
@@ -2721,7 +2767,8 @@ void create_alarm_record(inverter_info *inverter)
 		alarm_data[length++] = '\0';
 		
 		save_alarm_record(alarm_data,curTime);
-		//print2msg(ECU_DBG_COMM,"alarm Data:",alarm_data);
+		//
+		print2msg(ECU_DBG_COMM,"alarm Data:",alarm_data);
 	}
 
 	free(alarm_data);
@@ -2775,7 +2822,8 @@ int detection_alarm_resendflag2(void)		//存在返回1，不存在返回0
 		
 		if(dirp == RT_NULL)
 		{
-			printmsg(ECU_DBG_CLIENT,"detection_resendflag2 open directory error");
+			printmsg(ECU_DBG_CLIENT,"detection_alarm_resendflag2 open directory error");
+			mkdir("/home/record/almdata",0);
 		}
 		else
 		{
@@ -2843,7 +2891,8 @@ int change_alarm_resendflag(char *time,char flag)  //改变成功返回1，未找到该时间
 		
 		if(dirp == RT_NULL)
 		{
-			printmsg(ECU_DBG_CLIENT,"change_resendflag open directory error");
+			printmsg(ECU_DBG_CLIENT,"change_alarm_resendflag open directory error");
+			mkdir("/home/record/almdata",0);
 		}
 		else
 		{
@@ -2922,7 +2971,8 @@ int search_alarm_readflag(char *data,char * time, int *flag,char sendflag)
 		dirp = opendir("/home/record/almdata/");
 		if(dirp == RT_NULL)
 		{
-			printmsg(ECU_DBG_CLIENT,"search_readflag open directory error");
+			printmsg(ECU_DBG_CLIENT,"search_alarm_readflag open directory error");
+			mkdir("/home/record/almdata",0);
 		}
 		else
 		{
@@ -3036,7 +3086,8 @@ void delete_alarm_file_resendflag0(void)
 		
 		if(dirp == RT_NULL)
 		{
-			printmsg(ECU_DBG_CLIENT,"delete_file_resendflag0 open directory error");
+			printmsg(ECU_DBG_CLIENT,"delete_alarm_file_resendflag0 open directory error");
+			mkdir("/home/record/almdata",0);
 		}
 		else
 		{

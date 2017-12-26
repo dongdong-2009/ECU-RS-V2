@@ -235,7 +235,7 @@ void rt_init_thread_entry(void* parameter)
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
 	initUSRLock();
-	
+	sysDirDetection();
 }
 
 /*****************************************************************************/
