@@ -39,11 +39,7 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	inverter->status.last_pv1_low_voltage_pritection = inverter->status.pv1_low_voltage_pritection;
 	inverter->status.last_pv2_low_voltage_pritection = inverter->status.pv2_low_voltage_pritection;
 	inverter->last_RSDTimeout = inverter->RSDTimeout;
-	
-	apstime(inverter->LastCommTime);
-	inverter->LastCommTime[14] = '\0';
 
-	
 	inverter->PV_Output = inverter_data[4]*256 + inverter_data[5];
 	inverter->PV1 = inverter_data[6]*256 + inverter_data[7];
 	inverter->PV2 = inverter_data[8]*256 + inverter_data[9];
@@ -97,6 +93,13 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 		inverter->status.mos_status = 1;
 	else
 		inverter->status.mos_status = 0;
+
+	//通讯组BUG解决代码
+	//判断和上一轮PV1和PV2输入电量是否相同，并且PV1 PV2电量多度大于0
+	if((inverter->PV1_Energy == inverter->Last_PV1_Energy)&&(inverter->PV2_Energy == inverter->Last_PV2_Energy) && (inverter->PV1_Energy>0) && (inverter->PV2_Energy>0))
+		return -1;
+	apstime(inverter->LastCommTime);
+	inverter->LastCommTime[14] = '\0';
 
 	return 0;
 }
