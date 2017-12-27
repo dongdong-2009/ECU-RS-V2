@@ -45,7 +45,7 @@ typedef enum THREADTYPE {
 
 #ifdef USR_MODULE
 //socket每次发送的字节数
-#define SIZE_PER_SEND		3800
+#define SIZE_PER_SEND		2900
 #endif 
 
 #ifdef RAK475_MODULE

@@ -2856,7 +2856,7 @@ int SendToSocketA(char *data ,int length,unsigned char ID[8])
 			rt_exit_critical();
 			return 0;
 		}
-		rt_hw_ms_delay(200);
+		rt_hw_ms_delay(50);
 	}
 	rt_exit_critical();
 	return 0;
@@ -2902,7 +2902,7 @@ int SendToSocketB(char *data ,int length)
 				return 0;
 			}
 			
-			rt_hw_ms_delay(300);
+			rt_hw_ms_delay(50);
 		}
 		rt_exit_critical();
 	
@@ -2961,7 +2961,7 @@ int SendToSocketC(char *data ,int length)
 				return 0;
 			}
 			
-			rt_hw_ms_delay(300);
+			rt_hw_ms_delay(50);
 		}
 		rt_exit_critical();
 	}
