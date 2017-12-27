@@ -231,7 +231,7 @@ void rt_init_thread_entry(void* parameter)
 	uart5_init(115200);					//RAK475相应波特率 串口初始化
 #endif 
 	TIM2_Int_Init(14999,7199);    //心跳包超时事件定时器初始化
-	
+	WIFI_Reset();
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
 	initUSRLock();
