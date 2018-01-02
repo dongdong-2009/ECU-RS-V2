@@ -203,10 +203,10 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 				inverter_data[19] = curinverter->PI2/256;
 				inverter_data[20] = curinverter->PI2%256;
 				
-				inverter_data[21] = curinverter->Power1/256;
-				inverter_data[22] = curinverter->Power1%256;
-				inverter_data[23] = curinverter->Power2/256;
-				inverter_data[24] = curinverter->Power2%256;
+				inverter_data[21] = (int)curinverter->AveragePower1/256;
+				inverter_data[22] = (int)curinverter->AveragePower1%256;
+				inverter_data[23] = (int)curinverter->AveragePower2/256;
+				inverter_data[24] = (int)curinverter->AveragePower2%256;
 				
 				inverter_data[25] = curinverter->PV_Output/256;
 				inverter_data[26] = curinverter->PV_Output%256;

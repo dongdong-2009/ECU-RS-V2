@@ -36,7 +36,7 @@
 
 rt_mutex_t wifi_uart_lock = RT_NULL;
 extern rt_mutex_t usr_wifi_lock;
-
+unsigned char searchConnectNum = 0;
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
@@ -2781,11 +2781,13 @@ int WIFI_QueryStatus(eSocketType Type)
 					{
 						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Online ",Type);
 						clear_WIFI();
+						searchConnectNum = 0;
 						return 1;
 					}else if(WIFI_RecvSocketData[4] == 0x00)	//离线
 					{
 						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus not Online ",Type);
 						clear_WIFI();
+						searchConnectNum = 0;
 						return 0;
 					}else	//未知
 					{
@@ -2800,11 +2802,13 @@ int WIFI_QueryStatus(eSocketType Type)
 					{
 						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Online ",Type);
 						clear_WIFI();
+						searchConnectNum = 0;
 						return 0;
 					}else if(WIFI_RecvSocketData[4] == 0x00)	//在线
 					{
 						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus not Online ",Type);
 						clear_WIFI();
+						searchConnectNum = 0;
 						return 1;
 					}else	//未知
 					{
@@ -2818,6 +2822,7 @@ int WIFI_QueryStatus(eSocketType Type)
 					//查询SOCKET 失败
 					printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Failed ",Type);
 					clear_WIFI();
+					searchConnectNum++;
 					return -1;
 				}
 				

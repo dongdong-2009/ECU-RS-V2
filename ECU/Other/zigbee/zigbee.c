@@ -158,7 +158,7 @@ int openzigbee(void)
 	rt_device_t new;
 
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
-	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_OD;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_7;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
@@ -188,20 +188,12 @@ int openzigbee(void)
 //复位zigbee模块  通过PC7的电平置高置低然后达到复位的效果
 void zigbee_reset(void)
 {
-	//先设置PC7为低电平，然后再设置为高电平达到复位的功能
-	GPIO_InitTypeDef GPIO_InitStructure;
-
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
-  GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_7;
-  GPIO_Init(GPIOC, &GPIO_InitStructure);
-	
 	GPIO_ResetBits(GPIOC, GPIO_Pin_7);		//设置引脚为低电平输出
-	rt_thread_delay(100);
+	rt_hw_ms_delay(1000);
 	GPIO_SetBits(GPIOC, GPIO_Pin_7);		//设置引脚为高电平输出
-
+	rt_hw_s_delay(10);
 	printmsg(ECU_DBG_COMM,"zigbee reset successful");
+
 }
 
 int zb_get_reply_from_module(char *data)			//读取zigbee模块的返回帧
@@ -877,4 +869,11 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 		return -1;
 	}
 }
+
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+
+FINSH_FUNCTION_EXPORT(zigbee_reset , zigbee_reset.)
+#endif
+
 

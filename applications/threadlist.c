@@ -137,6 +137,8 @@ static struct rt_thread idwrite_thread;
 ecu_info ecu;	//ecu相关信息
 inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
 unsigned char LED_Status = 0;
+extern unsigned char searchConnectNum;
+
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -309,6 +311,13 @@ static void lan8720_rst_thread_entry(void* parameter)
 		{
 			printf("reboot :%s\n",Time);
 			reboot();
+		}
+
+		if(searchConnectNum > 3)
+		{
+			searchConnectNum = 0;
+			WIFI_Reset();
+			printf("printf :%s\n",Time);
 		}
 			
       	rt_thread_delay( RT_TICK_PER_SECOND*50 );
