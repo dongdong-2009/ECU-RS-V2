@@ -118,7 +118,7 @@ void App_GetBaseInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 			
 	char sofewareVersion[50];
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 1 ",(char *)recvbuffer);
 	
-	sprintf(sofewareVersion,"%s_%s_%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
+	sprintf(sofewareVersion,"%s_%s.%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
 	APP_Response_BaseInfo(ID,ecu,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo);
 }
 

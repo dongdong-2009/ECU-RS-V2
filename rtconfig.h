@@ -64,7 +64,10 @@
 #define RT_USING_SERIAL
 
 #define RT_USING_SPI
-#define RT_USING_SPI1
+//#define RT_USING_SPI1
+//#define RT_USING_SPI2
+#define RT_USING_SPI3
+#define RT_USING_SPI_DMA
 
 /* SECTION: Console options */
 #define RT_USING_CONSOLE

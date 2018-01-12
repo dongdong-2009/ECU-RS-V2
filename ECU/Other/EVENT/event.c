@@ -293,7 +293,7 @@ void baseInfo(void)
 	printf("ECU Channel :%02x\n",ecu.channel);
 	printf("ECU RSSI :%d\n",ecu.Signal_Level);
 	printf("RSD Type :%d\n",type);
-	printf("ECU software Version : %s_%s_%s\n",ECU_VERSION,MAJORVERSION,MINORVERSION);
+	printf("ECU software Version : %s_%s.%s\n",ECU_VERSION,MAJORVERSION,MINORVERSION);
 	printf("************************************************************\n");
 }
 FINSH_FUNCTION_EXPORT(baseInfo, eg:baseInfo());

@@ -9,8 +9,8 @@
 #define SDA_GPIO                	GPIOB
 #define SDA_PIN										(GPIO_Pin_1)
 
-#define WP_GPIO                   GPIOB
-#define WP_PIN                		(GPIO_Pin_10)
+#define WP_GPIO                   GPIOA
+#define WP_PIN                		(GPIO_Pin_4)
 
 #define  SDA_1    GPIO_SetBits(SDA_GPIO, SDA_PIN)
 #define  SDA_0    GPIO_ResetBits(SDA_GPIO, SDA_PIN)

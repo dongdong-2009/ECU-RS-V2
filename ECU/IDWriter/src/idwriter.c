@@ -45,6 +45,7 @@
 
 extern rt_mutex_t record_data_lock;
 extern ecu_info ecu;
+extern unsigned char LED_IDWrite_Status;
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -343,12 +344,12 @@ void idwrite_thread_entry(void* parameter)
 
 		//ÉèÖÃÄæ±äÆ÷µÄID
 		if(!strncmp(recvbuff, "set_inverter_id", 15)){
-			/*
+			
 			if(1 == saveECUChannel(18))
 				send(clientfd, "0x12", 4, 0);
 			else
 				send(clientfd, "change channel failed", 21, 0);
-			*/
+			
 			row = insertinverter(&recvbuff[16]);
 			snprintf(sendbuff, sizeof(sendbuff), "%02d", row);
 			send(clientfd, sendbuff, 3, 0);
@@ -383,7 +384,7 @@ void idwrite_thread_entry(void* parameter)
 		//¶ÁÈ¡ECUÈí¼þ°æ±¾ºÅ
 		if(!strncmp(recvbuff, "get_version", 11)){
 			memset(version, 0, sizeof(version));
-			sprintf(version,"%s_%s_%s", ECU_VERSION,MAJORVERSION,MINORVERSION);
+			sprintf(version,"%s_%s.%s", ECU_VERSION,MAJORVERSION,MINORVERSION);
 			memset(area, 0, sizeof(area));
 			fp = fopen("/config/area.con", "r");
 			if(fp){
@@ -405,19 +406,19 @@ void idwrite_thread_entry(void* parameter)
 		//²âÊÔLEDµÆ
 		if(!strncmp(recvbuff, "test_led", 8)){
 			rt_hw_led_init();	//LED³õÊ¼»¯
-			rt_hw_us_delay(500000);
+			rt_hw_ms_delay(500);
 			rt_hw_led_on();		//LEDÁÁ
-			rt_hw_us_delay(500000);
+			rt_hw_ms_delay(500);
 			rt_hw_led_off();		//LEDÏ¨Ãð
-			rt_hw_us_delay(500000);
+			rt_hw_ms_delay(500);
 			rt_hw_led_on();		//LEDÁÁ
-			rt_hw_us_delay(500000);
+			rt_hw_ms_delay(500);
 			rt_hw_led_off();		//LEDÏ¨Ãð
-			rt_hw_us_delay(500000);
+			rt_hw_ms_delay(500);
 			rt_hw_led_on();		//LEDÁÁ
-			rt_hw_us_delay(500000);
+			rt_hw_ms_delay(500);
 			rt_hw_led_off();		//LEDÏ¨Ãð
-			printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd, "OK", 2, 0));
+			LED_IDWrite_Status = 1;
 		}
 		rt_mutex_release(record_data_lock);
 		closesocket(clientfd);

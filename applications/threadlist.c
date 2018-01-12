@@ -138,6 +138,7 @@ ecu_info ecu;	//ecu相关信息
 inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
 unsigned char LED_Status = 0;
 extern unsigned char searchConnectNum;
+unsigned char LED_IDWrite_Status = 0;
 
 
 /*****************************************************************************/
@@ -270,7 +271,10 @@ static void led_thread_entry(void* parameter)
 		{
 			rt_hw_led_on();
 		}
-		
+		if(LED_IDWrite_Status == 1)
+		{
+			rt_hw_led_on();
+		}
 		rt_thread_delay( RT_TICK_PER_SECOND);
 		cpu_usage_get(&major, &minor);
 		//printf("CPU : %d.%d%\n", major, minor);

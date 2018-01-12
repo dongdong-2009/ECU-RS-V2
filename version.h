@@ -4,7 +4,7 @@
 #define ECU_VERSION 		"ECU_R_RS"
 #define ECU_EMA_VERSION		"S"
 #define MAJORVERSION  		"1"
-#define MINORVERSION		"0"
+#define MINORVERSION		"1"
 
 #define ECU_VERSION_LENGTH 12
 
