@@ -13,11 +13,13 @@
 #include <dfs_posix.h>
 #include "zigbee.h"
 #include "timer.h"
+#include "rsdFunction.h"
 
 extern unsigned char rateOfProgress;
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
-unsigned char ECUCommThreadFlag = 0;
+unsigned char ECUCommThreadFlag = EN_ECUHEART_DISABLE;
+unsigned short comm_failed_Num = 0;
 
 void inverter_Info(inverter_info *curinverter)
 {
@@ -41,8 +43,10 @@ int init_all(inverter_info *inverter)
 {
 	rateOfProgress = 0;
 	openzigbee();
-	zigbee_reset();
-	zb_test_communication();
+	if(-1==zb_test_communication())
+		zigbee_reset();
+	//zigbee_reset();
+	//zb_test_communication();
 	init_ecu();
 	init_inverter(inverter);
 	rateOfProgress = 100;
@@ -368,19 +372,108 @@ void Collect_Control_Record(void)
 }
 
 
+int getalldata(void)
+{
+	int i = 0,ret = 0;
+	unsigned short pre_heart_rate = 0;
+	
+	for(i=0;i<3;i++)
+	{
+		if(-1==zb_test_communication())
+			zigbee_reset();
+		else
+			break;
+	}
+	//采集数据到结构体中
+	for(ecu.curSequence = 0;ecu.curSequence<ecu.validNum;ecu.curSequence++)
+	{
+		ret = 0;
+		for(i=0;i<8;i++)
+		{
+			pre_heart_rate = inverterInfo[ecu.curSequence].heart_rate;
+			ret = zb_query_heart_data(&inverterInfo[ecu.curSequence]);	
+			if(ret == 1) 
+			{
+				if(inverterInfo[ecu.curSequence].heart_rate < pre_heart_rate)
+				{
+					//当前一轮重启次数+1
+					if(inverterInfo[ecu.curSequence].restartNum < 255)
+						inverterInfo[ecu.curSequence].restartNum++;
+				}
+				break;
+			}
+		}
+		if(ret != 1)
+		{
+			inverterInfo[ecu.curSequence].status.collect_ret = 0;
+			comm_failed_Num += 7;
+			if(comm_failed_Num > (ecu.validNum * 7 *12))
+			{
+				for(ecu.curSequence = 0;ecu.curSequence < ecu.validNum;ecu.curSequence++)
+				{
+					inverterInfo[ecu.curSequence].restartNum = 0;
+				}
+				comm_failed_Num = 0;
+				ecu.curSequence = 0;
+			}
+		}else{
+			inverterInfo[ecu.curSequence].status.collect_ret = 1;
+		}
+	}
+	ecu.polling_total_times++;
+	return 0;
+}
+
+int displayonPhone(void)
+{
+	for(ecu.curSequence = 0;ecu.curSequence<ecu.validNum;ecu.curSequence++)
+	{
+		if(0 == inverterInfo[ecu.curSequence].status.collect_ret)
+		{
+			inverterInfo[ecu.curSequence].status.comm_failed3_status = 0;
+			inverterInfo[ecu.curSequence].no_getdata_num++;
+			if(inverterInfo[ecu.curSequence].no_getdata_num>254)
+			{
+				inverterInfo[ecu.curSequence].no_getdata_num = 254;
+			}
+			
+		}else{
+			inverterInfo[ecu.curSequence].status.comm_failed3_status = 1;
+			inverterInfo[ecu.curSequence].no_getdata_num = 0;
+		}
+				
+	}
+	memcpy(ecu.JsonTime,ecu.curTime,15);
+	return 0;
+}
+
+int process_Heart(void)
+{
+	//每1.5S发送一次心跳
+	if(COMM_Timeout_Event == 1)
+	{
+		if(ecu.curHeartSequence >= ecu.validNum)
+		{
+			ecu.curHeartSequence = 0;
+		}
+		zb_sendHeart(inverterInfo[ecu.curHeartSequence].uid);
+		ecu.curHeartSequence++;
+		COMM_Timeout_Event = 0;
+	}
+	return 0;
+}
 
 //该线程主要用于相关数据的采集工作
 void ECUCollect_thread_entry(void* parameter)
 {
-	int i = 0,ret = 0;
-	unsigned short comm_failed_Num = 0;
-	unsigned short pre_heart_rate = 0;
 	int CollectClientThistime=0, CollectClientDurabletime=65535, CollectClientReportinterval=300;			//采集数据相关时间参数
 	int CollectControlThistime=0, CollectControlDurabletime=65535, CollectControlReportinterval=900;	//采集远程控制数据时间参数
-	ECUCommThreadFlag = 0;
+	int cur_time_hour;
+	ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 	ecu.curHeartSequence = 0;
 	init_all(inverterInfo); //初始化所有逆变器
 	rt_thread_delay(RT_TICK_PER_SECOND * START_TIME_COLLECT);
+	
 	while(1)
 	{
 		if(compareTime(CollectClientDurabletime ,CollectClientThistime,CollectClientReportinterval))
@@ -388,77 +481,38 @@ void ECUCollect_thread_entry(void* parameter)
 			//5分钟采集相关的发电量数据
 			CollectClientThistime = acquire_time();
 			apstime(ecu.curTime);
-			
-			if(	ecu.validNum >0	)
+			cur_time_hour = get_hour();
+			if(ecu.validNum >0)
 			{
-				ECUCommThreadFlag = 0;
-				//采集数据到结构体中
-				for(ecu.curSequence = 0;ecu.curSequence<ecu.validNum;ecu.curSequence++)
-				{
-					ret = 0;
-					for(i=0;i<8;i++)
-					{
-						pre_heart_rate = inverterInfo[ecu.curSequence].heart_rate;
-						ret = zb_query_heart_data(&inverterInfo[ecu.curSequence]);	
-						if(ret == 1) 
-						{
-							if(inverterInfo[ecu.curSequence].heart_rate < pre_heart_rate)
-							{
-								//当前一轮重启次数+1
-								if(inverterInfo[ecu.curSequence].restartNum < 255)
-									inverterInfo[ecu.curSequence].restartNum++;
-							}
-
-							break;
-						}
-						
-					}
-
-					if(ret != 1)
-					{
-						inverterInfo[ecu.curSequence].status.collect_ret = 0;
-						comm_failed_Num += 7;
-
-						if(comm_failed_Num > (ecu.validNum * 7 *12))
-						{
-							for(ecu.curSequence = 0;ecu.curSequence < ecu.validNum;ecu.curSequence++)
-							{
-								inverterInfo[ecu.curSequence].restartNum = 0;
-							}
-							comm_failed_Num = 0;
-							ecu.curSequence = 0;
-						}
-					}else{
-						inverterInfo[ecu.curSequence].status.collect_ret = 1;
-					}
-						
-
-
-				}
+				ECUCommThreadFlag = EN_ECUHEART_DISABLE;
+				getalldata();
+				ECUCommThreadFlag = EN_ECUHEART_ENABLE;
 				
-				ECUCommThreadFlag = 1;
 				optimizeFileSystem(300);
 				printmsg(ECU_DBG_COLLECT,"Collect DATA Start");
-				
 				//采集实时数据
-				
 				Collect_Client_Record();
-				for(ecu.curSequence = 0;ecu.curSequence<ecu.validNum;ecu.curSequence++)
-				{
-					if(0 == inverterInfo[ecu.curSequence].status.collect_ret)
-					{
-						inverterInfo[ecu.curSequence].status.comm_failed3_status = 0;
-					}else{
-						inverterInfo[ecu.curSequence].status.comm_failed3_status = 1;
-					}
-				
-				}
-				memcpy(ecu.JsonTime,ecu.curTime,15);
+				//更新手机显示
+				displayonPhone();
 				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
-				ECUCommThreadFlag = 0;
-			}
-	
+				process_rsd_single();
+				
+				if((cur_time_hour>9)&&(1 == ecu.flag_ten_clock_getshortaddr))
+				{
+					get_inverter_shortaddress(inverterInfo);
+					if(ecu.polling_total_times>3)
+					{
+						ecu.flag_ten_clock_getshortaddr = 0;							//每天10点执行完重新获取短地址后标志位置为0
+					}
+				}
+				
+				//对于轮训没有数据的逆变器进行重新获取短地址操作
+				bind_nodata_inverter(inverterInfo);
+				ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 
+			}
+			
+			
 		}
 		if((CollectClientDurabletime-CollectClientThistime)<=305)
 			CollectClientReportinterval = 300;
@@ -466,14 +520,14 @@ void ECUCollect_thread_entry(void* parameter)
 			CollectClientReportinterval = 600;
 		else
 			CollectClientReportinterval = 900;
+		
 		rt_thread_delay(RT_TICK_PER_SECOND/10);
-		ECUCommThreadFlag = 0;
 		if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
 		{	
 			
 			if(	ecu.validNum >0	)
 			{
-				ECUCommThreadFlag = 1;
+				ECUCommThreadFlag = EN_ECUHEART_ENABLE;
 				optimizeFileSystem(300);
 				//采集心跳相关远程控制数据
 				printmsg(ECU_DBG_COLLECT,"Collect Control DATA  Start");
@@ -481,21 +535,13 @@ void ECUCollect_thread_entry(void* parameter)
 				//采集远程控制数据
 				Collect_Control_Record();
 				printmsg(ECU_DBG_COLLECT,"Collect Control DATA  End");
-				ECUCommThreadFlag = 0;
+				ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 			}
 			
 			
 		}
-		if(COMM_Timeout_Event == 1)
-		{
-			if(ecu.curHeartSequence >= ecu.validNum)
-			{
-				ecu.curHeartSequence = 0;
-			}
-			zb_sendHeart(inverterInfo[ecu.curHeartSequence].uid);
-			ecu.curHeartSequence++;
-			COMM_Timeout_Event = 0;
-		}
+		process_Heart();
+
 		CollectClientDurabletime = acquire_time();		
 		CollectControlDurabletime = acquire_time();			
 	}

@@ -39,12 +39,14 @@ int init_ecu(void)
 	ecu.validNum = 0;
 	ecu.curSequence = 0;
 	Read_IO_INIT_STATU(&ecu.IO_Init_Status);
+	ecu.flag_ten_clock_getshortaddr = 1;			//ZK
 	ecu.life_energy = get_lifetime_power();
 	zb_change_ecu_panid();
 	memset(ecu.curTime,'0',14);
 	memset(ecu.JsonTime,'0',14);
 	ecu.curTime[14] = '\0';
 	ecu.JsonTime[14] = '\0';
+	ecu.polling_total_times = 0;
 	
 	return 0;
 }
@@ -111,6 +113,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->EnergyPV1 = 0;
 		curinverter->EnergyPV2 = 0;
 		curinverter->EnergyPV_Output = 0;
+		curinverter->no_getdata_num = 0;
 		
 	}
 	
@@ -138,6 +141,7 @@ int init_inverter(inverter_info *inverter)
 			fputs("0", fp);
 			fclose(fp);
 		}
+		process_rsd_enable_boardcast();
 	}
 
 	//判断是否需要广播参数设置指令  	先广播，然后再每台单播

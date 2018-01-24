@@ -14,6 +14,8 @@
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
+int process_rsd_enable_boardcast(void);
+int process_rsd_single(void);
 int process_rsdFunction_all(void);
 int process_rsdFunction(void);
 void insertSetRSDInfo(unsigned short num,char *buff);

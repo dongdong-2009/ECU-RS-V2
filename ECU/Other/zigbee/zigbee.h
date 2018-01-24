@@ -32,6 +32,8 @@ int zb_query_heart_data(inverter_info *inverter);
 int zb_set_heartSwitch_boardcast(unsigned char functionStatus,unsigned char onoff,unsigned char RSDTimeout);
 int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStatus,unsigned char onoff,unsigned char RSDTimeout);
 int zb_sendHeart(char uid[13]);
+int bind_nodata_inverter(inverter_info *firstinverter);
+int get_inverter_shortaddress(inverter_info *firstinverter);		//获取没有数据的逆变器的短地址
 
 
 #endif /*__ZIGBEE_H__*/

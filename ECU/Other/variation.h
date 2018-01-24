@@ -98,6 +98,7 @@ typedef struct inverter_info_t{
 	unsigned int EnergyPV1;		//当前一轮电量	精度 1焦耳
 	unsigned int EnergyPV2;		//当前一轮电量	精度 1焦耳
 	unsigned int EnergyPV_Output;		//当前一轮电量	精度 1焦耳
+	unsigned char no_getdata_num;					//unsigned char(保持上限255)连续没有获取到逆变器数据的次数
 	
 }inverter_info;
 
@@ -107,7 +108,7 @@ typedef struct ecu_info_t{
 	unsigned short panid;				//Zigbee的panid
 	char channel;				//Zigbee信道
 	char Signal_Level;		//信号强度
-	char IO_Init_Status;	//IO初始状态
+	char IO_Init_Status;	//IO初始状态	'1'是使能  '0‘是禁能
 	int count;					//系统当前一轮有数据的逆变器数
 	int validNum;			//当前有效台数
 	int curSequence;		//采集轮训机器号
@@ -120,6 +121,8 @@ typedef struct ecu_info_t{
 	int lastCommNum;
 	char curTime[15];			//最近一次采集的时间
 	char JsonTime[15];			//最近一次采集的时间
+	unsigned char flag_ten_clock_getshortaddr;	//每天10点有没有重新获取短地址标志
+	int polling_total_times;			//ECU一天之中总的轮询次数 ZK
 
 	
 }ecu_info;

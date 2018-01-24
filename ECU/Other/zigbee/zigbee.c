@@ -189,9 +189,9 @@ int openzigbee(void)
 void zigbee_reset(void)
 {
 	GPIO_ResetBits(GPIOC, GPIO_Pin_7);		//设置引脚为低电平输出
-	rt_hw_ms_delay(1000);
+	rt_thread_delay(100);
 	GPIO_SetBits(GPIOC, GPIO_Pin_7);		//设置引脚为高电平输出
-	rt_hw_s_delay(10);
+	rt_thread_delay(10000);
 	printmsg(ECU_DBG_COMM,"zigbee reset successful");
 
 }
@@ -227,7 +227,6 @@ int zb_test_communication(void)		//zigbee测试通信有没有断开
 	int check=0;
 
 	printmsg(ECU_DBG_COMM,"test zigbee communication");
-	rt_thread_delay(RT_TICK_PER_SECOND*2);
 	clear_zbmodem();			//发送指令前,先清空缓冲区
 	sendbuff[0]  = 0xAA;
 	sendbuff[1]  = 0xAA;
@@ -289,7 +288,7 @@ int zb_change_ecu_panid(void)
 			&& (0xAB == recvbuff[0])
 			&& (0xCD == recvbuff[1])
 			&& (0xEF == recvbuff[2])) {
-		rt_hw_s_delay(2); //延时2S，因为设置完ECU信道和PANID后会发6个FF
+		rt_thread_delay(200); //延时2S，因为设置完ECU信道和PANID后会发6个FF
 		return 1;
 	}
 
@@ -371,7 +370,7 @@ int zb_change_inverter_channel_one(char *inverter_id, int channel)
 	ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL,0, sendbuff, 21);
 	printhexmsg(ECU_DBG_COMM,"Change Inverter Channel (one)", sendbuff, 21);
 
-	rt_hw_s_delay(1); //此处延时必须大于1S
+	rt_thread_delay(100); //此处延时必须大于1S
 
 	return 0;
 }
@@ -424,6 +423,172 @@ int zb_off_report_id_and_bind(int short_addr)
 	return 0;
 }
 
+int zb_get_inverter_shortaddress_single(inverter_info *inverter)			//获取单台指定逆变器短地址，ZK
+{
+	unsigned char sendbuff[256] = {'\0'};
+	int i=0, ret;
+	char data[256];
+	char inverterid[13] = {'\0'};
+	int check=0;
+	printmsg(ECU_DBG_COMM,"Get inverter shortaddresssingle");
+
+	clear_zbmodem();			//发送指令前先清空缓冲区
+	sendbuff[0]  = 0xAA;
+	sendbuff[1]  = 0xAA;
+	sendbuff[2]  = 0xAA;
+	sendbuff[3]  = 0xAA;
+	sendbuff[4]  = 0x0E;
+	sendbuff[5]  = 0x00;
+	sendbuff[6]  = 0x00;
+	sendbuff[7]  = 0x00;//panid
+	sendbuff[8]  = 0x00;
+	sendbuff[9]  = 0x00;
+	sendbuff[10] = 0x00;
+	sendbuff[11] = 0x00;
+	for(i=4;i<12;i++)
+		check=check+sendbuff[i];
+	sendbuff[12] = check/256;
+	sendbuff[13] = check%256;
+	sendbuff[14] = 0x06;
+
+	sendbuff[15]=((inverter->uid[0]-0x30)*16+(inverter->uid[1]-0x30));
+	sendbuff[16]=((inverter->uid[2]-0x30)*16+(inverter->uid[3]-0x30));
+	sendbuff[17]=((inverter->uid[4]-0x30)*16+(inverter->uid[5]-0x30));
+	sendbuff[18]=((inverter->uid[6]-0x30)*16+(inverter->uid[7]-0x30));
+	sendbuff[19]=((inverter->uid[8]-0x30)*16+(inverter->uid[9]-0x30));
+	sendbuff[20]=((inverter->uid[10]-0x30)*16+(inverter->uid[11]-0x30));
+
+//	strcpy(&sendbuff[15],inverter->inverterid);
+
+
+	ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL, 0, sendbuff, 21);
+	printhexmsg(ECU_DBG_COMM,"sendbuff",(char *)sendbuff,21);
+	ret = zb_get_reply_from_module(data);
+
+	rt_sprintf(inverterid,"%02x%02x%02x%02x%02x%02x",data[4],data[5],data[6],data[7],data[8],data[9]);
+
+	if((11 == ret)&&(0xFF == data[2])&&(0==rt_strcmp(inverter->uid,inverterid)))
+	{
+		inverter->shortaddr = data[0]*256 + data[1];
+		updateID();
+		return 1;
+	}
+	else
+		return -1;
+
+}
+
+int bind_nodata_inverter(inverter_info *firstinverter)		//绑定没有数据的逆变器,并且获取短地址
+{
+	int i;
+	inverter_info *curinverter = firstinverter;
+
+	curinverter = firstinverter;
+	for(i=0; (i<MAXINVERTERCOUNT)&&(12==rt_strlen(curinverter->uid)); i++)
+	{
+		if(curinverter->status.collect_ret == 0)
+		{
+//			zb_turnoff_limited_rptid(curinverter->shortaddr,curinverter);
+			zb_get_inverter_shortaddress_single(curinverter);
+		}
+		curinverter++;
+	}
+	return 0;
+}
+
+int zb_change_inverter_panid_single(inverter_info *inverter)	//单点改变逆变器的PANID和信道，ZK
+{
+	char sendbuff[256] = {'\0'};
+	int i;
+	int check=0;
+	sendbuff[0]  = 0xAA;
+	sendbuff[1]  = 0xAA;
+	sendbuff[2]  = 0xAA;
+	sendbuff[3]  = 0xAA;
+	sendbuff[4]  = 0x0F;
+	sendbuff[5]  = 0x00;
+	sendbuff[6]  = 0x00;
+	sendbuff[7]  = ecu.panid>>8;
+	sendbuff[8]  = ecu.panid;
+	sendbuff[9]  = ecu.channel;
+	sendbuff[10] = 0x00;
+	sendbuff[11] = 0xA0;
+	for(i=4;i<12;i++)
+		check=check+sendbuff[i];
+	sendbuff[12] = check/256;
+	sendbuff[13] = check%256;
+	sendbuff[14] = 0x06;
+	sendbuff[15]=((inverter->uid[0]-0x30)*16+(inverter->uid[1]-0x30));
+	sendbuff[16]=((inverter->uid[2]-0x30)*16+(inverter->uid[3]-0x30));
+	sendbuff[17]=((inverter->uid[4]-0x30)*16+(inverter->uid[5]-0x30));
+	sendbuff[18]=((inverter->uid[6]-0x30)*16+(inverter->uid[7]-0x30));
+	sendbuff[19]=((inverter->uid[8]-0x30)*16+(inverter->uid[9]-0x30));
+	sendbuff[20]=((inverter->uid[10]-0x30)*16+(inverter->uid[11]-0x30));
+	
+	ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL, 0, sendbuff, 21);
+	printhexmsg(ECU_DBG_COMM,"sendbuff",sendbuff,21);
+
+	rt_thread_delay(100);
+	return 1;
+
+}
+
+int get_inverter_shortaddress(inverter_info *firstinverter)		//获取没有数据的逆变器的短地址
+{
+	int i;
+	inverter_info *curinverter = firstinverter;
+	unsigned short current_panid;				//Zigbee即时的PANID
+	int flag = 0;
+
+
+	curinverter = firstinverter;
+	for(i=0; (i<MAXINVERTERCOUNT)&&(12==rt_strlen(curinverter->uid)); i++)
+	{
+		if((0==curinverter->shortaddr)||(curinverter->no_getdata_num>5))
+		{
+			flag=1;
+			break;
+		}
+		curinverter++;
+	}
+
+	if(1==flag)
+	{
+		if(1==zb_restore_ecu_panid_0xffff(ecu.channel))		//把ECU的PANID设置为默认的0xffff
+			current_panid = 0xffff;
+		printdecmsg(ECU_DBG_COMM,"PANID",current_panid);
+		rt_thread_delay(500);
+
+
+		curinverter = firstinverter;
+		for(i=0; (i<MAXINVERTERCOUNT)&&(12==rt_strlen(curinverter->uid)); i++)
+		{
+			if((0==curinverter->shortaddr)||(curinverter->no_getdata_num>5))
+			{
+				zb_change_inverter_panid_single(curinverter);		//把没有数据的逆变器PANID修改成ECU的PANID
+				rt_thread_delay(50);
+			}
+			curinverter++;
+		}
+
+		if(1==zb_change_ecu_panid())						//把ECU的panid改成此台ECU原本panid
+			current_panid = ecu.panid;
+		printdecmsg(ECU_DBG_COMM,"PANID",current_panid);
+		rt_thread_delay(500);
+
+		curinverter = firstinverter;
+		for(i=0; (i<MAXINVERTERCOUNT)&&(12==rt_strlen(curinverter->uid)); i++)
+		{
+			printdecmsg(ECU_DBG_COMM,"no_getdata_num",curinverter->no_getdata_num);
+			if((0==curinverter->shortaddr)||(curinverter->no_getdata_num>5))
+			{
+				zb_get_inverter_shortaddress_single(curinverter);
+			}
+			curinverter++;
+		}
+	}
+	return 1;
+}
 
 int zigbeeRecvMsg(char *data, int timeout_sec)
 {
@@ -776,8 +941,6 @@ int zb_set_heartSwitch_boardcast(unsigned char functionStatus,unsigned char onof
 		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","onoff : 1");
 	}
 
-
-
 	sendbuff[i++] = RSDTimeout;
 	
 	//校验值
@@ -786,7 +949,9 @@ int zb_set_heartSwitch_boardcast(unsigned char functionStatus,unsigned char onof
 	sendbuff[i++] = crc16%256;
 	sendbuff[i++] = 0xFE;
 	sendbuff[i++] = 0xFE;
+	rt_mutex_take(heart_lock, RT_WAITING_FOREVER);
 	zb_broadcast_cmd(sendbuff, i);
+	rt_mutex_release(heart_lock);
 	return 0;
 
 }
@@ -840,10 +1005,10 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 	sendbuff[i++] = crc16%256;
 	sendbuff[i++] = 0xFE;
 	sendbuff[i++] = 0xFE;
-
+	rt_mutex_take(heart_lock, RT_WAITING_FOREVER);
 	zb_send_cmd(inverter, sendbuff, i);
 	ret = zb_get_reply(data,inverter);
-
+	rt_mutex_release(heart_lock);
 	if((15 == ret)&&(0xFB == data[0])&&(0xFB == data[1])&&(0xFE == data[13])&&(0xFE == data[14]))
 	{
 		crc16 = GetCrc_16((unsigned char *)&data[2],9,0,CRC_table_16);

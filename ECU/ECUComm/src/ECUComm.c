@@ -17,6 +17,7 @@
 #include "serverfile.h"
 #include "threadlist.h"
 #include "zigbee.h"
+#include "ecucollect.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -26,12 +27,12 @@ extern unsigned char ECUCommThreadFlag;
 
 void ECUComm_thread_entry(void* parameter)
 {
-	ECUCommThreadFlag = 0;
+	ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 	rt_thread_delay(RT_TICK_PER_SECOND * START_TIME_COMM);
 	while(1)
 	{
 		//判断是否有433模块心跳超时事件
-		if((ECUCommThreadFlag == 1) && (ecu.validNum > 0))
+		if((ECUCommThreadFlag == EN_ECUHEART_ENABLE) && (ecu.validNum > 0))
 		{
 			if(COMM_Timeout_Event == 1)
 			{

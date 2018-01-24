@@ -69,6 +69,7 @@ int updateECUByVersion(void)
 		FLASH_If_Erase_APP2();
 		FLASH_IF_FILE_COPY_TO_APP2(UPDATE_PATH);
 		unlink(UPDATE_PATH);
+		echo("/TMP/ECUUPVER.CON","1");
 		reboot();
 	}else
 	{
@@ -111,6 +112,7 @@ int updateECUByID(void)
 		FLASH_IF_FILE_COPY_TO_APP2(UPDATE_PATH);
 		deletefile(remote_path);
 		unlink(UPDATE_PATH);
+		echo("/TMP/ECUUPVER.CON","1");
 		reboot();
 	}else
 	{

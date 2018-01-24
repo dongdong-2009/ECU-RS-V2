@@ -17,6 +17,7 @@
 #include "set_rsd_function_switch.h"
 #include "inverter_id.h"
 #include "custom_command.h"
+#include <dfs_posix.h> 
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -419,7 +420,8 @@ void ECUControl_thread_entry(void* parameter)
 	int ControlThistime=0, ControlDurabletime=65535, ControlReportinterval=900;
 	int AlarmThistime=0, AlarmDurabletime=65535, AlarmReportinterval=180;
 	char *data = NULL;
-	int res,flag;
+	int res,flag,result;
+	FILE *fp;
 	char time[15] = {'\0'};
 	//添加功能函数
   	add_functions();
@@ -460,8 +462,27 @@ void ECUControl_thread_entry(void* parameter)
 				memset(time,0,15);
 			}
 			delete_control_file_resendflag0();		//清空数据resend标志全部为0的目录
+			fp=fopen("/TMP/ECUUPVER.CON","r");
+			if(fp!=NULL)
+			{
+				char c='0';
+				c=fgetc(fp);
+				fclose(fp);
+				if(c=='1')
+				{
+					printf("111111111111\n");
+					result = communication_with_EMA(102);
+					if(result != -1)
+					{
+						unlink("/TMP/ECUUPVER.CON");
+					}
+					
+				}
+			}else
+			{
+				communication_with_EMA(0);
+			}
 			
-			communication_with_EMA(0);
 
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Control DATA End");
 

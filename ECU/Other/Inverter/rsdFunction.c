@@ -34,6 +34,38 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
+int process_rsd_enable_boardcast(void)
+{
+	int i =0;
+	//先广播三次
+	for(i = 0;i<3;i++)
+	{
+		zb_set_heartSwitch_boardcast(1,2,0);
+		rt_hw_s_delay(1);
+	}
+	return 0;
+}
+
+int process_rsd_single(void)
+{
+	//如果系统RSD状态和某台RSD设备不同，更改
+	for(ecu.curSequence = 0;ecu.curSequence<ecu.validNum;ecu.curSequence++)
+	{
+		if((inverterInfo[ecu.curSequence].status.comm_failed3_status == 1) && (inverterInfo[ecu.curSequence].shortaddr !=0)  && (inverterInfo[ecu.curSequence].status.function_status != atoi(&ecu.IO_Init_Status)))
+		{	
+			if(ecu.IO_Init_Status != '0')
+			{
+				zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],2,2,0);	
+			}else
+			{
+				zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],1,2,0);
+			}
+					
+		}
+	}
+	return 0;
+}
+
 int process_rsdFunction_all(void)
 {
 	unsigned char rsdChangeFunctionStatus = 1;

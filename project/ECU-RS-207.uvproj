@@ -657,6 +657,11 @@
               <FilePath>..\components\DeviceDrivers\board.c</FilePath>
             </File>
             <File>
+              <FileName>usart5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\DeviceDrivers\SYSTEM\usart\usart5.c</FilePath>
+            </File>
+            <File>
               <FileName>completion.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\DeviceDrivers\completion.c</FilePath>
@@ -675,11 +680,6 @@
               <FileName>stm32f10x_it.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\DeviceDrivers\stm32f10x_it.c</FilePath>
-            </File>
-            <File>
-              <FileName>usart5.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\components\DeviceDrivers\SYSTEM\usart\usart5.c</FilePath>
             </File>
             <File>
               <FileName>spi_core.c</FileName>
