@@ -41,8 +41,8 @@ int init_all(inverter_info *inverter)
 {
 	rateOfProgress = 0;
 	openzigbee();
-	zigbee_reset();
-	zb_test_communication();
+	if(-1==zb_test_communication())
+		zigbee_reset();
 	init_ecu();
 	init_inverter(inverter);
 	rateOfProgress = 100;
