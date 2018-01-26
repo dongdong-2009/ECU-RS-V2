@@ -69,12 +69,12 @@ int ecu_msg(char *sendbuffer, int num, const char *recvbuffer)
 }
 
 
-int inverter_msg(char *sendbuffer, char* id)
+int inverter_msg(char *sendbuffer, char* id,char* inverter_version)
 {
 
 	strcat(sendbuffer, id); //inverter UID
 	strcat(sendbuffer, "05"); 	 //inverter Type
-	strcat(sendbuffer, "00000"); //what guess
+	strcat(sendbuffer, inverter_version); //what guess
 	strcat(sendbuffer, "END"); 	 //end
 
 	return 0;
@@ -135,6 +135,7 @@ int response_inverter_id(const char *recvbuffer, char *sendbuffer)
 {
 	int i;
 	char UID[13];
+	char inverter_version[6] = {'\0'};
 	/* Head Info*/
 	strcpy(sendbuffer, "APS13AAAAAA102AAA0"); 
 
@@ -145,9 +146,10 @@ int response_inverter_id(const char *recvbuffer, char *sendbuffer)
 		for(i = 0; i < ecu.validNum;i++)
 		{
 			sprintf(UID,"%s",inverterInfo[i].uid);
+			sprintf(inverter_version,"%05d",inverterInfo[i].version);
 			UID[12] = '\0';
 			/* Inverter Message */
-			inverter_msg(sendbuffer,UID);		
+			inverter_msg(sendbuffer,UID,inverter_version);		
 		}
 		
 	}
