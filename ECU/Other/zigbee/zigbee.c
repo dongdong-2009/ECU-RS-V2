@@ -191,7 +191,7 @@ void zigbee_reset(void)
 	GPIO_ResetBits(GPIOC, GPIO_Pin_7);		//设置引脚为低电平输出
 	rt_thread_delay(100);
 	GPIO_SetBits(GPIOC, GPIO_Pin_7);		//设置引脚为高电平输出
-	rt_thread_delay(10000);
+	rt_thread_delay(1000);
 	printmsg(ECU_DBG_COMM,"zigbee reset successful");
 
 }
@@ -699,6 +699,7 @@ int zb_get_reply(char *data,inverter_info *inverter)			//读取逆变器的返回帧
 			data[i]=data_all[i+12];
 		}
 		printhexmsg(ECU_DBG_COMM,"Reply", data_all, temp_size);
+		rt_thread_delay(90);
 		rt_sprintf(inverterid,"%02x%02x%02x%02x%02x%02x",data_all[6],data_all[7],data_all[8],data_all[9],data_all[10],data_all[11]);
 		if((size>0)&&(0xFC==data_all[0])&&(0xFC==data_all[1])&&(data_all[2]==inverter->shortaddr/256)&&(data_all[3]==inverter->shortaddr%256)&&(0==rt_strcmp(inverter->uid,inverterid)))
 		{

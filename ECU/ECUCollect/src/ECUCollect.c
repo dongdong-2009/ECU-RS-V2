@@ -508,7 +508,7 @@ void ECUCollect_thread_entry(void* parameter)
 				
 				//对于轮训没有数据的逆变器进行重新获取短地址操作
 				bind_nodata_inverter(inverterInfo);
-				ECUCommThreadFlag = EN_ECUHEART_DISABLE;
+			ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 
 			}
 			
