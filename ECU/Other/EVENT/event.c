@@ -161,6 +161,21 @@ void process_WIFIEvent(void)
 	}
 
 }
+void process_WIFIEvent_ESP07S(void)
+{
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	//检测WIFI事件
+	WIFI_GetEvent_ESP07S();
+	rt_mutex_release(wifi_uart_lock);
+	//判断是否有WIFI接收事件
+	if(WIFI_Recv_SocketA_Event == 1)
+	{
+		SEGGER_RTT_printf(0,"WIFI_Recv_Event start\n");
+		process_WIFI(ID_A);
+		WIFI_Recv_SocketA_Event = 0;
+		SEGGER_RTT_printf(0,"WIFI_Recv_Event end\n");
+	}
+}
 
 //按键初始化密码事件处理
 void process_KEYEvent(void)
@@ -333,4 +348,5 @@ void systemInfo(void)
 FINSH_FUNCTION_EXPORT(systemInfo, eg:systemInfo());
 
 #endif
+
 

@@ -169,6 +169,7 @@ unsigned char ID[9] = {'\0'};
 unsigned char WIFI_RecvSocketAData[SOCKETA_LEN] = {'\0'};
 unsigned char WIFI_Recv_SocketA_Event = 0;
 unsigned int WIFI_Recv_SocketA_LEN =0;
+char connectid = '0';
 unsigned char ID_A[9] = {'\0'};
 	
 //WIFI  socket B 当串口发出来的数据组包成功时 ,数组赋值，并且Socket事件变为1
@@ -801,6 +802,53 @@ void clear_WIFI(void)
 	eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
 	Cur = 0;
 }
+
+//判断字符中是否有+IPD
+int detectionIPD(int size)
+{
+	int i=0,j=0;
+	char messageLen[5] = {'\0'};
+	int len = 0;
+	
+	for(i = 0;i<(size-4);i++)
+	{
+		if(!memcmp(&USART_RX_BUF[i],"+IPD",4))
+		{
+			connectid = USART_RX_BUF[i+5];
+			memcpy(messageLen,&USART_RX_BUF[i+7],4);
+			for(j = 0;j<4;j++)
+			{
+				if(messageLen[j] == ':')
+				{
+					messageLen[j] = '\0';
+					printf("%c %d,%s\n",USART_RX_BUF[i+5],j,messageLen);
+					len = atoi(messageLen);
+					break;
+				}
+			}
+			if((size - i -7-j) >=len)
+			{
+				memcpy(WIFI_RecvSocketAData,&USART_RX_BUF[i+8+j],len );
+				WIFI_RecvSocketAData[len] = '\0';
+				WIFI_Recv_SocketA_Event = 1;
+				WIFI_Recv_SocketA_LEN =len;
+				printf("%s\n",WIFI_RecvSocketAData);
+				Cur = 0;
+				return 1;
+			}
+			break;
+			
+		}
+	}
+	return 0;
+}
+
+void WIFI_GetEvent_ESP07S(void)
+{
+	//判断ECU_R数据大于38个字节
+	detectionIPD(Cur);
+}
+
 
 #ifdef USR_MODULE
 //进入AT模式
@@ -2847,6 +2895,7 @@ char sendbuff[4096] = {'\0'};
 int SendToSocketA(char *data ,int length,unsigned char ID[8])
 {
 	int send_length = 0;	//需要发送的字节位置
+	#if 0 
 	rt_enter_critical();
 	while(length > 0)
 	{
@@ -2870,6 +2919,29 @@ int SendToSocketA(char *data ,int length,unsigned char ID[8])
 		rt_hw_ms_delay(50);
 	}
 	rt_exit_critical();
+		#else
+	while(length > 0)
+	{
+		memset(sendbuff,'\0',4096);
+		if(length > 1460)
+		{
+			memcpy(sendbuff,&data[send_length],1460);
+			AT_CIPSEND(connectid,1460);
+			WIFI_SendData(sendbuff,1460);
+			send_length += 1460;
+			length -= 1460;
+		}else
+		{
+			memcpy(sendbuff,&data[send_length],length);
+			AT_CIPSEND(connectid,length);
+			WIFI_SendData(sendbuff,length);
+			length -= length;
+
+			return 0;
+		}
+		rt_hw_ms_delay(300);
+	}
+	#endif
 	return 0;
 }
 
@@ -2980,6 +3052,266 @@ int SendToSocketC(char *data ,int length)
 	return -1;
 }
 
+
+//判断字符中是否有OK  字符
+int detectionOK(int size)		//检测到OK  返回1   未检出到返回0
+{
+	int i=0;
+	for(i = 0;i<(size-2);i++)
+	{
+		if(!memcmp(&USART_RX_BUF[i],"OK",2))
+		{
+			return 1;			
+		}
+	}
+	return 0;
+}
+
+//----ESP01流程-------------------------------
+int AT_CWMODE3(void)			//配置WIFI模块为AP+STA模式
+{
+	int i = 0;
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	WIFI_SendData("AT+CWMODE_DEF=3\r\n", 17);
+
+	for(i = 0;i< 100;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+CWMODE3 :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+		
+}
+
+int AT_RST(void)			//复位WIFI模块
+{
+	int i = 0;
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	//发送"AT+Z\n",返回+ok
+	WIFI_SendData("AT+RST\r\n", 8);
+	for(i = 0;i< 200;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+RST :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+	
+}
+
+int AT_CWSAP(char *ECUID,char *PASSWD)			//配置ECU热点名字
+{
+	int i = 0;
+	char AT[100] = { '\0' };
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	sprintf(AT,"AT+CWSAP_DEF=\"ECU_R_%s\",\"%s\",11,3\r\n",ECUID,PASSWD);
+	printf("%s",AT);
+	WIFI_SendData(AT, (strlen(AT)+1));
+	for(i = 0;i< 200;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+CWSAP :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+	
+}
+int AT_CWJAP_DEF(char *SSID,char *PASSWD)			//配置ECU连接无线路由器名
+{
+	int i = 0;
+	char AT[100] = { '\0' };
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	sprintf(AT,"AT+CWJAP_DEF=\"%s\",\"%s\"\r\n",SSID,PASSWD);
+	printf("%s",AT);
+	WIFI_SendData(AT, (strlen(AT)+1));
+	for(i = 0;i< 1000;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+AT_CWJAP_DEF :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+}
+
+int AT_CIPMUX1(void)			//设置多连接AT命令
+{
+	int i = 0;
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	WIFI_SendData("AT+CIPMUX=1\r\n", 13);
+	for(i = 0;i< 200;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+CIPMUX :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+}
+
+int AT_CIPSERVER(void)			//设置多连接AT命令
+{
+	int i = 0;
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	WIFI_SendData("AT+CIPSERVER=1,8899\r\n", 21);
+	for(i = 0;i< 200;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+CIPSERVER=1,8899 :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+}
+
+
+int AT_CIPSTART(char ConnectID,char *connectType,char *IP,char *port)			//配置ECU连接无线路由器名
+{
+	int i = 0;
+	char AT[100] = { '\0' };
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	sprintf(AT,"AT+CIPSTART=%c,\"%s\",\"%s\",%s\r\n",ConnectID,connectType,IP,port);
+	printf("%s",AT);
+	WIFI_SendData(AT, (strlen(AT)+1));
+	for(i = 0;i< 200;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+AT_CIPSTART :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+}
+
+int AT_CIPCLOSE(char ConnectID)			//配置ECU连接无线路由器名
+{
+	int i = 0;
+	char AT[100] = { '\0' };
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	sprintf(AT,"AT+CIPCLOSE=%c\r\n",ConnectID);
+	printf("%s",AT);
+	WIFI_SendData(AT, (strlen(AT)+1));
+	for(i = 0;i< 200;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+AT_CIPSTART :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+}
+
+
+int AT_CIPSEND(char ConnectID,int size)			//配置ECU连接无线路由器名
+{
+	int i = 0;
+	char AT[100] = { '\0' };
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	sprintf(AT,"AT+CIPSEND=%c,%d\r\n",ConnectID,size);
+	printf("%s",AT);
+	WIFI_SendData(AT, (strlen(AT)+1));
+	for(i = 0;i< 200;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+AT_CIPSEND :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+}
+
+int AT_CIPAP_DEF(void)			//配置ECU连接无线路由器名
+{
+	int i = 0;
+	char AT[100] = { '\0' };
+	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
+	clear_WIFI();
+	sprintf(AT,"AT+CIPAP_DEF=\"10.10.100.254\"\r\n");
+	printf("%s",AT);
+	WIFI_SendData(AT, (strlen(AT)+1));
+	for(i = 0;i< 200;i++)
+	{
+		if(detectionOK(Cur))
+		{
+			printf("AT+AT_CIPAP_DEF :+ok\n");
+			clear_WIFI();
+			rt_mutex_release(wifi_uart_lock);
+			return 0;
+		}
+		rt_hw_ms_delay(10);
+	}
+	clear_WIFI();
+	rt_mutex_release(wifi_uart_lock);
+	return -1;
+}
+
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 void Send(char *data, int num)
@@ -3014,6 +3346,19 @@ FINSH_FUNCTION_EXPORT(SendToSocketC , Send SOCKET C.)
 
 FINSH_FUNCTION_EXPORT(WIFI_Create ,WIFI Create Socket)
 
+FINSH_FUNCTION_EXPORT(WIFI_SendData ,WIFI_SendData)
+FINSH_FUNCTION_EXPORT(AT_CWMODE3 ,AT CWMODE 3)
+FINSH_FUNCTION_EXPORT(AT_RST ,AT reset)
+FINSH_FUNCTION_EXPORT(AT_CWSAP ,AT_CWSAP)
+FINSH_FUNCTION_EXPORT(AT_CWJAP_DEF ,AT_CWJAP_DEF)
+FINSH_FUNCTION_EXPORT(AT_CIPMUX1 ,AT_CIPMUX1)
+FINSH_FUNCTION_EXPORT(AT_CIPSERVER ,AT_CIPSERVER)
 
+FINSH_FUNCTION_EXPORT(AT_CIPSTART ,AT_CIPSTART)
+FINSH_FUNCTION_EXPORT(AT_CIPCLOSE ,AT_CIPCLOSE)
+FINSH_FUNCTION_EXPORT(AT_CIPSEND ,AT_CIPSEND)
+FINSH_FUNCTION_EXPORT(detectionIPD ,detectionIPD)
 
+FINSH_FUNCTION_EXPORT(AT_CIPAP_DEF ,AT_CIPAP_DEF)
 #endif
+

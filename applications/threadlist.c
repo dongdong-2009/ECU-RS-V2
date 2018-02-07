@@ -226,8 +226,8 @@ void rt_init_thread_entry(void* parameter)
 	//RFM_off();
 	rt_hw_led_init();
 #ifdef USR_MODULE
-	uart5_init(57600);					//USR模块相应波特率 串口初始化
-	//uart5_init(115200);					//USR模块相应波特率 串口初始化
+	//uart5_init(57600);					//USR模块相应波特率 串口初始化
+	uart5_init(115200);					//USR模块相应波特率 串口初始化
 #endif
 
 #ifdef RAK475_MODULE	

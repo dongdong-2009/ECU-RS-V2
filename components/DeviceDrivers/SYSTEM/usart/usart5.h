@@ -100,7 +100,10 @@ int SendToSocketA(char *data ,int length,unsigned char ID[8]);
 int SendToSocketB(char *data ,int length);
 int SendToSocketC(char *data ,int length);
 int InitWorkMode(void);
+int AT_CIPSEND(char ConnectID,int size);
 
+int AT_CIPMUX1(void);			//设置多连接AT命令
+int AT_CIPSERVER(void);			//设置多连接AT命令
 #endif
 
 

@@ -270,7 +270,7 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 			SendToSocketA(SendData ,16,ID);			
 		}
 		
-#if 1
+#if 0
 	for(i=0;i<length+9;i++)
 	{
 		SEGGER_RTT_printf(0, "%02x ",SendData[i]);

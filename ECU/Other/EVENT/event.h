@@ -32,5 +32,8 @@ void process_HeartBeatEvent(void);		//处理心跳时间
 void process_WIFI(unsigned char * ID);	//处理WIFI事件
 void process_KEYEvent(void);		//处理按键事件
 int process_WIFI_RST(void);			//处理复位时间
+void process_WIFIEvent_ESP07S(void);
+void WIFI_GetEvent_ESP07S(void);
 
 #endif /*__EVENT_H__*/
+

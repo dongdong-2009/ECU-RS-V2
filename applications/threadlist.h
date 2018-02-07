@@ -20,7 +20,7 @@
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-#define WIFI_USE 
+//#define WIFI_USE 
 //restartThread parameter
 typedef enum THREADTYPE {
 	TYPE_LED = 1,
