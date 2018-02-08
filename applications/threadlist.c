@@ -237,7 +237,7 @@ void rt_init_thread_entry(void* parameter)
 	WIFI_Reset();
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
-	initUSRLock();
+	initSocketArgs();
 	sysDirDetection();
 }
 

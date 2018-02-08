@@ -113,32 +113,32 @@ int ResolveWired(const char *string,IP_t *IPAddr,IP_t *MSKAddr,IP_t *GWAddr,IP_t
 
 }
 
-void App_GetBaseInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 				//获取基本信息请求
+void App_GetBaseInfo(int Data_Len,const char *recvbuffer) 				//获取基本信息请求
 {
 	char sofewareVersion[50];
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 1 ",(char *)recvbuffer);
 	
 	sprintf(sofewareVersion,"%s_%s.%s",ECU_VERSION,MAJORVERSION,MINORVERSION);
-	APP_Response_BaseInfo(ID,ecu,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo);
+	APP_Response_BaseInfo(ecu,ECU_VERSION_LENGTH,sofewareVersion,inverterInfo);
 }
 
-void App_GetSystemInfo(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_GetSystemInfo(int Data_Len,const char *recvbuffer)
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 2 ",(char *)recvbuffer);
 	//先对比ECUID是否匹配
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{	//匹配成功进行相应的操作
 		SEGGER_RTT_printf(0, "COMMAND_SYSTEMINFO  Mapping\n");
-		APP_Response_SystemInfo(ID,0x00,inverterInfo,ecu.validNum);
+		APP_Response_SystemInfo(0x00,inverterInfo,ecu.validNum);
 	}	else
 	{	//不匹配
 		SEGGER_RTT_printf(0, "COMMAND_SYSTEMINFO   Not Mapping");
-		APP_Response_SystemInfo(ID,0x01,inverterInfo,0);
+		APP_Response_SystemInfo(0x01,inverterInfo,0);
 	}
 
 }
 
-void App_GetPowerCurve(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_GetPowerCurve(int Data_Len,const char *recvbuffer)
 {
 	char date[9];
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 3 ",(char *)recvbuffer);
@@ -148,30 +148,30 @@ void App_GetPowerCurve(unsigned char * ID,int Data_Len,const char *recvbuffer)
 	//匹配成功进行相应操作
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{
-		APP_Response_PowerCurve(0x00,ID,date);
+		APP_Response_PowerCurve(0x00,date);
 	}else
 	{
-		APP_Response_PowerCurve(0x01,ID,date);
+		APP_Response_PowerCurve(0x01,date);
 	}
 
 }
 
-void App_GetGenerationCurve(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_GetGenerationCurve(int Data_Len,const char *recvbuffer)
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 4 ",(char *)recvbuffer);
 
 	//匹配成功进行相应操作
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{
-		APP_Response_GenerationCurve(0x00,ID,recvbuffer[29]);
+		APP_Response_GenerationCurve(0x00,recvbuffer[29]);
 	}else
 	{
-		APP_Response_GenerationCurve(0x01,ID,recvbuffer[29]);
+		APP_Response_GenerationCurve(0x01,recvbuffer[29]);
 	}
 }
 
 
-void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_SetNetwork(int Data_Len,const char *recvbuffer)
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 5 ",(char *)recvbuffer);
 	//先对比ECUID是否匹配
@@ -182,7 +182,7 @@ void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		inverter_info *curinverter = inverterInfo;
 		AddNum = (WIFI_Recv_SocketA_LEN - 31)/6;
 		printf("num:%d\n",AddNum);
-		APP_Response_SetNetwork(ID,0x00);
+		APP_Response_SetNetwork(0x00);
 		//将数据写入EEPROM
 		phone_add_inverter(AddNum,(char *)&recvbuffer[28]);	
 		
@@ -196,13 +196,13 @@ void App_SetNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		restartThread(TYPE_DATACOLLECT);
 	}	else
 	{	//不匹配
-		APP_Response_SetNetwork(ID,0x01);
+		APP_Response_SetNetwork(0x01);
 		SEGGER_RTT_printf(0, "COMMAND_SETNETWORK   Not Mapping");
 	}
 
 }
 
-void App_SetTime(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//ECU时间设置
+void App_SetTime(int Data_Len,const char *recvbuffer) 			//ECU时间设置
 {
 	char setTime[15];
 	char getTime[15];
@@ -228,18 +228,18 @@ void App_SetTime(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//EC
 		set_time(setTime);
 		//重启main线程
 		restartThread(TYPE_DATACOLLECT);	
-		APP_Response_SetTime(ID,0x00);
+		APP_Response_SetTime(0x00);
 	}
 	else
 	{
-		APP_Response_SetTime(ID,0x01);
+		APP_Response_SetTime(0x01);
 	}
 	
 
 }
 
 
-void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_SetWiredNetwork(int Data_Len,const char *recvbuffer)
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 7 ",(char *)recvbuffer);	
 
@@ -249,7 +249,7 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		char buff[200] = {'\0'};
 		IP_t IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr;
 		//检查是DHCP  还是固定IP
-		APP_Response_SetWiredNetwork(0x00,ID);
+		APP_Response_SetWiredNetwork(0x00);
 		ModeFlag = ResolveWired(&recvbuffer[28],&IPAddr,&MSKAddr,&GWAddr,&DNS1Addr,&DNS2Addr);
 		if(ModeFlag == 0x00)		//DHCP
 		{
@@ -271,25 +271,25 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 	}	
 	else
 	{
-		APP_Response_SetWiredNetwork(0x01,ID);
+		APP_Response_SetWiredNetwork(0x01);
 	}
 
 }
 
-void App_GetECUHardwareStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_GetECUHardwareStatus(int Data_Len,const char *recvbuffer)
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 8 ",(char *)recvbuffer);
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{	//匹配成功进行相应的操作
-		APP_Response_GetECUHardwareStatus(ID,0x00);
+		APP_Response_GetECUHardwareStatus(0x00);
 	}else
 	{
-		APP_Response_GetECUHardwareStatus(ID,0x01);
+		APP_Response_GetECUHardwareStatus(0x01);
 	}
 }
 
 
-void App_SetWIFIPasswd(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_SetWIFIPasswd(int Data_Len,const char *recvbuffer)
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 10 ",(char *)recvbuffer);
 	//先对比ECUID是否匹配
@@ -308,35 +308,35 @@ void App_SetWIFIPasswd(unsigned char * ID,int Data_Len,const char *recvbuffer)
 				
 		if(!memcmp(EEPROMPasswd,OldPassword,oldLen))
 		{
-			APP_Response_SetWifiPassword(ID,0x00);
+			APP_Response_SetWifiPassword(0x00);
 			WIFI_ChangePasswd(NewPassword);
 			Write_WIFI_PW(NewPassword,newLen);
 		}else
 		{
-			APP_Response_SetWifiPassword(ID,0x02);
+			APP_Response_SetWifiPassword(0x02);
 		}
 								
 	}	else
 	{	//不匹配
-		APP_Response_SetWifiPassword(ID,0x01);
+		APP_Response_SetWifiPassword(0x01);
 	}
 
 }
 
-void App_GetIDInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//获取ID信息
+void App_GetIDInfo(int Data_Len,const char *recvbuffer) 			//获取ID信息
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 11 ",(char *)recvbuffer);
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{
-		APP_Response_GetIDInfo(0x00,ID,inverterInfo);
+		APP_Response_GetIDInfo(0x00,inverterInfo);
 	}else
 	{
-		APP_Response_GetIDInfo(0x01,ID,inverterInfo);
+		APP_Response_GetIDInfo(0x01,inverterInfo);
 	}
 	
 }
 
-void App_GetTime(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//获取时间
+void App_GetTime(int Data_Len,const char *recvbuffer) 			//获取时间
 {
 	char Time[15] = {'\0'};
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 12 ",(char *)recvbuffer);
@@ -344,15 +344,15 @@ void App_GetTime(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//获
 	Time[14] = '\0';
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{
-		APP_Response_GetTime(0x00,ID,Time);
+		APP_Response_GetTime(0x00,Time);
 	}else
 	{
-		APP_Response_GetTime(0x01,ID,Time);
+		APP_Response_GetTime(0x01,Time);
 	}
 
 }
 
-void App_GetFlashSize(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_GetFlashSize(int Data_Len,const char *recvbuffer)
 {
 	int result;
 	long long cap;
@@ -364,21 +364,21 @@ void App_GetFlashSize(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		result = dfs_statfs("/", &buffer);
 		if (result != 0)
 		{
-			APP_Response_FlashSize(0x00,ID,0);
+			APP_Response_FlashSize(0x00,0);
 			return;
 		}
 		cap = buffer.f_bsize * buffer.f_bfree / 1024;
 
-		APP_Response_FlashSize(0x00,ID,(unsigned int)cap);
+		APP_Response_FlashSize(0x00,(unsigned int)cap);
 	}else
 	{
-		APP_Response_FlashSize(0x01,ID,0);
+		APP_Response_FlashSize(0x01,0);
 	}
 
 
 }
 
-void App_GetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_GetWiredNetwork(int Data_Len,const char *recvbuffer)
 {
 	unsigned int addr = 0;
 	extern struct netif *netif_list;
@@ -427,18 +427,18 @@ void App_GetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		//检查是DHCP	还是固定IP
 		ModeFlag = get_DHCP_Status();
 			  
-		APP_Response_GetWiredNetwork(0x00,ID,ModeFlag,IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr,ecu.MacAddress);
+		APP_Response_GetWiredNetwork(0x00,ModeFlag,IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr,ecu.MacAddress);
 		
 	}else
 	{
-		APP_Response_GetWiredNetwork(0x01,ID,ModeFlag,IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr,ecu.MacAddress);
+		APP_Response_GetWiredNetwork(0x01,ModeFlag,IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr,ecu.MacAddress);
 	}
 
 }
 
 
 
-void App_SetChannel(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_SetChannel(int Data_Len,const char *recvbuffer)
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 15 ",(char *)recvbuffer);
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
@@ -446,7 +446,7 @@ void App_SetChannel(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		unsigned char old_channel = 0x00;
 		unsigned char new_channel = 0x00;
 	
-		APP_Response_SetChannel(ID,0x00,ecu.channel,ecu.Signal_Level);
+		APP_Response_SetChannel(0x00,ecu.channel,ecu.Signal_Level);
 		old_channel = switchChannel((unsigned char *)&recvbuffer[28]);
 		new_channel = switchChannel((unsigned char *)&recvbuffer[30]);	
 
@@ -457,20 +457,20 @@ void App_SetChannel(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		restartThread(TYPE_DATACOLLECT);
 	}	else
 	{	//不匹配
-		APP_Response_SetChannel(ID,0x01,NULL,NULL);
+		APP_Response_SetChannel(0x01,NULL,NULL);
 	}
 
 }
 
 
-void App_SetIOInitStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void App_SetIOInitStatus(int Data_Len,const char *recvbuffer)
 {
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 16 ",(char *)recvbuffer);
 	//先对比ECUID是否匹配
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{//匹配成功进行相应的操作
 		//获取IO初始状态
-		APP_Response_IOInitStatus(ID,0x00);
+		APP_Response_IOInitStatus(0x00);
 		
 		//0：低电平（关闭心跳功能）1：高电平（打开心跳功能）
 		if(recvbuffer[25] == '0'){
@@ -484,12 +484,12 @@ void App_SetIOInitStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		restartThread(TYPE_DATACOLLECT);
 	}else
 	{
-		APP_Response_IOInitStatus(ID,0x01);
+		APP_Response_IOInitStatus(0x01);
 	}
 
 }
 
-void APP_GetRSDHistoryInfo(unsigned char * ID,int Data_Len,const char *recvbuffer)
+void APP_GetRSDHistoryInfo(int Data_Len,const char *recvbuffer)
 {
 	char date[9] = {'\0'};
 	char UID[7] = {'\0'};
@@ -501,27 +501,27 @@ void APP_GetRSDHistoryInfo(unsigned char * ID,int Data_Len,const char *recvbuffe
 	
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{
-		APP_Response_GetRSDHistoryInfo(0x00,ID,date,UID);
+		APP_Response_GetRSDHistoryInfo(0x00,date,UID);
 
 	}else
 	{
-		APP_Response_GetRSDHistoryInfo(0x01,ID,date,UID);
+		APP_Response_GetRSDHistoryInfo(0x01,date,UID);
 
 	}
 }
 
 
-void APP_GetShortAddrInfo(unsigned char * ID,int Data_Len,const char *recvbuffer) 			//获取ID信息
+void APP_GetShortAddrInfo(int Data_Len,const char *recvbuffer) 			//获取ID信息
 {
 	
 	
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 18 ",(char *)recvbuffer);
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{
-		APP_Response_GetShortAddrInfo(0x00,ID,inverterInfo);
+		APP_Response_GetShortAddrInfo(0x00,inverterInfo);
 	}else
 	{
-		APP_Response_GetShortAddrInfo(0x01,ID,inverterInfo);
+		APP_Response_GetShortAddrInfo(0x01,inverterInfo);
 	}
 	
 }

@@ -19,8 +19,6 @@
 #include "SEGGER_RTT.h"
 #include "watchdog.h"
 
-extern eRecvSM eStateMachine;
-extern unsigned short Cur;
 
 static signed char usart_flag = 0;
 //通用定时器3中断初始化
@@ -70,8 +68,6 @@ void TIM3_IRQHandler(void)   //TIM3中断
 			if( usart_flag > 1)
 			{
 				SEGGER_RTT_printf(0, "TIM3_IRQHandler\n");
-				eStateMachine = EN_RECV_ST_GET_SCOKET_HEAD;
-				Cur = 0;
 				TIM3_Int_Deinit();
 			}
 		}

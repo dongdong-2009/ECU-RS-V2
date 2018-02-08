@@ -10,17 +10,112 @@
 #include "string.h"
 #include "rthw.h"
 #include "rtthread.h"
+#include "datetime.h"
 
-rt_mutex_t usr_wifi_lock = RT_NULL;
 extern unsigned char LED_Status;
+Socket_Cfg client_arg;
+Socket_Cfg control_client_arg;
 
-
-//初始化USR锁
-void initUSRLock(void)
+void initSocketArgs(void)
 {
-	usr_wifi_lock = rt_mutex_create("usr_wifi_lock", RT_IPC_FLAG_FIFO);
+	FILE *fp;
+	char *buff = NULL;
+	client_arg.port1 = CLIENT_SERVER_PORT1;
+	client_arg.port2 = CLIENT_SERVER_PORT2;
+	strcpy(client_arg.domain, CLIENT_SERVER_DOMAIN);
+	strcpy(client_arg.ip, CLIENT_SERVER_IP);
 
+	buff = malloc(512);
+	memset(buff,'\0',512);
+	//初始化电量上传参数
+	fp = fopen("/config/datacent.con", "r");
+	if(fp)
+	{
+		while(1)
+		{
+			memset(buff, '\0', 512);
+			fgets(buff, 512, fp);
+			if(!strlen(buff))
+				break;
+			if(!strncmp(buff, "Domain", 6))
+			{
+				strcpy(client_arg.domain, &buff[7]);
+				if('\n' == client_arg.domain[strlen(client_arg.domain)-1])
+					client_arg.domain[strlen(client_arg.domain)-1] = '\0';
+			}
+			if(!strncmp(buff, "IP", 2))
+			{
+				strcpy(client_arg.ip, &buff[3]);
+				if('\n' == client_arg.ip[strlen(client_arg.ip)-1])
+					client_arg.ip[strlen(client_arg.ip)-1] = '\0';
+			}
+			if(!strncmp(buff, "Port1", 5))
+				client_arg.port1=atoi(&buff[6]);
+			if(!strncmp(buff, "Port2", 5))
+				client_arg.port2=atoi(&buff[6]);
+		}
+		fclose(fp);
+	}
+	
+	//初始化远程控制参数
+	control_client_arg.port1 = CONTROL_SERVER_PORT1;
+	control_client_arg.port2 = CONTROL_SERVER_PORT2;
+;	strcpy(control_client_arg.domain, CONTROL_SERVER_DOMAIN);
+	strcpy(control_client_arg.ip, CONTROL_SERVER_IP);
+	fp = fopen("/config/control.con", "r");
+	if(fp)
+	{
+		while(1)
+		{
+			memset(buff, '\0',512);
+			fgets(buff, 512, fp);
+			if(!strlen(buff))
+			break;
+			if(!strncmp(buff, "Domain", 6))
+			{
+				strcpy(control_client_arg.domain, &buff[7]);
+				if('\n' == control_client_arg.domain[strlen(control_client_arg.domain)-1])
+					control_client_arg.domain[strlen(control_client_arg.domain)-1] = '\0';
+			}
+			if(!strncmp(buff, "IP", 2))
+			{
+				strcpy(control_client_arg.ip, &buff[3]);
+				if('\n' == control_client_arg.ip[strlen(control_client_arg.ip)-1])
+					control_client_arg.ip[strlen(control_client_arg.ip)-1] = '\0';
+			}
+			if(!strncmp(buff, "Port1", 5))
+				control_client_arg.port1=atoi(&buff[6]);
+			if(!strncmp(buff, "Port2", 5))
+				control_client_arg.port2=atoi(&buff[6]);
+		}
+		fclose(fp);
+	}
+
+	printf("client_arg.domain:%s\n",client_arg.domain);
+	printf("client_arg.ip:%s\n",client_arg.ip);
+	printf("client_arg.port1:%d\n",client_arg.port1);
+	printf("client_arg.port2:%d\n",client_arg.domain);
+
+	printf("client_arg.domain:%s\n",control_client_arg.domain);
+	printf("client_arg.ip:%s\n",control_client_arg.ip);
+	printf("client_arg.port1:%d\n",control_client_arg.port1);
+	printf("client_arg.port2:%d\n",control_client_arg.port2);
+	
+	
+	free(buff);
+	buff = NULL;
 }
+
+
+int randport(Socket_Cfg cfg)
+{
+	srand((unsigned)acquire_time());
+	if(rand()%2)
+		return cfg.port1;
+	else
+		return cfg.port2;
+}
+
 
 int createsocket(void)					//创建SOCKET连接
 {
@@ -36,14 +131,9 @@ int createsocket(void)					//创建SOCKET连接
 }
 
 int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
-{
-	char domain[100]={'\0'};		//服务器域名
-	char ip[20] = {'\0'};	//服务器IP地址
-	int port[2]={CLIENT_SERVER_PORT1, CLIENT_SERVER_PORT2};	//服务器端口号
+{	
 	struct sockaddr_in serv_addr;
 	struct hostent * host;
-	char buff[512] = {'\0'};
-	FILE *fp;
 
 	//不存在有线连接，直接关闭socket
 	if(rt_hw_GetWiredNetConnect() == 0)
@@ -51,49 +141,17 @@ int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
 		closesocket(fd_sock);
 		return -1;
 	}
-	strcpy(domain, CLIENT_SERVER_DOMAIN);
-	strcpy(ip, CLIENT_SERVER_IP);
-
-	fp = fopen("/config/datacent.con", "r");
-	if(fp)
-	{
-		while(1)
-		{
-			memset(buff, '\0', sizeof(buff));
-			fgets(buff, sizeof(buff), fp);
-			if(!strlen(buff))
-				break;
-			if(!strncmp(buff, "Domain", 6))
-			{
-				strcpy(domain, &buff[7]);
-				if('\n' == domain[strlen(domain)-1])
-					domain[strlen(domain)-1] = '\0';
-			}
-			if(!strncmp(buff, "IP", 2))
-			{
-				strcpy(ip, &buff[3]);
-				if('\n' == ip[strlen(ip)-1])
-					ip[strlen(ip)-1] = '\0';
-			}
-			if(!strncmp(buff, "Port1", 5))
-				port[0]=atoi(&buff[6]);
-			if(!strncmp(buff, "Port2", 5))
-				port[1]=atoi(&buff[6]);
-		}
-		fclose(fp);
-	}
 
 
-
-	host = gethostbyname(domain);
+	host = gethostbyname(client_arg.domain);
 	if(NULL == host)
 	{
 		printmsg(ECU_DBG_CLIENT,"Resolve domain failure");
 	}
 	else
 	{
-		memset(ip, '\0', sizeof(ip));
-		sprintf(ip,"%s",ip_ntoa((ip_addr_t*)*host->h_addr_list));
+		memset(client_arg.ip, '\0', sizeof(client_arg.ip));
+		sprintf(client_arg.ip,"%s",ip_ntoa((ip_addr_t*)*host->h_addr_list));
 	}
 
 	//printf("IP:%s\n", ip);
@@ -102,8 +160,8 @@ int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
 
 	memset(&serv_addr,0,sizeof(struct sockaddr_in));
 	serv_addr.sin_family=AF_INET;
-	serv_addr.sin_port=htons(port[0]);
-	serv_addr.sin_addr.s_addr=inet_addr(ip);
+	serv_addr.sin_port=htons(randport(client_arg));
+	serv_addr.sin_addr.s_addr=inet_addr(client_arg.ip);
 	memset(&(serv_addr.sin_zero),0,8);
 
 	if(-1==connect(fd_sock,(struct sockaddr *)&serv_addr,sizeof(struct sockaddr))){
@@ -119,13 +177,8 @@ int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
 
 int connect_control_socket(int fd_sock)				//通过有线的方式连接服务器
 {
-	char domain[100]={'\0'};		//服务器域名
-	char ip[20] = {'\0'};	//服务器IP地址
-	int port[2]={CONTROL_SERVER_PORT1, CONTROL_SERVER_PORT2};	//服务器端口号
 	struct sockaddr_in serv_addr;
 	struct hostent * host;
-	char buff[512] = {'\0'};
-	FILE *fp;
 
 	//不存在有线连接，直接关闭socket
 	if(rt_hw_GetWiredNetConnect() == 0)
@@ -133,58 +186,22 @@ int connect_control_socket(int fd_sock)				//通过有线的方式连接服务器
 		closesocket(fd_sock);
 		return -1;
 	}
-	strcpy(domain, CONTROL_SERVER_DOMAIN);
-	strcpy(ip, CONTROL_SERVER_IP);
 
-	fp = fopen("/config/control.con", "r");
-		if(fp)
-		{
-			while(1)
-			{
-				memset(buff, '\0', sizeof(buff));
-				fgets(buff, sizeof(buff), fp);
-				if(!strlen(buff))
-					break;
-				if(!strncmp(buff, "Domain", 6))
-				{
-					strcpy(domain, &buff[7]);
-					if('\n' == domain[strlen(domain)-1])
-						domain[strlen(domain)-1] = '\0';
-				}
-				if(!strncmp(buff, "IP", 2))
-				{
-					strcpy(ip, &buff[3]);
-					if('\n' == ip[strlen(ip)-1])
-						ip[strlen(ip)-1] = '\0';
-				}
-				if(!strncmp(buff, "Port1", 5))
-					port[0]=atoi(&buff[6]);
-				if(!strncmp(buff, "Port2", 5))
-					port[1]=atoi(&buff[6]);
-			}
-			fclose(fp);
-		}
-
-
-	host = gethostbyname(domain);
+	host = gethostbyname(control_client_arg.domain);
 	if(NULL == host)
 	{
 		printmsg(ECU_DBG_CONTROL_CLIENT,"Resolve domain failure");
 	}
 	else
 	{
-		memset(ip, '\0', sizeof(ip));
-		sprintf(ip,"%s",ip_ntoa((ip_addr_t*)*host->h_addr_list));
+		memset(control_client_arg.ip, '\0', sizeof(control_client_arg.ip));
+		sprintf(control_client_arg.ip,"%s",ip_ntoa((ip_addr_t*)*host->h_addr_list));
 	}
-
-	//printf("IP:%s\n", ip);
-	//printf("Port1:%d\n", port[0]);
-	//printf("Port2:%d\n", port[1]);
-
+	
 	memset(&serv_addr,0,sizeof(struct sockaddr_in));
 	serv_addr.sin_family=AF_INET;
-	serv_addr.sin_port=htons(port[0]);
-	serv_addr.sin_addr.s_addr=inet_addr(ip);
+	serv_addr.sin_port=htons(randport(control_client_arg));
+	serv_addr.sin_addr.s_addr=inet_addr(control_client_arg.ip);
 	memset(&(serv_addr.sin_zero),0,8);
 
 	if(-1==connect(fd_sock,(struct sockaddr *)&serv_addr,sizeof(struct sockaddr))){
@@ -349,49 +366,6 @@ int Control_client_socket_init(void)
 	//小于0  表示创建失败
 	if(ret < 0) return ret;
 	return sockfd;
-}
-
-
-int wifi_socketb_format(char *data ,int length)
-{
-	char head[9] = {'\0'};
-	char *p = NULL;
-	int i = 0,retlength = 0;
-
-	head[0] = 'b';
-#ifdef USR_MODULE	
-	head[1] = 0x00;
-#endif 
-#ifdef RAK475_MODULE	
-		head[1] = 0x30;
-#endif 
-
-	head[2] = 0x00;
-	head[3] = 0x00;
-	head[4] = 0x00;
-	head[5] = 0x00;
-	head[6] = 0x00;
-	head[7] = 0x00;
-	head[8] = 0x00;
-	
-	if(((length -3)%14) != 0)
-	{
-		for(p = data,i = 0;p <= (data+length-9);p++,i++)
-		{
-			if(!memcmp(p,head,9))
-			{
-				memcpy(p,p+9,(length-9-i));
-				length -= 9;
-				data[length] = '\0';
-				retlength = length;
-			}
-		}
-	}else
-	{
-		retlength = length;
-	}
-	
-	return retlength;
 }
 
 int recv_response(int fd_sock, char *readbuff)
@@ -565,7 +539,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 		//失败情况下通过无线发送
 #ifdef WIFI_USE
 		int ret = 0,i = 0;
-		ret = SendToSocketB(sendbuff, sendLength);
+		ret = SendToSocketB(client_arg.ip,randport(client_arg),sendbuff, sendLength);
 		if(ret == -1)
 		{
 			LED_Status = 0;
@@ -576,18 +550,19 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
 		{
 			if(WIFI_Recv_SocketB_Event == 1)
 			{
-				*recvLength = wifi_socketb_format((char *)WIFI_RecvSocketBData ,WIFI_Recv_SocketB_LEN);
+				*recvLength = WIFI_Recv_SocketB_LEN;
 				memcpy(recvbuff,WIFI_RecvSocketBData,*recvLength);
 				recvbuff[*recvLength] = '\0';
-					print2msg(ECU_DBG_CLIENT,"serverCommunication_Client",recvbuff);
+				//sprint2msg(ECU_DBG_CLIENT,"serverCommunication_Client",recvbuff);
 				WIFI_Recv_SocketB_Event = 0;
 				LED_Status = 1;
 				//WIFI_Close(SOCKET_B);
+				AT_CIPCLOSE('3');
 				return 0;
 			}
 			rt_hw_ms_delay(10);
 		}
-		//WIFI_Close(SOCKET_B);
+		AT_CIPCLOSE('3');
 		LED_Status = 0;
 		return -1;
 #endif
@@ -676,7 +651,7 @@ int serverCommunication_Control(char *sendbuff,int sendLength,char *recvbuff,int
 		//失败情况下通过无线发送
 #ifdef WIFI_USE
 		int ret = 0,i = 0;
-		ret = SendToSocketC(sendbuff, sendLength);
+		ret = SendToSocketC(control_client_arg.ip,randport(control_client_arg),sendbuff, sendLength);
 		if(ret == -1)
 			return -1;
 		for(i = 0;i<(Timeout/10);i++)
@@ -686,13 +661,15 @@ int serverCommunication_Control(char *sendbuff,int sendLength,char *recvbuff,int
 				*recvLength = WIFI_Recv_SocketC_LEN;
 				memcpy(recvbuff,WIFI_RecvSocketCData,*recvLength);
 				recvbuff[*recvLength] = '\0';
-				print2msg(ECU_DBG_CONTROL_CLIENT,"serverCommunication_Control:",recvbuff);
+				//print2msg(ECU_DBG_CONTROL_CLIENT,"serverCommunication_Control:",recvbuff);
 				WIFI_Recv_SocketC_Event = 0;
 				//WIFI_Close(SOCKET_C);
+				AT_CIPCLOSE('3');
 				return 0;
 			}
 			rt_hw_ms_delay(10);
 		}
+		AT_CIPCLOSE('4');
 		//WIFI_Close(SOCKET_C);
 		return -1;
 #endif
@@ -706,25 +683,6 @@ int serverCommunication_Control(char *sendbuff,int sendLength,char *recvbuff,int
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
-void testS1()
-{
-	char sendbuff[100] = "1234567876543456765432";
-	char recvbuff[100] = {'\0'};
-	int sendLength = 22;
-	int recvLength = 100;
-	serverCommunication_Client(sendbuff,sendLength,recvbuff,&recvLength,5000);
 
-}
-FINSH_FUNCTION_EXPORT(testS1, eg:testS1());
-
-void testS2()
-{
-	char sendbuff[100] = "1234567876543456765432";
-	char recvbuff[100] = {'\0'};
-	int sendLength = 22;
-	int recvLength = 100;
-	serverCommunication_Control(sendbuff,sendLength,recvbuff,&recvLength,5000);
-
-}
-FINSH_FUNCTION_EXPORT(testS2, eg:testS2());
+FINSH_FUNCTION_EXPORT(initSocketArgs, eg:initSocketArgs());
 #endif

@@ -13,38 +13,6 @@
 #include "stdio.h"	
 #include "sys.h" 
 
-typedef enum
-{ 
-    EN_RECV_ST_GET_SCOKET_HEAD 	= 0,	//接收Socket数据头
-    EN_RECV_ST_GET_SCOKET_ID    = 1,	//接收手机Socket ID
-    EN_RECV_ST_GET_A_HEAD      	= 2,	//接收报文数据头
-    EN_RECV_ST_GET_A_LEN        = 3,	//接收报文数据长度   其中数据部分的长度为接收到长度减去12个字节
-    EN_RECV_ST_GET_A_DATA       = 4,	//接收报文数据部分数据
-    EN_RECV_ST_GET_A_END        = 5,	//接收报文END结尾标志
-	
-		EN_RECV_ST_GET_B_HEAD       = 6,
-		EN_RECV_ST_GET_B_LEN        = 7,
-		EN_RECV_ST_GET_B_DATA       = 8,
-		EN_RECV_ST_GET_B_END        = 9,
-	
-		EN_RECV_ST_GET_C_HEAD      	= 10,	//接收报文数据头
-    EN_RECV_ST_GET_C_LEN        = 11,	//接收报文数据长度   其中数据部分的长度为接收到长度减去12个字节
-    EN_RECV_ST_GET_C_DATA       = 12,	//接收报文数据部分数据
-    EN_RECV_ST_GET_C_END        = 13,	//接收报文END结尾标志
-
-	EN_RECV_ST_GET_SOCKET_DATA      	= 14,
-	
-} eRecvSM;// receive state machin
-
-typedef enum 
-{
-	EN_RECV_TYPE_UNKNOWN	= 0,				//未知数据包
-	EN_RECV_TYPE_A    		= 1,				//采集的是SOCKET A的数据
-	EN_RECV_TYPE_B    		= 2,				//采集的是SOCKET B的数据
-	EN_RECV_TYPE_C    		= 3,				//采集的是SOCKET C的数据
-	EN_RECV_TYPE_SOCKET		= 4,
-} eRecvType;
-
 typedef enum 
 {
 	SOCKET_A = 1,
@@ -54,14 +22,12 @@ typedef enum
 
 #define USART_REC_LEN  				2048  	//定义最大接收字节数 2048
 #define SOCKETA_LEN						2048
-#define SOCKETB_LEN						1408		
-#define SOCKETC_LEN						2048
-#define SOCKET_LEN						6
+#define SOCKETB_LEN						1460
+#define SOCKETC_LEN						1460
 
 extern unsigned char WIFI_RecvSocketAData[SOCKETA_LEN];
 extern unsigned char WIFI_Recv_SocketA_Event;
 extern unsigned int WIFI_Recv_SocketA_LEN;
-extern unsigned char ID_A[9];
 
 extern unsigned char WIFI_RecvSocketBData[SOCKETB_LEN];
 extern unsigned char WIFI_Recv_SocketB_Event;
@@ -70,40 +36,35 @@ extern unsigned int WIFI_Recv_SocketB_LEN;
 extern unsigned char WIFI_RecvSocketCData[SOCKETC_LEN];
 extern unsigned char WIFI_Recv_SocketC_Event;
 extern unsigned int WIFI_Recv_SocketC_LEN;
+
 unsigned short packetlen_A(unsigned char *packet);
 unsigned short packetlen_B(unsigned char *packet);
 unsigned short packetlen_C(unsigned char *packet);
 	  	
 
 int WIFI_SendData(char *data, int num);
-void WIFI_GetEvent(void);
 void uart5_init(u32 bound);
 
-int AT(void);
-int AT_ENTM(void);
-int AT_WAP(char *ECUID12);
-int AT_WAKEY(char *NewPasswd);
-int WIFI_ChangePasswd(char *NewPasswd);
 int WIFI_Reset(void);
-int AT_Z(void);
-int WIFI_SoftReset(void);
-
 int WIFI_Test(void);
-int WIFI_Factory(char *ECUID12);
 int WIFI_Factory_Passwd(void);
+int AT_RST(void);			//复位WIFI模块
+int WIFI_Factory(char *ECUID12);
+int WIFI_ChangePasswd(char *NewPasswd);
 
-int WIFI_Create(eSocketType Type);
-int WIFI_Close(eSocketType Type);
-int WIFI_QueryStatus(eSocketType Type);
-
-int SendToSocketA(char *data ,int length,unsigned char ID[8]);
-int SendToSocketB(char *data ,int length);
-int SendToSocketC(char *data ,int length);
+int SendToSocketA(char *data ,int length);
+int SendToSocketB(char *IP ,int port,char *data ,int length);
+int SendToSocketC(char *IP ,int port,char *data ,int length);
 int InitWorkMode(void);
 int AT_CIPSEND(char ConnectID,int size);
+int AT_CIPSTART(char ConnectID,char *connectType,char *IP,int port);
+int AT_CIPCLOSE(char ConnectID);			//配置ECU连接无线路由器名
 
 int AT_CIPMUX1(void);			//设置多连接AT命令
 int AT_CIPSERVER(void);			//设置多连接AT命令
+int AT_CIPSTO(void);		//配置WIFI模块作为TCP服务器时的超时时间
+int InitWorkMode(void);
+
 #endif
 
 

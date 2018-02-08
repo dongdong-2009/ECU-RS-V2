@@ -18,6 +18,7 @@
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
 #include "threadlist.h"
+#include "usart5.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -93,10 +94,6 @@ void ECUEvent_thread_entry(void* parameter)
 	int fileflag = 0; 
 	IPConfig_t IPconfig;
 	rt_thread_delay(RT_TICK_PER_SECOND*START_TIME_EVENT);
-
-	AT_CIPMUX1();
-	AT_CIPSERVER();
-	
 	add_APP_functions();
 	get_mac((unsigned char*)ecu.MacAddress);			//ECU 有线Mac地址
 	fileflag = file_get_array(array, 5, "/config/staticIP.con");
@@ -105,10 +102,14 @@ void ECUEvent_thread_entry(void* parameter)
 		getAddr(array, 5,&IPconfig);
 		StaticIP(IPconfig.IPAddr,IPconfig.MSKAddr,IPconfig.GWAddr,IPconfig.DNS1Addr,IPconfig.DNS2Addr);
 	}
+
+	AT_CIPMUX1();
+	AT_CIPSERVER();
+	AT_CIPSTO();
+	
 	while(1)
 	{	
 		//检测WIFI事件
-		//process_WIFIEvent();
 		process_WIFIEvent_ESP07S();
 		//检测按键事件
 		if(KEY_FormatWIFI_Event == 1)

@@ -70,7 +70,7 @@ int communication_with_EMA(int next_cmd_id)
 				{
 					//ECU向EMA发送请求命令指令
 					msg_REQ(send_buffer);
-					ret = SendToSocketC(send_buffer, strlen(send_buffer));
+					ret = SendToSocketC(control_client_arg.ip,randport(control_client_arg),send_buffer, strlen(send_buffer));
 					if(ret == -1)
 					{
 						rt_free(recv_buffer);
@@ -92,6 +92,7 @@ int communication_with_EMA(int next_cmd_id)
 					{
 						rt_free(recv_buffer);
 						rt_free(send_buffer);
+						AT_CIPCLOSE('4');
 						return -1;
 					}
 
@@ -101,6 +102,7 @@ int communication_with_EMA(int next_cmd_id)
 					print2msg(ECU_DBG_CONTROL_CLIENT,"communication_with_EMA recv",recv_buffer);
 					//校验命令
 					if(msg_format_check(recv_buffer) < 0){
+						AT_CIPCLOSE('4');
 						continue;
 					}
 					//解析命令号
@@ -122,6 +124,7 @@ int communication_with_EMA(int next_cmd_id)
 				}
 				//EMA命令发送完毕
 				else if(cmd_id == 100){
+					AT_CIPCLOSE('4');
 					break;
 				}
 				else{
@@ -131,8 +134,9 @@ int communication_with_EMA(int next_cmd_id)
 							ecu.ECUID12, cmd_id);
 				}
 				//将消息发送给EMA(自动计算长度,补上回车)
-				SendToSocketC(send_buffer, strlen(send_buffer));
+				SendToSocketC(control_client_arg.ip,randport(control_client_arg),send_buffer, strlen(send_buffer));
 				printmsg(ECU_DBG_CONTROL_CLIENT,">>End");
+				AT_CIPCLOSE('4');
 				//如果功能函数返回值小于0,则返回-1,程序会自动退出
 				if(next_cmd_id < 0){
 					rt_free(recv_buffer);

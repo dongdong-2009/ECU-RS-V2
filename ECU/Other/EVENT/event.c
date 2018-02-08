@@ -58,7 +58,7 @@ enum CommandID{
 	P0050, P0051, P0052, P0053, P0054, P0055, P0056, P0057, P0058, P0059, //50-59
 };
 
-void (*pfun_Phone[100])(unsigned char * id,int DataLen,const char *recvbuffer);
+void (*pfun_Phone[100])(int DataLen,const char *recvbuffer);
 
 void add_APP_functions(void)
 {
@@ -89,7 +89,7 @@ void add_APP_functions(void)
 /*  Function Implementations                                                 */
 /*****************************************************************************/
 //WIFI事件处理
-void process_WIFI(unsigned char * ID)
+void process_WIFI(void)
 {
 	ResolveFlag =  Resolve_RecvData((char *)WIFI_RecvSocketAData,&Data_Len,&Command_Id);
 	if(ResolveFlag == 0)
@@ -98,7 +98,7 @@ void process_WIFI(unsigned char * ID)
 		//函数指针不为空，则运行对应的函数
 		if(pfun_Phone[Command_Id%100])
 		{
-			(*pfun_Phone[Command_Id%100])(ID,Data_Len,(char *)WIFI_RecvSocketAData);
+			(*pfun_Phone[Command_Id%100])(Data_Len,(char *)WIFI_RecvSocketAData);
 		}
 		
 	}
@@ -145,22 +145,6 @@ int HardwareTest(char testItem)
 }
 
 
-void process_WIFIEvent(void)
-{
-	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
-	//检测WIFI事件
-	WIFI_GetEvent();
-	rt_mutex_release(wifi_uart_lock);
-	//判断是否有WIFI接收事件
-	if(WIFI_Recv_SocketA_Event == 1)
-	{
-		SEGGER_RTT_printf(0,"WIFI_Recv_Event start\n");
-		process_WIFI(ID_A);
-		WIFI_Recv_SocketA_Event = 0;
-		SEGGER_RTT_printf(0,"WIFI_Recv_Event end\n");
-	}
-
-}
 void process_WIFIEvent_ESP07S(void)
 {
 	rt_mutex_take(wifi_uart_lock, RT_WAITING_FOREVER);
@@ -171,7 +155,7 @@ void process_WIFIEvent_ESP07S(void)
 	if(WIFI_Recv_SocketA_Event == 1)
 	{
 		SEGGER_RTT_printf(0,"WIFI_Recv_Event start\n");
-		process_WIFI(ID_A);
+		process_WIFI();
 		WIFI_Recv_SocketA_Event = 0;
 		SEGGER_RTT_printf(0,"WIFI_Recv_Event end\n");
 	}
@@ -203,15 +187,19 @@ void process_KEYEvent(void)
 //无线复位处理
 int process_WIFI_RST(void)
 {
-	int ret =1,i = 0;
 	SEGGER_RTT_printf(0, "process_WIFI_RST Start\n");
-	for(i = 0;i<3;i++)
+
+	if(AT_RST() != 0)
 	{
-		ret = WIFI_SoftReset();
-		if(ret == 0) break;
+		WIFI_Reset();
 	}
+
 	SEGGER_RTT_printf(0, "process_WIFI_RST End\n");
-	return ret;
+	rt_hw_s_delay(1);
+	AT_CIPMUX1();
+	AT_CIPSERVER();
+	AT_CIPSTO();
+	return 0;
 }
 
 int setECUID(char *ECUID)

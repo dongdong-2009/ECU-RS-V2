@@ -20,7 +20,7 @@
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-//#define WIFI_USE 
+#define WIFI_USE 
 //restartThread parameter
 typedef enum THREADTYPE {
 	TYPE_LED = 1,
@@ -37,20 +37,12 @@ typedef enum THREADTYPE {
 //使用有人模块
 #define WIFI_MODULE_TYPE	0
 #define USR_MODULE 		
-#else
-//使用RAK475模块
-#define WIFI_MODULE_TYPE	1
-#define RAK475_MODULE	
+
 #endif
 
 #ifdef USR_MODULE
 //socket每次发送的字节数
 #define SIZE_PER_SEND		2700
-#endif 
-
-#ifdef RAK475_MODULE
-//socket每次发送的字节数
-#define SIZE_PER_SEND		3800
 #endif 
 
 //网络通讯地址
