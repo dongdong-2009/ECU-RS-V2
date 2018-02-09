@@ -172,3 +172,8 @@ void ECUClient_thread_entry(void* parameter)
 		ClientDurabletime = acquire_time();		
 	}
 }
+
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+FINSH_FUNCTION_EXPORT(preprocess ,preprocess)
+#endif

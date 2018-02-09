@@ -75,6 +75,7 @@ int communication_with_EMA(int next_cmd_id)
 					{
 						rt_free(recv_buffer);
 						rt_free(send_buffer);
+						printf("1----------->\n");
 						return -1;
 					}
 					memset(send_buffer, '\0', sizeof(send_buffer));
@@ -86,13 +87,14 @@ int communication_with_EMA(int next_cmd_id)
 							WIFI_Recv_SocketC_Event = 0;
 							break;
 						}
-						rt_hw_ms_delay(10);
+						rt_thread_delay(1);
 					}
 					if(flag_failed == 0)
 					{
 						rt_free(recv_buffer);
 						rt_free(send_buffer);
 						AT_CIPCLOSE('4');
+						printf("2----------->\n");
 						return -1;
 					}
 
@@ -141,6 +143,7 @@ int communication_with_EMA(int next_cmd_id)
 				if(next_cmd_id < 0){
 					rt_free(recv_buffer);
 					rt_free(send_buffer);
+					printf("4----------->\n");
 					return -1;
 				}				
 			}
@@ -542,5 +545,7 @@ void commEMA(void)
 	communication_with_EMA(0);
 }
 FINSH_FUNCTION_EXPORT(commEMA, eg:commEMA());
+FINSH_FUNCTION_EXPORT(prealarmprocess, eg:prealarmprocess());
+FINSH_FUNCTION_EXPORT(precontrolprocess, eg:precontrolprocess());
 #endif
 

@@ -215,6 +215,20 @@ int detectionOK(int size)		//¼ì²âµ½OK  ·µ»Ø1   Î´¼ì³öµ½·µ»Ø0
 	return 0;
 }
 
+int detectionUNLINK(int size)		//¼ì²âµ½OK  ·µ»Ø1   Î´¼ì³öµ½·µ»Ø0
+{
+	int i=0;
+	for(i = 0;i<(size-2);i++)
+	{
+		if(!memcmp(&USART_RX_BUF[i],"UNLINK",6))
+		{
+			WIFI_SetConfigOK_Event = 1;
+			return 1;			
+		}
+	}
+	return 0;
+}
+
 
 //ÅÐ¶Ï×Ö·ûÖÐÊÇ·ñÓÐ+IPD
 int detectionIPD(int size)
@@ -329,9 +343,10 @@ int SendToSocketA(char *data ,int length)
 //SOCKET B ·¢ËÍÊý¾Ý
 int SendToSocketB(char *IP ,int port,char *data ,int length)
 {
-	AT_CIPCLOSE('3');
+	WIFI_Recv_SocketB_Event = 0;
 	if(!AT_CIPSTART('3',"TCP",IP ,port))
 	{
+		printf("SendToSocketB: ino AT_CIPSTART\n");
 		return SendToSocket('3',data,length);
 	}
 	return -1;
@@ -340,9 +355,10 @@ int SendToSocketB(char *IP ,int port,char *data ,int length)
 //SOCKET C ·¢ËÍÊý¾Ý
 int SendToSocketC(char *IP ,int port,char *data ,int length)
 {
-	AT_CIPCLOSE('4');
+	WIFI_Recv_SocketC_Event = 0;
 	if(!AT_CIPSTART('4',"TCP",IP ,port))
 	{
+		printf("SendToSocketC: ino AT_CIPSTART\n");
 		return SendToSocket('4',data,length);
 	}
 	return -1;
@@ -597,12 +613,12 @@ int AT_CIPSTART(char ConnectID,char *connectType,char *IP,int port)			//ÅäÖÃECUÁ
 	sprintf(AT,"AT+CIPSTART=%c,\"%s\",\"%s\",%d\r\n",ConnectID,connectType,IP,port);
 	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
-	for(i = 0;i< 300;i++)
+	for(i = 0;i< 500;i++)
 	{
 		detectionOK(Cur);
 		if(1 == WIFI_SetConfigOK_Event)
 		{
-			printf("AT+AT_CIPSTART :+ok\n");
+			printf("AT+AT_CIPSTART :%c +ok\n",ConnectID);
 			clear_WIFI();
 			WIFI_SetConfigOK_Event = 0;
 			return 0;
@@ -622,12 +638,13 @@ int AT_CIPCLOSE(char ConnectID)			//ÅäÖÃECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû
 	sprintf(AT,"AT+CIPCLOSE=%c\r\n",ConnectID);
 	//printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
-	for(i = 0;i< 50;i++)
+	for(i = 0;i< 100;i++)
 	{
 		detectionOK(Cur);
+		detectionUNLINK(Cur);
 		if(1 == WIFI_SetConfigOK_Event)
 		{
-			printf("AT+AT_CIPSTART :+ok\n");
+			printf("AT+AT_CIPCLOSE :%c +ok\n",ConnectID);
 			clear_WIFI();
 			WIFI_SetConfigOK_Event = 0;
 			return 0;
@@ -653,7 +670,7 @@ int AT_CIPSEND(char ConnectID,int size)			//ÅäÖÃECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû
 		detectionOK(Cur);
 		if(1 == WIFI_SetConfigOK_Event)
 		{
-			//printf("AT+AT_CIPSEND :+ok\n");
+			printf("AT+AT_CIPSEND :+ok\n");
 			clear_WIFI();
 			WIFI_SetConfigOK_Event = 0;
 			return 0;
