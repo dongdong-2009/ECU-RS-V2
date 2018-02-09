@@ -734,4 +734,40 @@ void APP_Response_GetShortAddrInfo(char mapping,inverter_info *inverter)
 }
 
 
+void APP_Response_GetECUAPInfo(char mapping,unsigned char connectStatus,char *info)
+{
+	int packlength = 0;
+	memset(SendData,'\0',4096);	
+	if(mapping == 0x00)
+	{
+		if(0 == connectStatus)
+		{
+			sprintf(SendData,"APS110019002000%1dEND\n",connectStatus);
+			packlength = 20;
+		}else
+		{
+			sprintf(SendData,"APS11%04d002000%1d%sEND\n",(strlen(info) + 19),connectStatus,info);
+			packlength = (strlen(info) + 20);
+		}
+		
+	}else
+	{
+		sprintf(SendData,"APS110015002001\n");
+		packlength = 16;
+	}	
+	
+	SendToSocketA(SendData ,packlength);
+
+}
+
+
+//ECU-RS…Ë÷√WIFI√‹¬Î
+void APP_Response_SetECUAPInfo(unsigned char result)
+{
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+	sprintf(SendData,"APS1100150021%02d\n",result);
+	SendToSocketA(SendData ,16);
+}
+
+
 

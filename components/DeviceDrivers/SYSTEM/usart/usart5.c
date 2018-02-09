@@ -153,7 +153,6 @@ void uart5_init(u32 bound){
 	wifi_uart_lock = rt_mutex_create("wifi_uart_lock", RT_IPC_FLAG_FIFO);
 }
 
-unsigned char WIFI_SetConfigOK_Event = 0;
 
 //WIFI  socket A µ±´®¿Ú·¢³öÀ´µÄÊý¾Ý×é°ü³É¹¦Ê± ,Êý×é¸³Öµ£¬²¢ÇÒSocketÊÂ¼þ±äÎª1
 unsigned char WIFI_RecvSocketAData[SOCKETA_LEN] = {'\0'};
@@ -208,7 +207,6 @@ int detectionOK(int size)		//¼ì²âµ½OK  ·µ»Ø1   Î´¼ì³öµ½·µ»Ø0
 	{
 		if(!memcmp(&USART_RX_BUF[i],"OK",2))
 		{
-			WIFI_SetConfigOK_Event = 1;
 			return 1;			
 		}
 	}
@@ -222,13 +220,26 @@ int detectionUNLINK(int size)		//¼ì²âµ½OK  ·µ»Ø1   Î´¼ì³öµ½·µ»Ø0
 	{
 		if(!memcmp(&USART_RX_BUF[i],"UNLINK",6))
 		{
-			WIFI_SetConfigOK_Event = 1;
 			return 1;			
 		}
 	}
 	return 0;
 }
 
+
+//ÅÐ¶Ï×Ö·ûÖÐÊÇ·ñÓÐOK  ×Ö·û
+int detectionSENDOK(int size)		//¼ì²âµ½OK  ·µ»Ø1   Î´¼ì³öµ½·µ»Ø0
+{
+	int i=0;
+	for(i = 0;i<(size-7);i++)
+	{
+		if(!memcmp(&USART_RX_BUF[i],"SEND OK",7))
+		{
+			return 1;			
+		}
+	}
+	return 0;
+}
 
 //ÅÐ¶Ï×Ö·ûÖÐÊÇ·ñÓÐ+IPD
 int detectionIPD(int size)
@@ -304,6 +315,25 @@ int WIFI_Reset(void)
 
 char sendbuff[4096] = {'\0'};
 
+int ESP07S_sendData(char *data ,int length)
+{
+	int i = 0;
+	clear_WIFI();
+	WIFI_SendData(data,length);
+	for(i = 0;i< 100;i++)
+	{
+		if(1 == detectionSENDOK(Cur))
+		{
+			//printf("AT+CWMODE3 :+ok\n");
+			return 0;
+		}
+		rt_thread_delay(1);
+	}
+	clear_WIFI();
+	return -1;
+	
+}
+
 int SendToSocket(char connectID,char *data ,int length)
 {
 	int send_length = 0;	//ÐèÒª·¢ËÍµÄ×Ö½ÚÎ»ÖÃ
@@ -314,15 +344,15 @@ int SendToSocket(char connectID,char *data ,int length)
 		{
 			memcpy(sendbuff,&data[send_length],1460);
 			AT_CIPSEND(connectID,1460);
-			WIFI_SendData(sendbuff,1460);
-			rt_hw_ms_delay(230);
+			ESP07S_sendData(sendbuff,1460);
+			//rt_hw_ms_delay(230);
 			send_length += 1460;
 			length -= 1460;
 		}else
 		{
 			memcpy(sendbuff,&data[send_length],length);
 			AT_CIPSEND(connectID,length);
-			WIFI_SendData(sendbuff,length);
+			ESP07S_sendData(sendbuff,length);
 			length -= length;
 
 			return 0;
@@ -368,17 +398,14 @@ int SendToSocketC(char *IP ,int port,char *data ,int length)
 int AT_CWMODE3(void)			//ÅäÖÃWIFIÄ£¿éÎªAP+STAÄ£Ê½
 {
 	int i = 0;
-	WIFI_SetConfigOK_Event	= 0;
 	clear_WIFI();
 	WIFI_SendData("AT+CWMODE_DEF=3\r\n", 17);
 	for(i = 0;i< 100;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+CWMODE3 :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -392,17 +419,14 @@ int AT_RST(void)			//¸´Î»WIFIÄ£¿é
 {
 	int i = 0;
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	//·¢ËÍ"AT+Z\n",·µ»Ø+ok
 	WIFI_SendData("AT+RST\r\n", 8);
 	for(i = 0;i< 200;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+RST :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -417,17 +441,14 @@ int WIFI_Test(void)
 {
 	int i = 0;
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	//·¢ËÍ"AT+Z\n",·µ»Ø+ok
 	WIFI_SendData("AT\r\n", 8);
 	for(i = 0;i< 200;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT:+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -441,18 +462,15 @@ int AT_CWSAP(char *ECUID,char *PASSWD)			//ÅäÖÃECUÈÈµãÃû×Ö
 	int i = 0;
 	char AT[100] = { '\0' };
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	sprintf(AT,"AT+CWSAP_DEF=\"ECU_R_%s\",\"%s\",11,3\r\n",ECUID,PASSWD);
 	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+CWSAP :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -472,23 +490,31 @@ int WIFI_Factory_Passwd(void)
 		return -1;
 }
 
+int AT_CWJAP(char *SSID,char *PASSWD)			//ÅäÖÃECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû
+{
+	char AT[100] = { '\0' };
+	clear_WIFI();
+	sprintf(AT,"AT+CWJAP_DEF=\"%s\",\"%s\"\r\n",SSID,PASSWD);
+	printf("%s",AT);
+	WIFI_SendData(AT, (strlen(AT)+1));
+
+	return 0;
+}
+
 int AT_CWJAP_DEF(char *SSID,char *PASSWD)			//ÅäÖÃECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû
 {
 	int i = 0;
 	char AT[100] = { '\0' };
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	sprintf(AT,"AT+CWJAP_DEF=\"%s\",\"%s\"\r\n",SSID,PASSWD);
 	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
-	for(i = 0;i< 1000;i++)
+	for(i = 0;i< 1500;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+AT_CWJAP_DEF :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -500,7 +526,8 @@ int AT_CWJAP_DEF(char *SSID,char *PASSWD)			//ÅäÖÃECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû
 //ÅÐ¶Ï×Ö·ûÖÐÊÇ·ñÓÐOK  ×Ö·û	LinksStatus:Á¬½Ó×´Ì¬ 0±íÊ¾Î´Á¬½Ó 1±íÊ¾ÒÑÁ¬½Ó
 int detectionJAPStatus(int size,char *info,unsigned char *LinksStatus)		//¼ì²âµ½OK  ·µ»Ø1   Î´¼ì³öµ½·µ»Ø0
 {
-	int i=0,j=0,SSIDStart = 0,SSIDEnd = 0;;
+	int i=0,j=0,SSIDStart = 0,SSIDEnd = 0;
+	*LinksStatus = 0;
 	for(i = 0;i<(size-2);i++)
 	{
 		if(!memcmp(&USART_RX_BUF[i],"OK",2))
@@ -522,57 +549,50 @@ int detectionJAPStatus(int size,char *info,unsigned char *LinksStatus)		//¼ì²âµ½
 					memcpy(info,&USART_RX_BUF[SSIDStart],(SSIDEnd-SSIDStart));
 					printf("info:%s\n",info);
 					*LinksStatus = 1;
-					break;
+					return 1;
 				}
 			}
 			*LinksStatus = 0;
-			WIFI_SetConfigOK_Event = 1;
 			return 1;			
 		}
 	}
 	return -1;
 }
 
-int AT_CWJAPStatus(char *info)			//²éÑ¯ECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû ·µ»Ø1±íÊ¾»ñÈ¡³É¹¦Á¬½Ó£¬·µ»Ø0±íÊ¾Î´Á¬½Ó £¬·µ»Ø-1±íÊ¾»ñÈ¡Ê§°Ü
+int AT_CWJAPStatus(char *info)			//²éÑ¯ECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû ·µ»Ø1±íÊ¾»ñÈ¡³É¹¦Á¬½Ó£¬·µ»Ø0±íÊ¾Î´Á¬½Ó
 {
 	int i = 0;
 	unsigned char LinksStatus;
 	char AT[100] = { '\0' };
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	sprintf(AT,"AT+CWJAP?\r\n");
 	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
-		detectionJAPStatus(Cur,info,&LinksStatus);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionJAPStatus(Cur,info,&LinksStatus))
 		{
-			printf("AT+AT_CWJAPStatus :+ok\n");
+			printf("AT+AT_CWJAPStatus :+ok:%d\n",LinksStatus);
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return LinksStatus;
 		}
 		rt_thread_delay(1);
 	}
 	clear_WIFI();
-	return -1;
+	return 0;
 }
 
 int AT_CIPMUX1(void)			//ÉèÖÃ¶àÁ¬½ÓATÃüÁî
 {
 	int i = 0;
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	WIFI_SendData("AT+CIPMUX=1\r\n", 13);
 	for(i = 0;i< 200;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+CIPMUX :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -585,16 +605,13 @@ int AT_CIPSERVER(void)			//ÉèÖÃ¶àÁ¬½ÓATÃüÁî
 {
 	int i = 0;
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	WIFI_SendData("AT+CIPSERVER=1,8899\r\n", 21);
 	for(i = 0;i< 200;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+CIPSERVER=1,8899 :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -609,18 +626,15 @@ int AT_CIPSTART(char ConnectID,char *connectType,char *IP,int port)			//ÅäÖÃECUÁ
 	int i = 0;
 	char AT[100] = { '\0' };
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	sprintf(AT,"AT+CIPSTART=%c,\"%s\",\"%s\",%d\r\n",ConnectID,connectType,IP,port);
 	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 500;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+AT_CIPSTART :%c +ok\n",ConnectID);
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -634,19 +648,15 @@ int AT_CIPCLOSE(char ConnectID)			//ÅäÖÃECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû
 	int i = 0;
 	char AT[100] = { '\0' };
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	sprintf(AT,"AT+CIPCLOSE=%c\r\n",ConnectID);
 	//printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 100;i++)
 	{
-		detectionOK(Cur);
-		detectionUNLINK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if((1 == detectionOK(Cur))||(1 == detectionUNLINK(Cur)))
 		{
 			printf("AT+AT_CIPCLOSE :%c +ok\n",ConnectID);
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -661,18 +671,15 @@ int AT_CIPSEND(char ConnectID,int size)			//ÅäÖÃECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû
 	int i = 0;
 	char AT[100] = { '\0' };
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	sprintf(AT,"AT+CIPSEND=%c,%d\r\n",ConnectID,size);
 	//printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+AT_CIPSEND :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -686,18 +693,15 @@ int AT_CIPAP_DEF(void)			//ÅäÖÃECUÁ¬½ÓÎÞÏßÂ·ÓÉÆ÷Ãû
 	int i = 0;
 	char AT[100] = { '\0' };
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	sprintf(AT,"AT+CIPAP_DEF=\"10.10.100.254\"\r\n");
 	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT+AT_CIPAP_DEF :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -711,18 +715,15 @@ int AT_CIPSTO(void)			//ÅäÖÃWIFIÄ£¿é×÷ÎªTCP·þÎñÆ÷Ê±µÄ³¬Ê±Ê±¼ä
 	int i = 0;
 	char AT[100] = { '\0' };
 	clear_WIFI();
-	WIFI_SetConfigOK_Event	= 0;
 	sprintf(AT,"AT+CIPSTO=20\r\n");
 	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
-		detectionOK(Cur);
-		if(1 == WIFI_SetConfigOK_Event)
+		if(1 == detectionOK(Cur))
 		{
 			printf("AT_CIPSTO :+ok\n");
 			clear_WIFI();
-			WIFI_SetConfigOK_Event = 0;
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -806,11 +807,11 @@ void Send(char *data, int num)
 	
 	WIFI_SendData(sendbuff,(num+9));
 }
-void AT_JAPST(void)
+int AT_JAPST(void)
 {
 	char info[100] = {'\0'};
 
-	AT_CWJAPStatus(info);
+	return AT_CWJAPStatus(info);
 }
 
 FINSH_FUNCTION_EXPORT(Send ,WIFI send)

@@ -67,12 +67,12 @@ int phone_add_inverter(int num,const char *uidstring)
 	return 0;
 }
 
-int ResolveWifiPasswd(char *oldPasswd,int *oldLen,char *newPasswd,int *newLen,char *passwdstring)
+int Resolve2Str(char *firstStr,int *firstLen,char *secondStr,int *secondLen,char *string)
 {
-	*oldLen = (passwdstring[0]-'0')*10+(passwdstring[1]-'0');
-	memcpy(oldPasswd,&passwdstring[2],*oldLen);
-	*newLen = (passwdstring[2+(*oldLen)]-'0')*10+(passwdstring[3+(*oldLen)]-'0');
-	memcpy(newPasswd,&passwdstring[4+*oldLen],*newLen);
+	*firstLen = (string[0]-'0')*10+(string[1]-'0');
+	memcpy(firstStr,&string[2],*firstLen);
+	*secondLen = (string[2+(*firstLen)]-'0')*10+(string[3+(*firstLen)]-'0');
+	memcpy(secondStr,&string[4+*firstLen],*secondLen);
 	
 	return 0;
 }
@@ -300,7 +300,7 @@ void App_SetWIFIPasswd(int Data_Len,const char *recvbuffer)
 		char EEPROMPasswd[100] = {'\0'};
 		int oldLen,newLen;
 				
-		ResolveWifiPasswd(OldPassword,&oldLen,NewPassword,&newLen,(char *)&recvbuffer[28]);								
+		Resolve2Str(OldPassword,&oldLen,NewPassword,&newLen,(char *)&recvbuffer[28]);								
 		SEGGER_RTT_printf(0, "COMMAND_SETWIFIPASSWORD %d %s %d %s\n",oldLen,OldPassword,newLen,NewPassword);
 								
 		//读取旧密码，如果旧密码相同，设置新密码
@@ -516,6 +516,62 @@ void APP_GetShortAddrInfo(int Data_Len,const char *recvbuffer) 			//获取ID信息
 	
 	
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 18 ",(char *)recvbuffer);
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{
+		APP_Response_GetShortAddrInfo(0x00,inverterInfo);
+	}else
+	{
+		APP_Response_GetShortAddrInfo(0x01,inverterInfo);
+	}
+	
+}
+
+void APP_GetECUAPInfo(int Data_Len,const char *recvbuffer) 			//获取ECU连接AP信息
+{
+	unsigned char connectStatus = 0;
+	char info[100] = {'\0'};
+	
+	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 20 ",(char *)recvbuffer);
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{
+		connectStatus = AT_CWJAPStatus(info);
+		printf("connectStatus:%d\n",connectStatus);
+		APP_Response_GetECUAPInfo(0x00,connectStatus,info);
+	}else
+	{
+		APP_Response_GetECUAPInfo(0x01,connectStatus,info);
+	}
+	
+}
+
+void APP_SetECUAPInfo(int Data_Len,const char *recvbuffer) 			//设置ECU连接AP
+{
+	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 21 ",(char *)recvbuffer);
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{
+		//匹配成功进行相应的操作
+		char SSID[100] = {'\0'};
+		char Password[100] = {'\0'};
+
+		int ssidLen,passwdLen;
+				
+		Resolve2Str(SSID,&ssidLen,Password,&passwdLen,(char *)&recvbuffer[30]);								
+		printf("SSID:  %s   ,PASSWD: %s \n",SSID,Password);					
+
+		APP_Response_SetECUAPInfo(0x00);
+		AT_CWJAP(SSID,Password);
+	}else
+	{
+		APP_Response_SetECUAPInfo(0x01);
+	}
+	
+}
+
+void APP_ListECUAPInfo(int Data_Len,const char *recvbuffer) 			//列举ECU 查询到的AP信息
+{
+	
+	
+	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 22 ",(char *)recvbuffer);
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{
 		APP_Response_GetShortAddrInfo(0x00,inverterInfo);

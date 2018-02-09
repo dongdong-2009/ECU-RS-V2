@@ -64,6 +64,9 @@ int AT_CIPMUX1(void);			//设置多连接AT命令
 int AT_CIPSERVER(void);			//设置多连接AT命令
 int AT_CIPSTO(void);		//配置WIFI模块作为TCP服务器时的超时时间
 int InitWorkMode(void);
+int AT_CWJAPStatus(char *info);			//查询ECU连接无线路由器名 返回1表示获取成功连接，返回0表示未连接
+int AT_CWJAP(char *SSID,char *PASSWD);			//配置ECU连接无线路由器名
+
 
 #endif
 

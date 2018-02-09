@@ -66,5 +66,8 @@ void APP_Response_IOInitStatus(unsigned char result);
 void APP_Response_GetRSDHistoryInfo(char mapping,char *date_time ,char * UID);
 //18 命令回应
 void APP_Response_GetShortAddrInfo(char mapping,inverter_info *inverter);
-
+//20 命令回应
+void APP_Response_GetECUAPInfo(char mapping,unsigned char connectStatus,char *info);
+//21 命令回应
+void APP_Response_SetECUAPInfo(unsigned char result);
 #endif /*__APPCOMM_H__*/
