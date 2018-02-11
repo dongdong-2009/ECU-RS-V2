@@ -569,16 +569,30 @@ void APP_SetECUAPInfo(int Data_Len,const char *recvbuffer) 			//设置ECU连接AP
 
 void APP_ListECUAPInfo(int Data_Len,const char *recvbuffer) 			//列举ECU 查询到的AP信息
 {
-	
+	unsigned char ret = 0;
+	char *list = NULL;
+
+	list = malloc(4096);
+	memset(list,'\0',4096);
 	
 	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 22 ",(char *)recvbuffer);
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{
-		APP_Response_GetShortAddrInfo(0x00,inverterInfo);
+		ret = AT_CWLAPList(list);
+		if(0 == ret)
+		{
+			APP_Response_GetECUAPList(0x00,list);
+		}else
+		{
+			APP_Response_GetECUAPList(0x00,"");
+		}
+		
 	}else
 	{
-		APP_Response_GetShortAddrInfo(0x01,inverterInfo);
+		APP_Response_GetECUAPList(0x01,list);
 	}
+	free(list);
+	list = NULL;
 	
 }
 

@@ -770,4 +770,19 @@ void APP_Response_SetECUAPInfo(unsigned char result)
 }
 
 
-
+void APP_Response_GetECUAPList(char mapping,char *list)
+{
+	int packlength = 0;
+	memset(SendData,'\0',4096);	
+	if(mapping == 0x00)
+	{
+		sprintf(SendData,"APS11%04d002200%sEND\n",(strlen(list) + 18),list);
+		packlength = (strlen(list) + 19);		
+	}else
+	{
+		sprintf(SendData,"APS110015002201\n");
+		packlength = 16;
+	}	
+	
+	SendToSocketA(SendData ,packlength);
+}

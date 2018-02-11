@@ -70,4 +70,6 @@ void APP_Response_GetShortAddrInfo(char mapping,inverter_info *inverter);
 void APP_Response_GetECUAPInfo(char mapping,unsigned char connectStatus,char *info);
 //21 命令回应
 void APP_Response_SetECUAPInfo(unsigned char result);
+//22 命令回应
+void APP_Response_GetECUAPList(char mapping,char *list);
 #endif /*__APPCOMM_H__*/

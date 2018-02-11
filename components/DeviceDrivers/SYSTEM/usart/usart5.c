@@ -36,7 +36,6 @@
 
 
 rt_mutex_t wifi_uart_lock = RT_NULL;
-unsigned char searchConnectNum = 0;
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
@@ -307,9 +306,12 @@ void WIFI_GetEvent_ESP07S(void)
 int WIFI_Reset(void)
 {
 	GPIO_ResetBits(WIFI_GPIO, WIFI_PIN);
-	
 	rt_hw_ms_delay(1000);
 	GPIO_SetBits(WIFI_GPIO, WIFI_PIN);
+	rt_hw_ms_delay(3000);
+	AT_CIPMUX1();
+	AT_CIPSERVER();
+	AT_CIPSTO();
 	return 0;
 }
 
@@ -582,6 +584,53 @@ int AT_CWJAPStatus(char *info)			//查询ECU连接无线路由器名 返回1表示获取成功连接
 	return 0;
 }
 
+
+int detectionLAPList(int size,char *str)		//检测到OK  返回1   未检出到返回0
+{
+	int i=0,j=0;
+	for(i = 0;i<(size-2);i++)
+	{
+		if(!memcmp(&USART_RX_BUF[i],"OK",2))
+		{
+			for(j = 0;j < i;j++)
+			{
+				if(!memcmp(&USART_RX_BUF[j],"+CWLAP:",7))
+				{
+					memcpy(str,&USART_RX_BUF[j],(i-j-4));
+					str[i-j-4] = '\0';
+					printf("list:%d %d %d  %s\n",i,j,strlen(str),str);
+					return 1;
+				}
+			}
+			return 1;			
+		}
+	}
+	return -1;
+}
+
+
+int AT_CWLAPList(char *liststr)		
+{
+	int i = 0;
+	char AT[100] = { '\0' };
+	clear_WIFI();
+	sprintf(AT,"AT+CWLAP\r\n");
+	printf("%s",AT);
+	WIFI_SendData(AT, (strlen(AT)+1));
+	for(i = 0;i< 600;i++)
+	{
+		if(1 == detectionLAPList(Cur,liststr))
+		{
+			printf("AT+AT_CWLAPList :+ok\n");
+			clear_WIFI();
+			return 0;
+		}
+		rt_thread_delay(1);
+	}
+	clear_WIFI();
+	return -1;
+}
+
 int AT_CIPMUX1(void)			//设置多连接AT命令
 {
 	int i = 0;
@@ -814,6 +863,15 @@ int AT_JAPST(void)
 	return AT_CWJAPStatus(info);
 }
 
+void AT_LAPList(void)
+{
+	char *list = NULL;
+	list = malloc(2048);
+	memset(list,'\0',2048);
+	AT_CWLAPList(list);
+	free(list);
+}
+FINSH_FUNCTION_EXPORT(AT_LAPList ,AT_LAPList)
 FINSH_FUNCTION_EXPORT(Send ,WIFI send)
 
 

@@ -35,6 +35,7 @@ void initSocketArgs(void)
 		{
 			memset(buff, '\0', 512);
 			fgets(buff, 512, fp);
+			
 			if(!strlen(buff))
 				break;
 			if(!strncmp(buff, "Domain", 6))
@@ -94,7 +95,7 @@ void initSocketArgs(void)
 	printf("client_arg.domain:%s\n",client_arg.domain);
 	printf("client_arg.ip:%s\n",client_arg.ip);
 	printf("client_arg.port1:%d\n",client_arg.port1);
-	printf("client_arg.port2:%d\n",client_arg.domain);
+	printf("client_arg.port2:%d\n",client_arg.port2);
 
 	printf("client_arg.domain:%s\n",control_client_arg.domain);
 	printf("client_arg.ip:%s\n",control_client_arg.ip);

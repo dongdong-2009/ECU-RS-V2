@@ -20,7 +20,7 @@ typedef enum
 	SOCKET_C = 3,
 } eSocketType;
 
-#define USART_REC_LEN  				2048  	//定义最大接收字节数 2048
+#define USART_REC_LEN  				4096  	//定义最大接收字节数 2048
 #define SOCKETA_LEN						2048
 #define SOCKETB_LEN						1460
 #define SOCKETC_LEN						1460
@@ -66,7 +66,7 @@ int AT_CIPSTO(void);		//配置WIFI模块作为TCP服务器时的超时时间
 int InitWorkMode(void);
 int AT_CWJAPStatus(char *info);			//查询ECU连接无线路由器名 返回1表示获取成功连接，返回0表示未连接
 int AT_CWJAP(char *SSID,char *PASSWD);			//配置ECU连接无线路由器名
-
+int AT_CWLAPList(char *liststr);
 
 #endif
 

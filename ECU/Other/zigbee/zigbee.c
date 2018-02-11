@@ -469,8 +469,12 @@ int zb_get_inverter_shortaddress_single(inverter_info *inverter)			//»ñÈ¡µ¥Ì¨Ö¸¶
 
 	if((11 == ret)&&(0xFF == data[2])&&(0==rt_strcmp(inverter->uid,inverterid)))
 	{
-		inverter->shortaddr = data[0]*256 + data[1];
-		updateID();
+		if((data[0]*256 + data[1])  != inverter->shortaddr)
+		{
+			inverter->shortaddr = data[0]*256 + data[1];
+			updateID();
+		}
+		
 		return 1;
 	}
 	else

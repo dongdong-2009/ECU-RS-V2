@@ -102,10 +102,6 @@ void ECUEvent_thread_entry(void* parameter)
 		getAddr(array, 5,&IPconfig);
 		StaticIP(IPconfig.IPAddr,IPconfig.MSKAddr,IPconfig.GWAddr,IPconfig.DNS1Addr,IPconfig.DNS2Addr);
 	}
-
-	AT_CIPMUX1();
-	AT_CIPSERVER();
-	AT_CIPSTO();
 	
 	while(1)
 	{	
