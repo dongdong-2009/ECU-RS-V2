@@ -376,7 +376,7 @@ int SendToSocketB(char *IP ,int port,char *data ,int length)
 	WIFI_Recv_SocketB_Event = 0;
 	if(!AT_CIPSTART('3',"TCP",IP ,port))
 	{
-		printf("SendToSocketB: ino AT_CIPSTART\n");
+		//printf("SendToSocketB: ino AT_CIPSTART\n");
 		return SendToSocket('3',data,length);
 	}
 	return -1;
@@ -388,7 +388,7 @@ int SendToSocketC(char *IP ,int port,char *data ,int length)
 	WIFI_Recv_SocketC_Event = 0;
 	if(!AT_CIPSTART('4',"TCP",IP ,port))
 	{
-		printf("SendToSocketC: ino AT_CIPSTART\n");
+		//printf("SendToSocketC: ino AT_CIPSTART\n");
 		return SendToSocket('4',data,length);
 	}
 	return -1;
@@ -627,13 +627,13 @@ int AT_CIPSTART(char ConnectID,char *connectType,char *IP,int port)			//≈‰÷√ECU¡
 	char AT[100] = { '\0' };
 	clear_WIFI();
 	sprintf(AT,"AT+CIPSTART=%c,\"%s\",\"%s\",%d\r\n",ConnectID,connectType,IP,port);
-	printf("%s",AT);
+	
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 500;i++)
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT+AT_CIPSTART :%c +ok\n",ConnectID);
+			printf("%s +ok\n",AT);
 			clear_WIFI();
 			return 0;
 		}
@@ -678,7 +678,7 @@ int AT_CIPSEND(char ConnectID,int size)			//≈‰÷√ECU¡¨Ω”Œﬁœﬂ¬∑”…∆˜√˚
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT+AT_CIPSEND :+ok\n");
+			//printf("AT+AT_CIPSEND :+ok\n");
 			clear_WIFI();
 			return 0;
 		}
