@@ -38,11 +38,11 @@
 
 typedef struct
 {
-    unsigned short comm_failed3_status:1;			//通讯状态 :  1 正常通讯   0 连续三次通讯不上
+    	unsigned short comm_failed3_status:1;			//通讯状态 :  1 正常通讯   0 连续三次通讯不上
 	unsigned short function_status:1;	//功能开关状态: 1 开    0 关
 	unsigned short pv1_low_voltage_pritection:1;	// PV1欠压保护
 	unsigned short pv2_low_voltage_pritection:1;	// PV2欠压保护
-	unsigned short device_Type:3;					//设备类型  0:开关设备 1；监控设备
+	unsigned short device_Type:2;					//设备类型  0:开关设备 1；监控设备
 	unsigned short comm_status:1;					//1表示读到当前数据；0表示读取数据失败
 	unsigned short bindflag:1;					//逆变器绑定短地址标志，1表示绑定，0表示未绑定
 	unsigned short flag:1;					//id中的flag标志
@@ -52,6 +52,7 @@ typedef struct
 	unsigned short last_pv1_low_voltage_pritection:1;	// PV1欠压保护
 	unsigned short last_pv2_low_voltage_pritection:1;	// PV2欠压保护
 	unsigned short collect_ret:1;
+	unsigned short turn_on_collect_data:1;	//开机时，文件中是否有对应RSD数据(数据为上一轮关机前存储数据)
 }status_t;
 
 

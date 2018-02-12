@@ -81,7 +81,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->status.last_function_status = 1;
 		curinverter->status.last_pv1_low_voltage_pritection = 0;
 		curinverter->status.last_pv2_low_voltage_pritection = 0;
-
+		curinverter->status.turn_on_collect_data = 0;
 		
 		
 		curinverter->restartNum = 0;

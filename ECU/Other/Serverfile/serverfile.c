@@ -282,6 +282,7 @@ void init_tmpdb(inverter_info *firstinverter)
 					curinverter->Last_PV1_Energy = atoi(list[2]);
 					curinverter->Last_PV2_Energy = atoi(list[3]);
 					curinverter->Last_PV_Output_Energy = atoi(list[4]);
+					curinverter->status.turn_on_collect_data = 1;
 					printf("UID %s ,LastCollectTime: %s ,Last_PV1_Energy: %d ,Last_PV2_Energy: %d \n",curinverter->uid,curinverter->LastCollectTime,curinverter->Last_PV1_Energy,curinverter->Last_PV2_Energy);
 					break;
 				}
