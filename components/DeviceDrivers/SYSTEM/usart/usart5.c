@@ -225,6 +225,22 @@ int detectionUNLINK(int size)		//检测到OK  返回1   未检出到返回0
 	return 0;
 }
 
+//判断字符中是否有Ai-Thinker Technology Co. Ltd.  字符
+int detectionResetStatus(int size)		//检测到Ai-Thinker Technology Co. Ltd.  返回1   未检出到返回0
+{
+	int i=0;
+	for(i = 0;i<(size-30);i++)
+	{
+		if(!memcmp(&USART_RX_BUF[i],"Ai-Thinker Technology Co. Ltd.",30))
+		{
+			AT_CIPMUX1();
+			AT_CIPSERVER();
+			AT_CIPSTO();
+			return 1;			
+		}
+	}
+	return 0;
+}
 
 //判断字符中是否有OK  字符
 int detectionSENDOK(int size)		//检测到OK  返回1   未检出到返回0
@@ -301,6 +317,7 @@ void WIFI_GetEvent_ESP07S(void)
 {
 	//判断ECU_R数据大于38个字节
 	detectionIPD(Cur);
+	detectionResetStatus(Cur);
 }
 
 int WIFI_Reset(void)
@@ -640,7 +657,7 @@ int AT_CIPMUX1(void)			//设置多连接AT命令
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT+CIPMUX :+ok\n");
+			//printf("AT+CIPMUX :+ok\n");
 			clear_WIFI();
 			return 0;
 		}
@@ -659,7 +676,7 @@ int AT_CIPSERVER(void)			//设置多连接AT命令
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT+CIPSERVER=1,8899 :+ok\n");
+			//printf("AT+CIPSERVER=1,8899 :+ok\n");
 			clear_WIFI();
 			return 0;
 		}
@@ -765,13 +782,13 @@ int AT_CIPSTO(void)			//配置WIFI模块作为TCP服务器时的超时时间
 	char AT[100] = { '\0' };
 	clear_WIFI();
 	sprintf(AT,"AT+CIPSTO=20\r\n");
-	printf("%s",AT);
+	//printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT_CIPSTO :+ok\n");
+			printmsg(ECU_DBG_WIFI,"AT_CIPSTO :+ok");	
 			clear_WIFI();
 			return 0;
 		}
