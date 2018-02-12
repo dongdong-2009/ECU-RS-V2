@@ -82,7 +82,7 @@ void Collect_Client_Record(void)
 		for(i = 0;i< ecu.validNum; i++)
 		{
 			//采集每一轮优化器的数据
-			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传   只有最新一轮通讯打野上一次采集，才会进入
+			//判断数据是否较上一轮有更新，如果更新了，就需要上传，如果没更新就不上传   只有最新一轮通讯大于上一次采集，才会进入
 			if(((!memcmp(curinverter->LastCollectTime,"00000000000000",14))&&(memcmp(curinverter->LastCommTime,"00000000000000",14))) || (Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) > 0))
 			//if(1)
 			{
@@ -105,13 +105,20 @@ void Collect_Client_Record(void)
 				//输出电量 10字节
 				if(curinverter->Last_PV_Output_Energy > curinverter->PV_Output_Energy)
 				{
+					//当上一轮发电量> 当前轮发电量
+					//该轮电量为采集到的输出电量
 					curinverter->EnergyPV_Output= curinverter->PV_Output_Energy;
 					sprintf(&client_Data[length],"%010d",(curinverter->PV_Output_Energy/36));
 					length += 10;
 				}else
 				{
-					
-					curinverter->EnergyPV_Output= (curinverter->PV_Output_Energy - curinverter->Last_PV_Output_Energy);
+					if(0 == curinverter->status.turn_on_collect_data)
+					{
+						curinverter->EnergyPV_Output = 0;
+					}else
+					{
+						curinverter->EnergyPV_Output= (curinverter->PV_Output_Energy - curinverter->Last_PV_Output_Energy);
+					}
 					//pv1输入电量(两轮计算差值)
 					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV_Output/36));
 					length += 10;	
@@ -139,14 +146,27 @@ void Collect_Client_Record(void)
 				}else
 				{
 					unsigned short Power1;
+					
 					//功率=(当前一轮电量-上一轮电量)/时间的差值
-					Power1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
-					curinverter->AveragePower1 = Power1;
+					if(!memcmp(curinverter->LastCollectTime,"00000000000000",14))
+					{
+						curinverter->AveragePower1 = curinverter->Power1;
+					}else
+					{
+						Power1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
+						curinverter->AveragePower1 = Power1;
+					}
+					
 					//pv1输入功率(计算得到平均功率)
 					sprintf(&client_Data[length],"%06d",((unsigned short)curinverter->AveragePower1*100));
 					length += 6;
-					
-					curinverter->EnergyPV1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy);
+					if(0 == curinverter->status.turn_on_collect_data)
+					{
+						curinverter->EnergyPV1 = 0;
+					}else
+					{
+						curinverter->EnergyPV1 = (curinverter->PV1_Energy - curinverter->Last_PV1_Energy);
+					}
 					//pv1输入电量(两轮计算差值)
 					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV1/36));
 					length += 10;	
@@ -173,13 +193,27 @@ void Collect_Client_Record(void)
 				{
 					unsigned short Power2;
 					//功率=(当前一轮电量-上一轮电量)/时间的差值
-					Power2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
-					curinverter->AveragePower2 = Power2;
+					if(!memcmp(curinverter->LastCollectTime,"00000000000000",14))
+					{
+						curinverter->AveragePower2 = curinverter->Power2;
+					}else
+					{
+						Power2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
+						curinverter->AveragePower2 = Power2;
+					}
+					
 					//pv2输入功率(计算得到平均功率)
 					sprintf(&client_Data[length],"%06d",((unsigned short)curinverter->AveragePower2*100));
 					length += 6;
+					if(0 == curinverter->status.turn_on_collect_data)
+					{
+						curinverter->EnergyPV2 = 0;
+						curinverter->status.turn_on_collect_data = 1;
+					}else
+					{
+						curinverter->EnergyPV2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy);
+					}
 					
-					curinverter->EnergyPV2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy);
 					//pv2输入电量(两轮计算差值)
 					sprintf(&client_Data[length],"%010d",(curinverter->EnergyPV2/36));
 					length += 10;
