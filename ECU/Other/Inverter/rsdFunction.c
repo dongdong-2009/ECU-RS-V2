@@ -53,7 +53,7 @@ int process_rsd_single(void)
 	{
 		if((inverterInfo[ecu.curSequence].status.comm_failed3_status == 1) && (inverterInfo[ecu.curSequence].shortaddr !=0)  && (inverterInfo[ecu.curSequence].status.function_status != atoi(&ecu.IO_Init_Status)))
 		{	
-			if(ecu.IO_Init_Status != '0')
+			if(ecu.IO_Init_Status == '0')
 			{
 				zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],2,2,0);	
 			}else
