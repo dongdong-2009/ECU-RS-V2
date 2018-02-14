@@ -155,9 +155,6 @@ int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
 		sprintf(client_arg.ip,"%s",ip_ntoa((ip_addr_t*)*host->h_addr_list));
 	}
 
-	//printf("IP:%s\n", ip);
-	//printf("Port1:%d\n", port[0]);
-	//printf("Port2:%d\n", port[1]);
 
 	memset(&serv_addr,0,sizeof(struct sockaddr_in));
 	serv_addr.sin_family=AF_INET;
