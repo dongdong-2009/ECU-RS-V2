@@ -58,7 +58,7 @@ int rt_hw_GetWiredNetConnect(void)
 	return ret;
 }
 
-#if 0
+#if 1
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 void lanrst()
@@ -66,6 +66,12 @@ void lanrst()
 	rt_hw_lan8720_rst();
 }
 FINSH_FUNCTION_EXPORT(lanrst, lanrst.)
+void GetNet()
+{
+	rt_hw_GetWiredNetConnect();
+}
+FINSH_FUNCTION_EXPORT(GetNet, GetNet.)
+
 #endif
 #endif
 

@@ -75,7 +75,7 @@ int communication_with_EMA(int next_cmd_id)
 					{
 						rt_free(recv_buffer);
 						rt_free(send_buffer);
-						printf("1----------->\n");
+						AT_CIPCLOSE('4');
 						return -1;
 					}
 					memset(send_buffer, '\0', sizeof(send_buffer));
@@ -94,7 +94,6 @@ int communication_with_EMA(int next_cmd_id)
 						rt_free(recv_buffer);
 						rt_free(send_buffer);
 						AT_CIPCLOSE('4');
-						printf("2----------->\n");
 						return -1;
 					}
 
@@ -143,7 +142,6 @@ int communication_with_EMA(int next_cmd_id)
 				if(next_cmd_id < 0){
 					rt_free(recv_buffer);
 					rt_free(send_buffer);
-					printf("4----------->\n");
 					return -1;
 				}				
 			}
