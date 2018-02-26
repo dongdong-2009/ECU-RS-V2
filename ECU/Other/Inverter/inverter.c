@@ -141,7 +141,7 @@ int init_inverter(inverter_info *inverter)
 			fputs("0", fp);
 			fclose(fp);
 		}
-		process_rsd_enable_boardcast();
+		//process_rsd_enable_boardcast();
 	}
 
 	//判断是否需要广播参数设置指令  	先广播，然后再每台单播

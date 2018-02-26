@@ -529,7 +529,7 @@ void ECUCollect_thread_entry(void* parameter)
 				//更新手机显示
 				displayonPhone();
 				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
-				process_rsd_single();
+				//process_rsd_single();
 				
 				if((cur_time_hour>9)&&(1 == ecu.flag_ten_clock_getshortaddr))
 				{
