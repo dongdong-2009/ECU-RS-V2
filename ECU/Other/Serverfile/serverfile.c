@@ -776,7 +776,7 @@ int get_id_from_file(inverter_info *firstinverter)
 			}
 			if(0==strlen(list[2]))
 			{
-				inverter->model = 0;		//未获得机型码的逆变器赋值为0.ZK
+				inverter->model = 0xff;		//未获得机型码的逆变器赋值为0.ZK
 			}
 			else
 			{

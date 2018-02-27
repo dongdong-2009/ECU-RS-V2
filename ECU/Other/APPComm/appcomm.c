@@ -238,6 +238,8 @@ void APP_Response_SystemInfo(unsigned char *ID,unsigned char mapflag,inverter_in
 				inverter_data[44] = curinverter->Mos_CloseNum;
 				inverter_data[45] = curinverter->version/256;
 				inverter_data[46] = curinverter->version%256;
+				inverter_data[47] = curinverter->model;
+				inverter_data[48] = curinverter->temperature;
 				memcpy(&SendData[length],inverter_data,inverter_length);
 				length += inverter_length;
 				
