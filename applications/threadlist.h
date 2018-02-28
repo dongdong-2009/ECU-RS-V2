@@ -32,6 +32,9 @@ typedef enum THREADTYPE {
 
 #define ALARM_RECORD_ON
 
+#define USR_AT_TEST_CYCLE	60
+#define USR_AT_TEST_FAILED_NUM 2
+
 //WIFI 模块使用宏
 #if 1
 //使用有人模块

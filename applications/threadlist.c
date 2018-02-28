@@ -37,6 +37,8 @@
 #include "serverfile.h"
 #include "socket.h"
 #include "rtc.h"
+#include "mcp1316.h"
+#include "debug.h"
 
 
 #ifdef RT_USING_DFS
@@ -137,7 +139,6 @@ static struct rt_thread idwrite_thread;
 ecu_info ecu;	//ecu相关信息
 inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
 unsigned char LED_Status = 0;
-extern unsigned char searchConnectNum;
 unsigned char LED_IDWrite_Status = 0;
 
 
@@ -258,12 +259,15 @@ void rt_init_thread_entry(void* parameter)
 static void led_thread_entry(void* parameter)
 {
 	rt_uint8_t major,minor;
+	int index = 0,ATFaliedNum = 0;
 	/* Initialize led */
 	rt_hw_led_init();
 	rt_hw_watchdog_init();
+	MCP1316_init();
 	while (1)
-    {
-    	kickwatchdog();
+    	{
+		kickwatchdog();
+		MCP1316_kickwatchdog();
 		if(LED_Status == 0)
 		{
 			rt_hw_led_off();
@@ -275,7 +279,25 @@ static void led_thread_entry(void* parameter)
 		{
 			rt_hw_led_on();
 		}
-		rt_thread_delay( RT_TICK_PER_SECOND);
+		rt_thread_delay( RT_TICK_PER_SECOND/2);
+		index++;
+		if(index >= USR_AT_TEST_CYCLE)
+		{
+			if(-1 == usr_Test())
+			{
+				ATFaliedNum++;
+				printdecmsg(ECU_DBG_WIFI,"WIFI_Test failed NUM ",ATFaliedNum);
+				if(ATFaliedNum >= USR_AT_TEST_FAILED_NUM)	//连续失败2次
+				{
+					WIFI_RST_Event = 1;
+					ATFaliedNum = 0;
+				}
+				
+			}
+			index = 0;
+		}
+		kickwatchdog();
+		MCP1316_kickwatchdog();
 		cpu_usage_get(&major, &minor);
 		//printf("CPU : %d.%d%\n", major, minor);
     }
@@ -315,13 +337,6 @@ static void lan8720_rst_thread_entry(void* parameter)
 		{
 			printf("reboot :%s\n",Time);
 			reboot();
-		}
-
-		if(searchConnectNum > 3)
-		{
-			searchConnectNum = 0;
-			WIFI_Reset();
-			printf("printf :%s\n",Time);
 		}
 			
       	rt_thread_delay( RT_TICK_PER_SECOND*50 );

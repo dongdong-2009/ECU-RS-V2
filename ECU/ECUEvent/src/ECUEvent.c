@@ -18,6 +18,7 @@
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
 #include "threadlist.h"
+#include "usart5.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -119,7 +120,7 @@ void ECUEvent_thread_entry(void* parameter)
 		if(WIFI_RST_Event == 1)
 		{
 			SEGGER_RTT_printf(0,"WIFI_RST_Event start\n");
-			ret = process_WIFI_RST();
+			ret = WIFI_Reset();
 			if(ret == 0)
 				WIFI_RST_Event = 0;
 			SEGGER_RTT_printf(0,"WIFI_RST_Event end\n");

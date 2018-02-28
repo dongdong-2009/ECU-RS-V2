@@ -25,6 +25,7 @@
 #include "threadlist.h"
 #include "debug.h"
 #include "zigbee.h"
+#include "mcp1316.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -36,7 +37,6 @@
 
 rt_mutex_t wifi_uart_lock = RT_NULL;
 extern rt_mutex_t usr_wifi_lock;
-unsigned char searchConnectNum = 0;
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
@@ -1635,7 +1635,7 @@ int WIFI_ChangePasswd(char *NewPasswd)
 int WIFI_Reset(void)
 {
 	GPIO_ResetBits(WIFI_GPIO, WIFI_PIN);
-	
+	printf("WIFI reset\n");
 	rt_hw_ms_delay(1000);
 	GPIO_SetBits(WIFI_GPIO, WIFI_PIN);
 	return 0;
@@ -2772,8 +2772,9 @@ int WIFI_QueryStatus(eSocketType Type)
 		clear_WIFI();
 		WIFI_Recv_Socket_Event = 0;
 		WIFI_SendData(send, 6);
-		for(j = 0;j <300;j++)
+		for(j = 0;j <100;j++)
 		{
+			WIFI_GetEvent();
 			if(WIFI_Recv_Socket_Event == 1)
 			{
 				WIFI_Recv_Socket_Event = 0;
@@ -2785,15 +2786,13 @@ int WIFI_QueryStatus(eSocketType Type)
 					//查询SOCKET 成功
 					if(WIFI_RecvSocketData[4] == 0x01)	//在线
 					{
-						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Online ",Type);
+						//printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Online ",Type);
 						clear_WIFI();
-						searchConnectNum = 0;
 						return 1;
 					}else if(WIFI_RecvSocketData[4] == 0x00)	//离线
 					{
-						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus not Online ",Type);
+						//printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus not Online ",Type);
 						clear_WIFI();
-						searchConnectNum = 0;
 						return 0;
 					}else	//未知
 					{
@@ -2806,15 +2805,13 @@ int WIFI_QueryStatus(eSocketType Type)
 					//查询SOCKET 成功
 					if(WIFI_RecvSocketData[4] == 0x01)			//离线
 					{
-						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Online ",Type);
+						//printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Online ",Type);
 						clear_WIFI();
-						searchConnectNum = 0;
 						return 0;
 					}else if(WIFI_RecvSocketData[4] == 0x00)	//在线
 					{
-						printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus not Online ",Type);
+						//printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus not Online ",Type);
 						clear_WIFI();
-						searchConnectNum = 0;
 						return 1;
 					}else	//未知
 					{
@@ -2828,12 +2825,12 @@ int WIFI_QueryStatus(eSocketType Type)
 					//查询SOCKET 失败
 					printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus Failed ",Type);
 					clear_WIFI();
-					searchConnectNum++;
 					return -1;
 				}
 				
 			}
 			rt_thread_delay(1);
+			MCP1316_kickwatchdog();
 		}
 		printdecmsg(ECU_DBG_WIFI,"WIFI_QueryStatus WIFI Get reply time out ",Type);
 	}	
@@ -2922,6 +2919,10 @@ int SendToSocketB(char *data ,int length)
 	return -1;
 }
 
+int usr_Test(void)
+{
+	return WIFI_QueryStatus(SOCKET_B);
+}
 //SOCKET C 发送数据
 int SendToSocketC(char *data ,int length)
 {
@@ -3001,9 +3002,6 @@ FINSH_FUNCTION_EXPORT(AT_WAP, eg:AT_WAP)
 FINSH_FUNCTION_EXPORT(AT_WAKEY, eg:AT_WAKEY)
 FINSH_FUNCTION_EXPORT(AT_WMODE, eg:AT_WMODE)
 
-	
-
-
 FINSH_FUNCTION_EXPORT(InitTestMode , Init Test Mode.)
 FINSH_FUNCTION_EXPORT(InitWorkMode , Init Work Mode.)
 FINSH_FUNCTION_EXPORT(WIFI_Factory , Set WIFI ID .)
@@ -3013,6 +3011,8 @@ FINSH_FUNCTION_EXPORT(SendToSocketB , Send SOCKET B.)
 FINSH_FUNCTION_EXPORT(SendToSocketC , Send SOCKET C.)
 
 FINSH_FUNCTION_EXPORT(WIFI_Create ,WIFI Create Socket)
+
+FINSH_FUNCTION_EXPORT(usr_Test ,WIFI Query Socket B)
 
 
 
