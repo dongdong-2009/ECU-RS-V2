@@ -526,3 +526,15 @@ void APP_GetShortAddrInfo(unsigned char * ID,int Data_Len,const char *recvbuffer
 	
 }
 
+void APP_GetFunctionStatusInfo(unsigned char * ID,int Data_Len,const char *recvbuffer)
+{
+	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 23 ",(char *)recvbuffer);
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{
+		APP_Response_GetFunctionStatusInfo(0x00,ID);
+	}else
+	{
+		APP_Response_GetFunctionStatusInfo(0x01,ID);
+	}
+}
+

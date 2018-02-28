@@ -3187,4 +3187,12 @@ int update_alarm_send_flag(char *send_date_time)
 FINSH_FUNCTION_EXPORT(initsystem, eg:initsystem("80:97:1B:00:72:1C"));
 FINSH_FUNCTION_EXPORT(echo, eg:echo);
 
+void setdatacent(char *IP,char* port)
+{
+	char str[100] = {'\0'};
+	sprintf(str,"Domain=EEE.apsema.com\nIP=%s\nPort1=%s\nPort2=%s\n",IP,port,port);
+	echo("/config/datacent.con",str);
+}
+FINSH_FUNCTION_EXPORT(setdatacent, eg:setdatacent);
+
 #endif

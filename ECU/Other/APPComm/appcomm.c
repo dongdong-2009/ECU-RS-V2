@@ -736,4 +736,41 @@ void APP_Response_GetShortAddrInfo(char mapping,unsigned char *ID,inverter_info 
 }
 
 
+void APP_Response_GetFunctionStatusInfo(char mapping,unsigned char *ID)
+{
+	int packlength = 0;
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
+
+	if(mapping == 0x00)
+	{
+		sprintf(SendData,"APS110015002300");
+		packlength = 15;
+		if(ecu.IO_Init_Status == '1')	
+		{
+			SendData[packlength++] = '2';
+		}else
+		{
+			SendData[packlength++] = '1';
+		}
+		memset(&SendData[packlength],'0',300);
+		packlength += 300;
+		SendData[packlength++] = 'E';
+		SendData[packlength++] = 'N';
+		SendData[packlength++] = 'D';
+		
+		SendData[5] = (packlength/1000) + '0';
+		SendData[6] = ((packlength/100)%10) + '0';
+		SendData[7] = ((packlength/10)%10) + '0';
+		SendData[8] = ((packlength)%10) + '0';
+		SendData[packlength++] = '\n';
+
+		
+	}else
+	{
+		sprintf(SendData,"APS110015002301\n");
+		packlength = 16;
+	}		
+	SendToSocketA(SendData ,packlength,ID);
+}
+
 
