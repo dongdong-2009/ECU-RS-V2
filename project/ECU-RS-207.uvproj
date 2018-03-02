@@ -711,6 +711,11 @@
               <FileType>1</FileType>
               <FilePath>..\components\FTP\thftpapi.c</FilePath>
             </File>
+            <File>
+              <FileName>mcp1316.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\DeviceDrivers\watchdog\mcp1316.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

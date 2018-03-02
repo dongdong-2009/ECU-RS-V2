@@ -4,7 +4,6 @@
 
 
 extern signed char COMM_Timeout_Event;
-extern signed char WIFI_RST_Event;
 
 //WIFI串口接收超时中断
 void TIM3_Int_Init(u16 arr,u16 psc);

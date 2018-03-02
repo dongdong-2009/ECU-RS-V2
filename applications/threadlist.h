@@ -45,6 +45,9 @@ typedef enum THREADTYPE {
 #define SIZE_PER_SEND		2700
 #endif 
 
+#define ESP07S_AT_TEST_CYCLE	60
+#define ESP07S_AT_TEST_FAILED_NUM 2
+
 //ÍøÂçÍ¨Ñ¶µØÖ·
 #if 1
 #define CLIENT_SERVER_DOMAIN			""		//"ecu.apsema.com"

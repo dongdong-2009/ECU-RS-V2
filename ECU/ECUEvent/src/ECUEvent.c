@@ -22,6 +22,7 @@
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
+extern unsigned char WIFI_RST_Event;
 
 typedef struct IPConfig
 {
@@ -119,11 +120,9 @@ void ECUEvent_thread_entry(void* parameter)
 		//WIFI¸´Î»ÊÂ¼þ
 		if(WIFI_RST_Event == 1)
 		{
-			SEGGER_RTT_printf(0,"WIFI_RST_Event start\n");
 			ret = process_WIFI_RST();
 			if(ret == 0)
 				WIFI_RST_Event = 0;
-			SEGGER_RTT_printf(0,"WIFI_RST_Event end\n");
 		}
 		
 		rt_thread_delay(RT_TICK_PER_SECOND/100);

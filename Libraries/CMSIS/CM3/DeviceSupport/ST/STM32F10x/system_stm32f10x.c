@@ -102,7 +102,8 @@
           the System clock.
      If you are using different crystal you have to adapt those functions accordingly.
     */
-    
+#define HSI_ON
+
 #if defined (STM32F10X_LD_VL) || (defined STM32F10X_MD_VL) || (defined STM32F10X_HD_VL)
 /* #define SYSCLK_FREQ_HSE    HSE_VALUE */
  #define SYSCLK_FREQ_24MHz  24000000
@@ -112,7 +113,11 @@
 /* #define SYSCLK_FREQ_36MHz  36000000 */
 /* #define SYSCLK_FREQ_48MHz  48000000 */
 /* #define SYSCLK_FREQ_56MHz  56000000 */
+#ifndef HSI_ON
 #define SYSCLK_FREQ_72MHz  72000000
+#else
+#define SYSCLK_FREQ_72MHz  64000000
+#endif
 #endif
 
 /*!< Uncomment the following line if you need to use external SRAM mounted
@@ -209,7 +214,7 @@ static void SetSysClock(void);
   * @param  None
   * @retval None
   */
-#if 1		//使用外部25M晶振
+#ifndef HSI_ON		//使用外部25M晶振
 void SystemInit (void)
 {
   /* Reset the RCC clock configuration to the default reset state(for debug purpose) */
@@ -275,10 +280,10 @@ void SystemInit (void)
 	RCC->CR |= (uint32_t)0x00000001;		//开启内部告诉8M的RC振荡器
                 
 	// select HSI as PLL source
-	//RCC->CFGR |= (uint32_t)RCC_CFGR_PLLSRC_HSI_Div2;        
+	RCC->CFGR |= (uint32_t)RCC_CFGR_PLLSRC_HSI_Div2;        
 	                
 	//PLLCLK=8*9=72M
-	RCC->CFGR |= (uint32_t)RCC_CFGR_PLLMULL9;
+	RCC->CFGR |= (uint32_t)0x00380000;
                 
 	/* HCLK = SYSCLK      */
 	RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
@@ -308,7 +313,6 @@ void SystemInit (void)
   	/* Reset CFGR2 register */
  	 RCC->CFGR2 = 0x00000000;
 }
-
 #endif
 
 /**

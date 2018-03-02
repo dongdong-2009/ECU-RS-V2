@@ -60,6 +60,7 @@ void Collect_Client_Record(void)
 	char *client_Data = NULL;
 	int length = 0; //当前报文所在位置
 	int i = 0;				//轮训变量
+	unsigned systemModel = 0xff;	//系统类型
 	inverter_info *curinverter = inverterInfo;
 	int commNum = 0; 	//通讯上的逆变器数量
 	char curTime[15] = {'\0'};
@@ -70,7 +71,27 @@ void Collect_Client_Record(void)
 	if(ecu.validNum > 0)
 	{
 		client_Data = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
-		memcpy(client_Data,"APS16AAAAA0002AAA1",18);
+		memcpy(client_Data,"APS16AAAAA",10);//
+		//判断是哪种机型
+		for(i = 0;i< ecu.validNum; i++)
+		{
+			if((0 != inverterInfo[i].model)&&(0xff != inverterInfo[i].model))
+			{
+				systemModel = inverterInfo[i].model;
+				break;
+			}
+		}
+		//根据不同机型组织报文头
+		if((systemModel == 0)||(systemModel == 0xff))
+		{
+			memcpy(&client_Data[10],"0002",4);
+		}else
+		{
+			sprintf(&client_Data[10],"%04d",systemModel);
+			printf("systemModel:%d\n",systemModel);
+		}
+
+		memcpy(&client_Data[14],"AAA1",4);
 		memcpy(&client_Data[18],ecu.ECUID12,12);
 		memset(&client_Data[30],'0',63);
 		memcpy(&client_Data[93],"END",3);
@@ -124,7 +145,8 @@ void Collect_Client_Record(void)
 					length += 10;	
 				}			
 				//温度 3字节
-				memcpy(&client_Data[length],"100",3);
+				sprintf(&client_Data[length],"%03d",curinverter->temperature);
+				//memcpy(&client_Data[length],"100",3);
 				length += 3;
 				//Optimizer_pv1  1字节
 				client_Data[length++]  = '1';
@@ -497,6 +519,16 @@ int process_Heart(void)
 	return 0;
 }
 
+int process_IDUpdate(void)
+{
+	if(1 == ecu.idUpdateFlag)
+	{
+		updateID();
+		ecu.idUpdateFlag = 0;
+	}
+	return 0;
+}
+
 //该线程主要用于相关数据的采集工作
 void ECUCollect_thread_entry(void* parameter)
 {
@@ -530,6 +562,7 @@ void ECUCollect_thread_entry(void* parameter)
 				displayonPhone();
 				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
 				process_rsd_single();
+				process_IDUpdate();//检测ID表格是否需要更新
 				
 				if((cur_time_hour>9)&&(1 == ecu.flag_ten_clock_getshortaddr))
 				{

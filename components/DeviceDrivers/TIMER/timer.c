@@ -74,7 +74,6 @@ void TIM3_IRQHandler(void)   //TIM3中断
 }
 
 
-signed char WIFI_RST_Event = 0;
 signed char COMM_Timeout_Event = 0;
 //通用定时器3中断初始化
 //这里时钟选择为APB1的2倍，而APB1为36M
@@ -131,7 +130,6 @@ void TIM2_IRQHandler(void)   //TIM2中断
 
 			if(timeout_WIFI_RST_Time > 64800)
 			{
-				WIFI_RST_Event = 1;
 				timeout_WIFI_RST_Time = 0;
 			}
 

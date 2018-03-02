@@ -47,6 +47,7 @@ int init_ecu(void)
 	ecu.curTime[14] = '\0';
 	ecu.JsonTime[14] = '\0';
 	ecu.polling_total_times = 0;
+	ecu.idUpdateFlag = 0;
 	
 	return 0;
 }
@@ -62,7 +63,7 @@ int init_inverter(inverter_info *inverter)
 	{
 		memset(curinverter->uid, 0xff, sizeof(curinverter->uid));	
 		curinverter->shortaddr = 0;
-		curinverter->model = 0;
+		curinverter->model = 0xff;
 		curinverter->zigbee_version = 0;
 		curinverter->version = 0;
 		
@@ -82,7 +83,8 @@ int init_inverter(inverter_info *inverter)
 		curinverter->status.last_pv1_low_voltage_pritection = 0;
 		curinverter->status.last_pv2_low_voltage_pritection = 0;
 		curinverter->status.turn_on_collect_data = 0;
-		
+		curinverter->temperature = 100;
+		memset(&curinverter->parameter_status,0x00,2);
 		
 		curinverter->restartNum = 0;
 		curinverter->PV1 = 0;
@@ -141,7 +143,7 @@ int init_inverter(inverter_info *inverter)
 			fputs("0", fp);
 			fclose(fp);
 		}
-		process_rsd_enable_boardcast();
+		//process_rsd_enable_boardcast();
 	}
 
 	//判断是否需要广播参数设置指令  	先广播，然后再每台单播
@@ -162,7 +164,7 @@ int init_inverter_A103(inverter_info *inverter)
 	{
 		memset(curinverter->uid, 0xff, sizeof(curinverter->uid));	
 		curinverter->shortaddr = 0;
-		curinverter->model = 0;
+		curinverter->model = 0xff;
 		curinverter->zigbee_version = 0;
 		curinverter->version = 0;
 		

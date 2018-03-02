@@ -55,18 +55,39 @@ typedef struct
 	unsigned short turn_on_collect_data:1;	//开机时，文件中是否有对应RSD数据(数据为上一轮关机前存储数据)
 }status_t;
 
+typedef struct
+{
+	unsigned short  Version_Control_flag:1;	//版本控制位
+	unsigned short  Reserve1:2;	//保留位
+	unsigned short  Energy2_flag:1;	//输入2发电量标志位
+	unsigned short  Energy1_flag:1;	//输入1发电量标志位
+	unsigned short  EnergyOut_flag:1;	//输出发电量标志位
+	unsigned short  Temperature_flag:1;	//温度标志位
+	unsigned short  Current2_flag:1;	//PV2输入电流
+	unsigned short  Current1_flag:1;	//PV1输入电流
+	unsigned short  CurrentOut_flag:1;	//输出电流
+	unsigned short  Power2_flag:1;	//PV2输入功率
+	unsigned short  Power1_flag:1;	//PV1输入功率
+	unsigned short  PowerOut_flag:1;	//输出功率
+	unsigned short  Voltage2_flag:1;	//PV2输入电压
+	unsigned short  Voltage1_flag:1;	//PV1输入电压
+	unsigned short  VoltageOut_flag:1;	//输出电压
+}parameter_status_t;
 
 typedef struct inverter_info_t{
 	char uid[13];		//逆变器ID（在通讯的时候转换为BCD编码）
 	unsigned short shortaddr;	//Zigbee的短地址
-	int model;					//机型：1是YC250CN,2是YC250NA，3是YC500CN，4是YC500NA，5是YC900CN，6是YC900NA			
+	unsigned char model;					//机型：00未知 01优化器 02 关断器 03JBOX
 	int zigbee_version;					//zigbee版本号ZK			
 	
 	unsigned short version;				//软件版本号
 	unsigned short heart_rate;	//心跳次数
 	unsigned short off_times;	//心跳超时次数
 	status_t status;			//部分状态信息 
+	parameter_status_t parameter_status;
 	unsigned char restartNum;	//一天内的重启次数
+	unsigned char  temperature; 	//设备内部温度
+	
 	unsigned short PV1;		//PV1输入电压  精度 0.1V
 	unsigned short PV2;		//PV2输入电压  精度 0.1V
 	unsigned short PI;		//输入电流 	精度0.1A
@@ -124,7 +145,7 @@ typedef struct ecu_info_t{
 	char JsonTime[15];			//最近一次采集的时间
 	unsigned char flag_ten_clock_getshortaddr;	//每天10点有没有重新获取短地址标志
 	int polling_total_times;			//ECU一天之中总的轮询次数 ZK
-
+	unsigned char idUpdateFlag;		//id更新标志
 	
 }ecu_info;
 

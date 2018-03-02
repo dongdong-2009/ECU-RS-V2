@@ -72,4 +72,7 @@ void APP_Response_GetECUAPInfo(char mapping,unsigned char connectStatus,char *in
 void APP_Response_SetECUAPInfo(unsigned char result);
 //22 命令回应
 void APP_Response_GetECUAPList(char mapping,char *list);
+//23 命令回应
+void APP_Response_GetFunctionStatusInfo(char mapping);
+
 #endif /*__APPCOMM_H__*/

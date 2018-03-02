@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "zigbee.h"
 #include "Serverfile.h"
+#include "mcp1316.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -471,6 +472,7 @@ int WIFI_Test(void)
 			return 0;
 		}
 		rt_thread_delay(1);
+		MCP1316_kickwatchdog();
 	}
 	clear_WIFI();
 	return -1;

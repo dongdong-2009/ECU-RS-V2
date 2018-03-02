@@ -238,6 +238,8 @@ void APP_Response_SystemInfo(unsigned char mapflag,inverter_info *inverter,int v
 				inverter_data[44] = curinverter->Mos_CloseNum;
 				inverter_data[45] = curinverter->version/256;
 				inverter_data[46] = curinverter->version%256;
+				inverter_data[47] = curinverter->model;
+				inverter_data[48] = curinverter->temperature;
 				memcpy(&SendData[length],inverter_data,inverter_length);
 				length += inverter_length;
 				
@@ -492,7 +494,7 @@ void APP_Response_GetIDInfo(char mapping,inverter_info *inverter)
 void APP_Response_GetTime(char mapping,char *Time)
 {
 	int packlength = 0;
-	memset(SendData,'\0',4096);	
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
 	if(mapping == 0x00)
 	{
 		sprintf(SendData,"APS110032001200%sEND\n",Time);
@@ -737,7 +739,7 @@ void APP_Response_GetShortAddrInfo(char mapping,inverter_info *inverter)
 void APP_Response_GetECUAPInfo(char mapping,unsigned char connectStatus,char *info)
 {
 	int packlength = 0;
-	memset(SendData,'\0',4096);	
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
 	if(mapping == 0x00)
 	{
 		if(0 == connectStatus)
@@ -773,7 +775,7 @@ void APP_Response_SetECUAPInfo(unsigned char result)
 void APP_Response_GetECUAPList(char mapping,char *list)
 {
 	int packlength = 0;
-	memset(SendData,'\0',4096);	
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);		
 	if(mapping == 0x00)
 	{
 		sprintf(SendData,"APS11%04d002200%sEND\n",(strlen(list) + 18),list);
@@ -784,5 +786,42 @@ void APP_Response_GetECUAPList(char mapping,char *list)
 		packlength = 16;
 	}	
 	
+	SendToSocketA(SendData ,packlength);
+}
+
+void APP_Response_GetFunctionStatusInfo(char mapping)
+{
+	int packlength = 0;
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
+
+	if(mapping == 0x00)
+	{
+		sprintf(SendData,"APS110015002300");
+		packlength = 15;
+		if(ecu.IO_Init_Status == '1')	
+		{
+			SendData[packlength++] = '2';
+		}else
+		{
+			SendData[packlength++] = '1';
+		}
+		memset(&SendData[packlength],'0',300);
+		packlength += 300;
+		SendData[packlength++] = 'E';
+		SendData[packlength++] = 'N';
+		SendData[packlength++] = 'D';
+		
+		SendData[5] = (packlength/1000) + '0';
+		SendData[6] = ((packlength/100)%10) + '0';
+		SendData[7] = ((packlength/10)%10) + '0';
+		SendData[8] = ((packlength)%10) + '0';
+		SendData[packlength++] = '\n';
+
+		
+	}else
+	{
+		sprintf(SendData,"APS110015002301\n");
+		packlength = 16;
+	}		
 	SendToSocketA(SendData ,packlength);
 }

@@ -596,3 +596,15 @@ void APP_ListECUAPInfo(int Data_Len,const char *recvbuffer) 			//ÁÐ¾ÙECU ²éÑ¯µ½µ
 	
 }
 
+
+void APP_GetFunctionStatusInfo(int Data_Len,const char *recvbuffer)
+{
+	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 23 ",(char *)recvbuffer);
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{
+		APP_Response_GetFunctionStatusInfo(0x00);
+	}else
+	{
+		APP_Response_GetFunctionStatusInfo(0x01);
+	}
+}
