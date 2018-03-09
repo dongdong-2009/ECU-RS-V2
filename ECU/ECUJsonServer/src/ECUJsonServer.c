@@ -53,13 +53,13 @@ void Json_Response_101(int connectSocket)
 				sprintf(&sendbuff[length],",\"type\":1");
 				length = strlen(sendbuff);
 				//输出功率
-				sprintf(&sendbuff[length],",\"op\":%.1f",inverterInfo[i].AveragePower_Output);
+				sprintf(&sendbuff[length],",\"op\":%.1f",inverterInfo[i].AveragePower_Output/10);
 				length = strlen(sendbuff);
 				//PV1输入功率
-				sprintf(&sendbuff[length],",\"ip1\":%.1f",inverterInfo[i].AveragePower1);
+				sprintf(&sendbuff[length],",\"ip1\":%.1f",inverterInfo[i].AveragePower1/10);
 				length = strlen(sendbuff);
 				//PV2输入功率
-				sprintf(&sendbuff[length],",\"ip2\":%.1f",inverterInfo[i].AveragePower2);
+				sprintf(&sendbuff[length],",\"ip2\":%.1f",inverterInfo[i].AveragePower2/10);
 				length = strlen(sendbuff);
 				//输出电量
 				sprintf(&sendbuff[length],",\"oe\":%.6f",((float)inverterInfo[i].EnergyPV_Output)/3600000);

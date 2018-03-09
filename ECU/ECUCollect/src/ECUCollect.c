@@ -562,7 +562,7 @@ void ECUCollect_thread_entry(void* parameter)
 				//更新手机显示
 				displayonPhone();
 				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
-				process_rsd_single();//检测RSD功能是否正确
+				//process_rsd_single();//检测RSD功能是否正确
 				process_IDUpdate();//检测ID表格是否需要更新
 
 				if((cur_time_hour>9)&&(1 == ecu.flag_ten_clock_getshortaddr))
