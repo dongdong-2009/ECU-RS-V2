@@ -88,12 +88,28 @@ void Json_Response_101(int connectSocket)
 				if(i != ecu.validNum-1)
 				{
 					//PV2输入电流
-					sprintf(&sendbuff[length],",\"ic2\":%.1f},",((float)inverterInfo[i].PI2)/10);
+					//判断2 路是否有保护，如果没保护，传1路电流
+					if(0 == inverterInfo[i].status.pv2_low_voltage_pritection)
+					{
+						sprintf(&sendbuff[length],",\"ic2\":%.1f},",((float)inverterInfo[i].PI)/10);
+					}else
+					{
+						sprintf(&sendbuff[length],",\"ic2\":%.1f},",((float)inverterInfo[i].PI2)/10);
+					}
+					
 					length = strlen(sendbuff);
 				}else
 				{
 					//PV2输入电流
-					sprintf(&sendbuff[length],",\"ic2\":%.1f}",((float)inverterInfo[i].PI2)/10);
+					//判断2 路是否有保护，如果没保护，传1路电流
+					if(0 == inverterInfo[i].status.pv2_low_voltage_pritection)
+					{
+						sprintf(&sendbuff[length],",\"ic2\":%.1f}",((float)inverterInfo[i].PI)/10);
+					}else
+					{
+						sprintf(&sendbuff[length],",\"ic2\":%.1f}",((float)inverterInfo[i].PI2)/10);
+					}
+					
 					length = strlen(sendbuff);
 				}
 				

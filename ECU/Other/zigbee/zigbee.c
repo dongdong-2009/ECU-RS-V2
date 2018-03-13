@@ -131,7 +131,7 @@ int selectZigbee(int timeout)			// 参数为1表示10ms zigbee串口数据检测 返回0 表示
 			if(zigbeeReadFlag == 1)	//串口数据监测,如果有数据则返回1
 			{
 				rt_timer_delete(readtimer);
-				rt_thread_delay(8);
+				rt_thread_delay(20);
 				return 1;
 			}
 		}

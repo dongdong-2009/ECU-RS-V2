@@ -41,7 +41,7 @@ int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
 	char ip[20] = {'\0'};	//服务器IP地址
 	int port[2]={CLIENT_SERVER_PORT1, CLIENT_SERVER_PORT2};	//服务器端口号
 	struct sockaddr_in serv_addr;
-	struct hostent * host;
+	struct hostent * host = NULL;
 	char buff[512] = {'\0'};
 	FILE *fp;
 
