@@ -192,6 +192,8 @@ void ECUJsonServer_thread_entry(void* parameter)
 	{
 		/* 创建失败的错误处理 */
 		rt_kprintf("Socket error\n");
+		free(recvbuff);
+		recvbuff = NULL;
 		return;
 	}
 	server_addr.sin_family = AF_INET;
@@ -201,6 +203,8 @@ void ECUJsonServer_thread_entry(void* parameter)
 	
 	if (bind(sock, (struct sockaddr *) &server_addr, sizeof(struct sockaddr))	== -1)
 	{
+		free(recvbuff);
+		recvbuff = NULL;
 		return;	
 	}
 	/* 在SOCKET上进行监听 */
@@ -208,6 +212,8 @@ void ECUJsonServer_thread_entry(void* parameter)
 		{
 		rt_kprintf("Listen error\n");
 		/* release recv buffer */
+		free(recvbuff);
+		recvbuff = NULL;
 		return;
 	}
 		

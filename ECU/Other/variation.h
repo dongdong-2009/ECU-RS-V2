@@ -87,7 +87,7 @@ typedef struct inverter_info_t{
 	parameter_status_t parameter_status;
 	unsigned char restartNum;		//一天内的重启次数
 
-	unsigned char  temperature; 	//设备内部温度
+	unsigned char  temperature; 	//设备内部温度 -100度为真实温度
 	
 	unsigned short PV1;		//PV1输入电压  精度 0.1V
 	unsigned short PV2;		//PV2输入电压  精度 0.1V

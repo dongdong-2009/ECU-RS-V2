@@ -287,12 +287,15 @@ static void led_thread_entry(void* parameter)
 			{
 				ATFaliedNum++;
 				printdecmsg(ECU_DBG_WIFI,"WIFI_Test failed NUM ",ATFaliedNum);
-				if(ATFaliedNum >= USR_AT_TEST_FAILED_NUM)	//连续失败2次
+				if(ATFaliedNum >= USR_AT_TEST_FAILED_NUM)	//连续失败2次重启模块
 				{
 					WIFI_RST_Event = 1;
 					ATFaliedNum = 0;
 				}
 				
+			}else
+			{
+				ATFaliedNum = 0;
 			}
 			index = 0;
 		}

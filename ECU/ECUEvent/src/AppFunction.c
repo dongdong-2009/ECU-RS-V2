@@ -472,11 +472,12 @@ void App_SetIOInitStatus(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		//获取IO初始状态
 		APP_Response_IOInitStatus(ID,0x00);
 		
-		//0：低电平（关闭心跳功能）1：高电平（打开心跳功能）
+		//0：低电平（关闭心跳功能）
+		//1：高电平（打开心跳功能）
 		if(recvbuffer[25] == '0'){
-			saveChangeFunctionStatus(2,0,0);
+			saveChangeFunctionStatus(2,0,0);//关闭心跳功能
 		}else{
-			saveChangeFunctionStatus(1,2,0);
+			saveChangeFunctionStatus(1,2,0);//打开心跳功能
 		}
 		
 		save_rsdFunction_change_flag();

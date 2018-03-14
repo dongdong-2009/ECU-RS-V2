@@ -62,12 +62,12 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 
 	inverter->model =  inverter_data[38];	//获取机型码，如果机型码是00表示历史机型
 									//根据ID值将历史机型更改为对应的机型
-	if(inverter->model == 0x00)
+	if(inverter->model == 0x00 ||inverter->model == 0xff)
 	{
 		if(!memcmp(inverter->uid,"601",3))
 		{
 			inverter->model  = 0x01;
-		}else if (!memcmp(inverter->uid,"611",3))
+		}else if (!memcmp(inverter->uid,"611",3))	//RSD机型码位传的为0xff
 		{
 			inverter->model  = 0x02;
 		}
