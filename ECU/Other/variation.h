@@ -57,6 +57,12 @@ typedef struct
 
 typedef struct
 {
+    	unsigned char rsd_config_status:1;			//RSD配置状态: 1 RSD功能使能   0 RSD功能禁能
+	unsigned char Reserve1:7;				//保留
+}config_status_t;
+
+typedef struct
+{
 	unsigned short  Version_Control_flag:1;	//版本控制位
 	unsigned short  Reserve1:2;	//保留位
 	unsigned short  Energy2_flag:1;	//输入2发电量标志位
@@ -75,53 +81,54 @@ typedef struct
 }parameter_status_t;
 
 typedef struct inverter_info_t{
-	char uid[13];		//逆变器ID（在通讯的时候转换为BCD编码）
-	unsigned short shortaddr;	//Zigbee的短地址
-	unsigned char model;					//机型：00未知 01优化器 02 关断器 03JBOX		
-	int zigbee_version;					//zigbee版本号ZK			
+	char uid[13];				//逆变器ID（在通讯的时候转换为BCD编码）
+	unsigned short shortaddr;		//Zigbee的短地址
+	unsigned char model;			//机型：00未知 01优化器 02 关断器 03JBOX		
+	int zigbee_version;			//zigbee版本号ZK			
 	
-	unsigned short version;				//软件版本号
+	unsigned short version;		//软件版本号
 	unsigned short heart_rate;	//心跳次数
 	unsigned short off_times;		//心跳超时次数
 	status_t status;			//部分状态信息 
-	parameter_status_t parameter_status;
+	parameter_status_t parameter_status;	//RSD相关产品传送过来的状态
+	config_status_t config_status;	//配置状态信息
 	unsigned char restartNum;		//一天内的重启次数
 
 	unsigned char  temperature; 	//设备内部温度 -100度为真实温度
 	
-	unsigned short PV1;		//PV1输入电压  精度 0.1V
-	unsigned short PV2;		//PV2输入电压  精度 0.1V
-	unsigned short PI;		//输入电流 	精度0.1A
-	unsigned short PI2;		//输入电流 	精度0.1A
+	unsigned short PV1;			//PV1输入电压  精度 0.1V
+	unsigned short PV2;			//PV2输入电压  精度 0.1V
+	unsigned short PI;			//输入电流 	精度0.1A
+	unsigned short PI2;			//输入电流 	精度0.1A
 	
-	unsigned short PV_Output; //输出电压 精度0.1V
-	unsigned short PI_Output; //输出电流 	精度0.1A
-	unsigned short Power1;	//PV1输入功率  精度0.1W
-	unsigned short Power2;	//PV2输入功率  精度0.1W 
+	unsigned short PV_Output; 	//输出电压 精度0.1V
+	unsigned short PI_Output; 	//输出电流 	精度0.1A
+	unsigned short Power1;		//PV1输入功率  精度0.1W
+	unsigned short Power2;		//PV2输入功率  精度0.1W 
 	unsigned short Power_Output;	//输出功率  精度0.1W 
-	unsigned char RSSI;	//信号强度
-	unsigned int PV1_Energy;//当前一轮PV1发电量	精度 1焦耳
-	unsigned int PV2_Energy;//当前一轮PV2发电量	精度 1焦耳
+	unsigned char RSSI;			//信号强度
+	unsigned int PV1_Energy;		//当前一轮PV1发电量	精度 1焦耳
+	unsigned int PV2_Energy;		//当前一轮PV2发电量	精度 1焦耳
 	unsigned int PV_Output_Energy;//当前一轮PV2发电量	精度 1焦耳
-	unsigned char Mos_CloseNum;//设备上电后MOS管关断次数
-	unsigned char last_RSDTimeout;
-	unsigned char RSDTimeout;
-	unsigned short PV1_low_voltageNUM;
-	unsigned short PV2_low_voltageNUM;
-	char LastCommTime[15];	//RSD最后一次通讯上的时间	
+	unsigned char Mos_CloseNum;	//设备上电后MOS管关断次数
+	unsigned char last_RSDTimeout;		//上一轮RSD超时时间
+	unsigned char RSDTimeout;			//RSD超时时间
+	unsigned short PV1_low_voltageNUM;	//PV1欠压次数
+	unsigned short PV2_low_voltageNUM;	//PV2欠压次数
+	char LastCommTime[15];			//RSD最后一次通讯上的时间	
 	
 	//上一轮相关的数据，这里的上一轮指的是5分钟一轮
 	char LastCollectTime[15];	//上一轮采集时，最后一次通讯时间
 	unsigned int Last_PV1_Energy;//上一轮PV1发电量 指的是5分钟前的一轮
 	unsigned int Last_PV2_Energy;//上一轮PV2发电量 指的是5分钟前的一轮
 	unsigned int Last_PV_Output_Energy;//上一轮PV2发电量 指的是5分钟前的一轮
-	double AveragePower1; //5分钟平均功率1
-	double AveragePower2; //5分钟平均功率2
-	double AveragePower_Output; //5分钟平均功率2
-	unsigned int EnergyPV1;		//当前一轮电量	精度 1焦耳
-	unsigned int EnergyPV2;		//当前一轮电量	精度 1焦耳
+	double AveragePower1; 			//5分钟平均功率1
+	double AveragePower2; 			//5分钟平均功率2
+	double AveragePower_Output; 		//5分钟平均功率2
+	unsigned int EnergyPV1;			//当前一轮电量	精度 1焦耳
+	unsigned int EnergyPV2;			//当前一轮电量	精度 1焦耳
 	unsigned int EnergyPV_Output;		//当前一轮电量	精度 1焦耳
-	unsigned char no_getdata_num;					//unsigned char(保持上限255)连续没有获取到逆变器数据的次数
+	unsigned char no_getdata_num;	//unsigned char(保持上限255)连续没有获取到逆变器数据的次数
 	
 }inverter_info;
 

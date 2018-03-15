@@ -23,7 +23,7 @@
 #include "debug.h"
 #include "bind_inverters.h"
 #include "rsdFunction.h"
-
+#include "stdlib.h"
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
@@ -58,7 +58,8 @@ int init_inverter(inverter_info *inverter)
 	char flag_limitedid = '0';				//限定ID标志
 	FILE *fp;
 	inverter_info *curinverter = inverter;
-	
+	unsigned char RSDStatus = atoi(&ecu.IO_Init_Status);
+	printf("RSDStatus:%d\n",RSDStatus);
 	for(i=0; i<MAXINVERTERCOUNT; i++, curinverter++)
 	{
 		memset(curinverter->uid, 0xff, sizeof(curinverter->uid));	
@@ -85,6 +86,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->status.turn_on_collect_data = 0;
 		curinverter->temperature = 100;
 		memset(&curinverter->parameter_status,0x00,2);
+		memset(&curinverter->config_status,0x00,1);
 		
 		curinverter->restartNum = 0;
 		curinverter->PV1 = 0;
@@ -116,7 +118,8 @@ int init_inverter(inverter_info *inverter)
 		curinverter->EnergyPV2 = 0;
 		curinverter->EnergyPV_Output = 0;
 		curinverter->no_getdata_num = 0;
-		
+		//初始化配置状态为RSD系统状态
+		curinverter->config_status.rsd_config_status = RSDStatus;
 	}
 	
 	while(1) {
@@ -148,8 +151,11 @@ int init_inverter(inverter_info *inverter)
 
 	//判断是否需要广播参数设置指令  	先广播，然后再每台单播
 	process_rsdFunction_all();
+	
 	//判断是否需要单播参数设置指令		进行每台单播
-	process_rsdFunction();			
+	process_rsdFunction();	
+
+	
 	
 	return 0;
 }

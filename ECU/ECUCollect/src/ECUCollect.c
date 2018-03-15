@@ -51,6 +51,7 @@ int init_all(inverter_info *inverter)
 	init_inverter(inverter);
 	rateOfProgress = 100;
 	init_tmpdb(inverter);
+	init_rsdStatus(inverter);
 	return 0;
 }
 

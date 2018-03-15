@@ -294,6 +294,45 @@ void init_tmpdb(inverter_info *firstinverter)
 	}
 }
 
+void init_rsdStatus(inverter_info *firstinverter)
+{
+	int j;
+	char list[2][32];
+	char data[200];
+	unsigned char UID12[13] = {'\0'};
+	FILE *fp;
+	inverter_info *curinverter = firstinverter;
+	fp = fopen("/tmp/rsdcon.con", "r");
+	if(fp)
+	{
+		while(NULL != fgets(data,200,fp))
+		{
+			//print2msg(ECU_DBG_FILE,"ID",data);
+			memset(list,0,sizeof(list));
+			splitString(data,list);
+			//判断是否存在该逆变器
+			//将12位的RSD ID转换为6位的BCD编码ID
+			memcpy(UID12,list[0],12);
+			UID12[12] = '\0';
+			curinverter = firstinverter;
+			
+			for(j=0; (j<ecu.validNum); j++)	
+			{
+
+				if(!memcmp(curinverter->uid,UID12,12))
+				{
+					curinverter->config_status.rsd_config_status = atoi(list[1]);
+					printf("UID %s ,RSDStatus: %d\n",UID12,curinverter->config_status.rsd_config_status);
+					break;
+				}
+				curinverter++;
+			}			
+		}
+		printf("\n\n");
+		fclose(fp);
+	}
+}
+
 //初始化Record锁
 void init_RecordMutex(void)
 {

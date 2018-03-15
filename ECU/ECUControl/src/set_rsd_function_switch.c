@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "serverfile.h"
 #include "rsdFunction.h"
+#include "dfs_posix.h "
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -55,6 +56,8 @@ int set_rsd_function_switch(const char *recvbuffer, char *sendbuffer)
 			rsdTimeout = atoi(strrsdTimeout);
 			saveChangeFunctionStatus(FunctionStatus,onoffstatus,rsdTimeout);
 			save_rsdFunction_change_flag();
+			unlink("/tmp/setrsd");
+			unlink("/tmp/rsdcon.con");
 			//重启main线程
 			threadRestartTimer(20,TYPE_DATACOLLECT);
 
@@ -63,6 +66,7 @@ int set_rsd_function_switch(const char *recvbuffer, char *sendbuffer)
 			memcpy(strnum,&recvbuffer[48],4);
 			num = atoi(strnum);
 			insertSetRSDInfo(num,(char *)&recvbuffer[52]);
+			insertRSDCon(num,(char *)&recvbuffer[52]);
 			//重启main线程
 			threadRestartTimer(20,TYPE_DATACOLLECT);
 			
