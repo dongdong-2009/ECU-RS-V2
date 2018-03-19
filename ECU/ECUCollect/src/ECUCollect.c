@@ -14,6 +14,7 @@
 #include "zigbee.h"
 #include "timer.h"
 #include "rsdFunction.h"
+#include "remote_update.h"
 
 extern unsigned char rateOfProgress;
 extern ecu_info ecu;
@@ -566,6 +567,8 @@ void ECUCollect_thread_entry(void* parameter)
 				process_rsd_single();//检测RSD功能是否正确
 				process_IDUpdate();//检测ID表格是否需要更新
 
+
+				//remote_update(inverterInfo);
 				if((cur_time_hour>9)&&(1 == ecu.flag_ten_clock_getshortaddr))
 				{
 					get_inverter_shortaddress(inverterInfo);
@@ -608,7 +611,7 @@ void ECUCollect_thread_entry(void* parameter)
 			
 			
 		}
-		process_Heart();
+		//process_Heart();
 
 		CollectClientDurabletime = acquire_time();		
 		CollectControlDurabletime = acquire_time();			

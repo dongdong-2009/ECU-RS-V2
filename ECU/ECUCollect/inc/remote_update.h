@@ -1,7 +1,7 @@
-#ifndef __DATETIME_H__
-#define __DATETIME_H__
+#ifndef __REMOTE_UPDATE_H__
+#define __REMOTE_UPDATE_H__
 /*****************************************************************************/
-/*  File      : datatime.h                                                   */
+/*  File      : remote_update.h                                              */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
@@ -12,19 +12,14 @@
 /*****************************************************************************/
 
 /*****************************************************************************/
+/*  Include Files                                                            */
+/*****************************************************************************/
+#include "variation.h"
+
+/*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
+int remote_update(inverter_info *firstinverter);
 
-int get_time(char *sendcommanddatetime, char *sendcommandtime);
-int acquire_time(void);
-//时间比较
-int compareTime(int durabletime ,int thistime,int reportinterval);
-//获取当前的小时数
-int get_hour(void);
+#endif /*__REMOTE_UPDATE_H__*/
 
-//计算两个时间点的时间差
-int Time_difference(char *curTime,char *lastTime);
-
-void getcurrenttime(char db_time[]);
-
-#endif /*__DATETIME_H__*/

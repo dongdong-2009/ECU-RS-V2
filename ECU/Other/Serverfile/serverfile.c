@@ -53,7 +53,7 @@ int fileRead(int fd,char* buf,int len)
 int Write_ECUID(char *ECUID)		//ECU ID  12◊÷Ω⁄
 {
 	char ecuid[13] = {'\0'};
-	FILE *fp = fopen("/config/ecuid.con","w");
+	FILE *fp = fopen("/yuneng/ecuid.con","w");
 	memcpy(ecuid,ECUID,12);
 	ecuid[12] = '\0';
 	fputs(ecuid,fp);
@@ -63,7 +63,7 @@ int Write_ECUID(char *ECUID)		//ECU ID  12◊÷Ω⁄
 int Read_ECUID(char *ECUID)		//∂¡»°ECUID  12◊÷Ω⁄
 {
 	int fd;
-	fd = open("/config/ecuid.con", O_RDONLY, 0);
+	fd = open("/yuneng/ecuid.con", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		read(fd, ECUID, 13);
@@ -87,7 +87,7 @@ void transformECUID(char * ECUID6,char *ECUID12)
 int Write_IO_INIT_STATU(char *IO_InitStatus)								//IO…œµÁ◊¥Ã¨
 {
 	char IO_INITStatus[1] = {'\0'};
-	FILE *fp = fopen("/config/IO_Init.con","w");
+	FILE *fp = fopen("/yuneng/IO_Init.con","w");
 	memcpy(IO_INITStatus,IO_InitStatus,1);
 	fputs(IO_INITStatus,fp);
 	fclose(fp);
@@ -97,7 +97,7 @@ int Write_IO_INIT_STATU(char *IO_InitStatus)								//IO…œµÁ◊¥Ã¨
 int Read_IO_INIT_STATU(char *IO_InitStatus)
 {
 	int fd;
-	fd = open("/config/IO_Init.con", O_RDONLY, 0);
+	fd = open("/yuneng/IO_Init.con", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		read(fd, IO_InitStatus, 1);
@@ -108,7 +108,7 @@ int Read_IO_INIT_STATU(char *IO_InitStatus)
 int Write_WIFI_PW(char *WIFIPasswd,unsigned char Counter)//WIFI√‹¬Î
 {
 	int fd;
-	fd = open("/config/passwd.con", O_WRONLY|O_CREAT, 0);
+	fd = open("/yuneng/passwd.con", O_WRONLY|O_CREAT, 0);
 	if (fd >= 0)
 	{
 		write(fd, WIFIPasswd, Counter);
@@ -119,7 +119,7 @@ int Write_WIFI_PW(char *WIFIPasswd,unsigned char Counter)//WIFI√‹¬Î
 int Read_WIFI_PW(char *WIFIPasswd,unsigned char Counter)
 {
 	int fd;
-	fd = open("/config/passwd.con", O_RDONLY, 0);
+	fd = open("/yuneng/passwd.con", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		read(fd, WIFIPasswd, Counter);
@@ -151,10 +151,12 @@ void sysDirDetection(void)
 	dirDetection("/home");
 	dirDetection("/tmp");
 	dirDetection("/ftp");
-	dirDetection("/config");
+	dirDetection("/yuneng");
 	dirDetection("/home/data");
 	dirDetection("/home/record");
 	dirDetection("/home/record/data");
+	dirDetection("/home/data/proc_res");
+	dirDetection("/home/data/IPROCRES");
 	dirDetection("/home/record/power");
 	dirDetection("/home/record/energy");
 	dirDetection("/home/record/CTLDATA");
@@ -374,13 +376,13 @@ void echo(const char* filename,const char* string)
 
 void key_init(void)
 {
-	echo("/config/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
+	echo("/yuneng/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
 	rt_hw_ms_delay(20);
-	echo("/config/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
+	echo("/yuneng/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
 	rt_hw_ms_delay(20);
-	echo("/config/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
+	echo("/yuneng/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
 	rt_hw_ms_delay(20);
-	unlink("/config/staticIP.con");
+	unlink("/yuneng/staticIP.con");
 	dhcp_reset();
 
 }
@@ -389,16 +391,18 @@ int initPath(void)
 {
 	mkdir("/tmp",0x777);
 	mkdir("/home",0x777);
-	mkdir("/config",0x777);
+	mkdir("/yuneng",0x777);
 	mkdir("/home/data",0x777);
 	mkdir("/home/record",0x777);
+	mkdir("/home/data/proc_res",0x777);
+	mkdir("/home/data/iprocres",0x777);
 	echo("/home/data/ltpower","0.000000");
 	mkdir("/home/record/data",0x777);
 	mkdir("/home/record/power",0x777);
 	mkdir("/home/record/energy",0x777);	
-	echo("/config/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
-	echo("/config/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
-	echo("/config/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
+	echo("/yuneng/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
+	echo("/yuneng/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
+	echo("/yuneng/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
 	mkdir("/ftp",0x777);
 	mkdir("/home/record/ctldata/",0x777);
 	mkdir("/home/record/almdata/",0x777);
@@ -412,7 +416,7 @@ int initsystem(char *mac)
 {
 	initPath();
 	rt_hw_ms_delay(20);
-	echo("/config/ecumac.con",mac);
+	echo("/yuneng/ecumac.con",mac);
 	
 	return 0;
 }
@@ -431,7 +435,7 @@ void get_mac(rt_uint8_t  dev_addr[6])
 {
 	FILE *fp;
 	char macstr[18] = {'\0'};
-	fp = fopen("/config/ecumac.con","r");
+	fp = fopen("/yuneng/ecumac.con","r");
 	if(fp)
 	{
 		//∂¡»°macµÿ÷∑
@@ -606,6 +610,20 @@ int optimizeFileSystem(int capsize)
 	if (cap < capsize) 
 	{
 		//…æ≥˝◊Ó«∞√Ê“ªÃÏµƒECUº∂±¥¶¿ÌΩ·π˚ ˝æ›    »Áπ˚∏√ƒø¬ºœ¬¥Ê‘⁄Œƒº˛µƒª∞
+		if(1 == checkOldFile("/home/data/proc_res",oldFile))
+		{
+			unlink(oldFile);
+		}
+		
+		//…æ≥˝◊Ó«∞√Ê“ªÃÏµƒƒÊ±‰∆˜º∂±¥¶¿ÌΩ·π˚ ˝æ›  »Áπ˚∏√ƒø¬ºœ¬¥Ê‘⁄Œƒº˛µƒª∞
+		memset(oldFile,0x00,100);
+		if(1 == checkOldFile("/home/data/iprocres",oldFile))
+		{
+			unlink(oldFile);
+		}
+		
+	
+		//…æ≥˝◊Ó«∞√Ê“ªÃÏµƒECUº∂±¥¶¿ÌΩ·π˚ ˝æ›    »Áπ˚∏√ƒø¬ºœ¬¥Ê‘⁄Œƒº˛µƒª∞
 		if(1 == checkOldFile("/home/record/almdata",oldFile))
 		{
 			unlink(oldFile);
@@ -635,7 +653,7 @@ int optimizeFileSystem(int capsize)
 int get_DHCP_Status(void)
 {
 	int fd;
-	fd = open("/config/staticIP.con", O_RDONLY, 0);
+	fd = open("/yuneng/staticIP.con", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		close(fd);
@@ -689,7 +707,7 @@ unsigned short get_panid(void)
 	int fd;
 	unsigned short ret = 0;
 	char buff[17] = {'\0'};
-	fd = open("/config/ECUMAC.CON", O_RDONLY, 0);
+	fd = open("/yuneng/ECUMAC.CON", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		memset(buff, '\0', sizeof(buff));
@@ -721,7 +739,7 @@ char get_channel(void)
 	int fd;
 	char ret = 0;
 	char buff[5] = {'\0'};
-	fd = open("/config/CHANNEL.CON", O_RDONLY, 0);
+	fd = open("/yuneng/CHANNEL.CON", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		memset(buff, '\0', sizeof(buff));
@@ -741,7 +759,7 @@ char get_channel(void)
 			buff[3] -= 0x57;
 		ret = (buff[2]*16+buff[3]);
 	} else {
-		fd = open("/config/CHANNEL.CON", O_WRONLY | O_CREAT | O_TRUNC, 0);
+		fd = open("/yuneng/CHANNEL.CON", O_WRONLY | O_CREAT | O_TRUNC, 0);
 		if (fd >= 0) {
 			write(fd, "0x17", 5);
 			close(fd);
@@ -958,6 +976,59 @@ void save_system_power(int system_power, char *date_time)
 	rt_mutex_release(record_data_lock);
 	
 }
+
+int save_inverter_parameters_result(inverter_info *inverter, int item, char *inverter_result)
+{
+	char dir[50] = "/home/data/iprocres/";
+	char file[9];
+	int fd;
+	char time[20];
+	
+	getcurrenttime(time);
+	memcpy(file,&time[0],8);
+	file[8] = '\0';
+	sprintf(dir,"%s%s.dat",dir,file);
+	print2msg(ECU_DBG_COLLECT,"save_inverter_parameters_result dir",dir);
+	fd = open(dir, O_WRONLY | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{	
+		write(fd,"\n",1);
+		sprintf(inverter_result,"%s,%s,%3d,1\n",inverter_result,inverter->uid,item);
+		print2msg(ECU_DBG_COLLECT,"inverter_result",inverter_result);
+		write(fd,inverter_result,strlen(inverter_result));
+		close(fd);
+	}
+	
+	return 0;
+
+}
+
+int save_inverter_parameters_result2(char *id, int item, char *inverter_result)
+{
+	char dir[50] = "/home/data/iprocres/";
+	char file[9];
+	int fd;
+	char time[20];
+	
+	getcurrenttime(time);
+	memcpy(file,&time[0],8);
+	file[8] = '\0';
+	sprintf(dir,"%s%s.dat",dir,file);
+	print2msg(ECU_DBG_COLLECT,"save_inverter_parameters_result2 DIR",dir);
+	fd = open(dir, O_WRONLY | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{		
+		write(fd,"\n",1);
+		sprintf(inverter_result,"%s,%s,%3d,1\n",inverter_result,id,item);
+		print2msg(ECU_DBG_COLLECT,"inverter_result",inverter_result);
+		write(fd,inverter_result,strlen(inverter_result));
+		close(fd);
+	}
+	
+	return 0;
+
+}
+
 
 //º∆À„¡ΩÃÏ«∞µƒ»’∆⁄
 int calculate_earliest_2_day_ago(char *date,int *earliest_data)
@@ -3220,6 +3291,29 @@ int update_alarm_send_flag(char *send_date_time)
 }
 
 
+int read_line(char* filename,char *linedata,char* compareData,int len)
+{
+	FILE *fin;
+  fin=fopen(filename,"r");
+	if(fin == NULL)
+	{
+		print2msg(ECU_DBG_OTHER,"read_line failure2",filename);
+    return -1;
+	}
+	
+  while(fgets(linedata,100,fin))//‰ªéÂéüÊñá‰ª∂ËØªÂèñ‰∏ÄË°å
+	{
+		if(!memcmp(linedata,compareData,len))
+		{
+			//Â≠òÂú®Áõ∏ÂêåË°åÔºåÂÖ≥Èó≠Êñá‰ª∂   ÁÑ∂ÂêéËøîÂõû1  Ë°®Á§∫Â≠òÂú®ËØ•Ë°å
+			fclose(fin);
+			return 1;
+		}
+	}
+  fclose(fin);
+  return -1;
+}
+
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
@@ -3230,7 +3324,7 @@ void setdatacent(char *IP,char* port)
 {
 	char str[100] = {'\0'};
 	sprintf(str,"Domain=EEE.apsema.com\nIP=%s\nPort1=%s\nPort2=%s\n",IP,port,port);
-	echo("/config/datacent.con",str);
+	echo("/yuneng/datacent.con",str);
 }
 FINSH_FUNCTION_EXPORT(setdatacent, eg:setdatacent);
 

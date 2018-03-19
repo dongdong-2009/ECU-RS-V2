@@ -158,10 +158,10 @@ int insertinverter(char *buff)
 		addInverter(id);
 	}
 
-	fp = fopen("/config/autoflag.con", "w");
+	fp = fopen("/yuneng/autoflag.con", "w");
 	fputs("0", fp);
 	fclose(fp);
-	fp = fopen("/config/limiteid.con", "w");
+	fp = fopen("/yuneng/limiteid.con", "w");
 	fputs("1", fp);
 	fclose(fp);
 	restartThread(TYPE_DATACOLLECT);
@@ -206,8 +206,8 @@ int getevent(char *eve)
 
 int clearrecord()
 {
-	unlink("/config/AUTOFLAG.CON");
-	unlink("/config/LIMITEID.CON");
+	unlink("/yuneng/AUTOFLAG.CON");
+	unlink("/yuneng/LIMITEID.CON");
 	unlink("/home/data/COLLECT.CON");
 
 	clear_id();
@@ -273,7 +273,7 @@ void idwrite_thread_entry(void* parameter)
 				ret = -2;
 			}
 			
-			fp=fopen("/config/ecuid.con","r");
+			fp=fopen("/yuneng/ecuid.con","r");
 			fgets(ecu.ECUID12,13,fp);
 			fclose(fp);
 			restartThread(TYPE_DATACOLLECT);
@@ -290,7 +290,7 @@ void idwrite_thread_entry(void* parameter)
 		}
 		if(!strncmp(recvbuff, "get_ecu_id", 10)){
 			memset(ecu.ECUID12,'\0',sizeof(ecu.ECUID12));
-			fp=fopen("/config/ecuid.con","r");
+			fp=fopen("/yuneng/ecuid.con","r");
 			fgets(ecu.ECUID12,13,fp);
 			fclose(fp);
 			printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd,ecu.ECUID12,strlen(ecu.ECUID12),0));
@@ -317,19 +317,19 @@ void idwrite_thread_entry(void* parameter)
 			mac[16] = recvbuff[24];
 			print2msg(ECU_DBG_OTHER,"ECU eth0 MAC address",mac);
 			printdecmsg(ECU_DBG_OTHER,"length",strlen(mac));
-			fp=fopen("/config/ecumac.con","w");
+			fp=fopen("/yuneng/ecumac.con","w");
 			fputs(mac,fp);
 			fclose(fp);
 			memset(mac,'\0',sizeof(mac));
 			
-			fp=fopen("/config/ecumac.con","r");
+			fp=fopen("/yuneng/ecumac.con","r");
 			fgets(mac,18,fp);
 			fclose(fp);
 			printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd,mac,strlen(mac),0));
 		}
 		if(!strncmp(recvbuff, "get_eth0_mac", 12)){
 			memset(mac,'\0',sizeof(mac));
-			fp=fopen("/config/ecumac.con","r");
+			fp=fopen("/yuneng/ecumac.con","r");
 			fgets(mac,18,fp);
 			fclose(fp);
 			printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd,mac,strlen(mac),0));
@@ -386,7 +386,7 @@ void idwrite_thread_entry(void* parameter)
 			memset(version, 0, sizeof(version));
 			sprintf(version,"%s_%s.%s", ECU_VERSION,MAJORVERSION,MINORVERSION);
 			memset(area, 0, sizeof(area));
-			fp = fopen("/config/area.con", "r");
+			fp = fopen("/yuneng/area.con", "r");
 			if(fp){
 				fgets(area, sizeof(area), fp);
 				fclose(fp);

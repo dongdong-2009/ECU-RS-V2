@@ -33,6 +33,8 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 {
 	char status = 0;
 	unsigned char pre_model = inverter->model;  //现将原来的model保存   如果和获取到的不同 更新model表
+	unsigned short pre_version = inverter->version;
+
 	//保存上一轮报警状态数据
 	inverter->status.last_mos_status = inverter->status.mos_status;
 	inverter->status.last_function_status = inverter->status.function_status;
@@ -117,7 +119,7 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	apstime(inverter->LastCommTime);
 	inverter->LastCommTime[14] = '\0';
 
-	if(pre_model != inverter->model)	//如果model变化了  将ECU的ID更新标志位置1
+	if((pre_model != inverter->model) ||(pre_version != inverter->version))	//如果model变化了  将ECU的ID更新标志位置1
 	{
 		ecu.idUpdateFlag = 1;
 	}

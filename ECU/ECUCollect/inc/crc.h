@@ -1,20 +1,29 @@
-#ifndef __MYCOMMAND_H__
-#define __MYCOMMAND_H__
+#ifndef __CRC_H__
+#define __CRC_H__
 /*****************************************************************************/
-/*  File      : mycommand.h                                                  */
+/*  File      : crc.h                                                        */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-04-13 * Shengfeng Dong  * Creation of the file                      */
+/*  2018-03-15 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
 
 /*****************************************************************************/
+/*  Include Files                                                            */
+/*****************************************************************************/
+#include "variation.h"
+
+/*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-int mysystem(const char *command);
-void reboot_timer(int timeout);
+unsigned short UpdateCRC(unsigned short CRC_acc, unsigned char CRC_input);
+unsigned short crc_array(unsigned char *buff, int len);
+unsigned short crc_file(char *file);
+unsigned short crc_16_opt(char *pData,int len,int init,int *ptable);
 
-#endif	/*__MYCOMMAND_H__*/
+
+#endif /*__REMOTE_UPDATE_H__*/
+

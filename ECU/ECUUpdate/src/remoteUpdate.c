@@ -30,6 +30,11 @@
 #define UPDATE_PATH_SUFFIX "ecu-r-rs.bin"
 #define UPDATE_PATH "/FTP/ecu.bin"
 
+#define UPDATE_PATH_OPT_SUFFIX "OPT700.BIN"
+#define UPDATE_PATH_OPT_TEMP "/FTP/OPT700UP.BIN"
+#define UPDATE_PATH_OPT "/FTP/UPOPT700.BIN"
+
+
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
@@ -121,6 +126,45 @@ int updateECUByID(void)
 	return ret;
 }
 
+
+int updateOPTByID(void)	//获取OPT升级包
+{
+	int ret = 0;
+	char domain[100]={'\0'};		//服务器域名
+	char IPFTPadd[50] = {'\0'};
+	char remote_path[100] = {'\0'};
+	char ecuID[13] = {'\0'};
+	int port = 0;
+	char user[20]={'\0'};
+	char password[20]={'\0'};
+	
+	
+	getFTPConf(domain,IPFTPadd,&port,user,password);
+	print2msg(ECU_DBG_UPDATE,"Domain",domain);
+	print2msg(ECU_DBG_UPDATE,"FTPIP",IPFTPadd);
+	printdecmsg(ECU_DBG_UPDATE,"port",port);
+	print2msg(ECU_DBG_UPDATE,"user",user);
+	print2msg(ECU_DBG_UPDATE,"password",password);
+	//获取ECU的ID
+	memcpy(ecuID,ecu.ECUID12,12);
+	ecuID[12] = '\0';
+	
+	//获取服务器IP地址
+	sprintf(remote_path,"/ECU_R_RS/%s/%s",ecuID,UPDATE_PATH_OPT_SUFFIX);
+	print2msg(ECU_DBG_UPDATE,"ID Path",remote_path);
+	ret=ftpgetfile(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH_OPT_TEMP);
+	if(!ret)
+	{
+		unlink(UPDATE_PATH_OPT);
+		rename(UPDATE_PATH_OPT_TEMP,UPDATE_PATH_OPT);
+		deletefile(remote_path);
+	}else
+	{
+
+	}
+	return ret;
+}
+
 void remote_update_thread_entry(void* parameter)
 {
 	int i = 0;
@@ -138,6 +182,14 @@ void remote_update_thread_entry(void* parameter)
 			if(-1 != updateECUByID())
 				break;
 		}
+				
+		for(i = 0;i<2;i++)
+		{
+			if(-1 != updateOPTByID())
+				break;
+		}
+
+
 		
 		//rt_thread_delay(RT_TICK_PER_SECOND*10);		
 		rt_thread_delay(RT_TICK_PER_SECOND*86400);		

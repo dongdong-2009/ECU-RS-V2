@@ -16,6 +16,10 @@
 /*****************************************************************************/
 #define MAXINVERTERCOUNT 								120	//最大的逆变器数
 #define INVERTERLENGTH 									56	//最大的逆变器数  //与手机通讯
+
+#define RECORDLENGTH 150		//子记录的长度
+#define RECORDTAIL 100			//大记录的结尾，包括发电量、时间等信息
+
 //Client 相关通信参数
 #define CLIENT_RECORD_HEAD							20
 #define CLIENT_RECORD_ECU_HEAD					78

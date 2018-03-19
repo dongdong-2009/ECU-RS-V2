@@ -38,7 +38,7 @@ void getFTPConf(char *domain,char *FTPIP,int *port,char* user,char *password)
 {
 	FILE *fp;
 	char buff[50];
-	fp = fopen("/config/ftpadd.con", "r");
+	fp = fopen("/yuneng/ftpadd.con", "r");
 	if(fp)
 	{
 		while(1)

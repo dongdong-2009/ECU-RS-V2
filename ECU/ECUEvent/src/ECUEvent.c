@@ -96,7 +96,7 @@ void ECUEvent_thread_entry(void* parameter)
 	rt_thread_delay(RT_TICK_PER_SECOND*START_TIME_EVENT);
 	add_APP_functions();
 	get_mac((unsigned char*)ecu.MacAddress);			//ECU ”–œﬂMacµÿ÷∑
-	fileflag = file_get_array(array, 5, "/config/staticIP.con");
+	fileflag = file_get_array(array, 5, "/yuneng/staticIP.con");
 	if(fileflag == 0)
 	{
 		getAddr(array, 5,&IPconfig);

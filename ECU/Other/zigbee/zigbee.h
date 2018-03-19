@@ -34,6 +34,10 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 int zb_sendHeart(char uid[13]);
 int bind_nodata_inverter(inverter_info *firstinverter);
 int get_inverter_shortaddress(inverter_info *firstinverter);		//获取没有数据的逆变器的短地址
+int zb_get_reply_update_start(char *data,inverter_info *inverter);			//读取逆变器远程更新的Update_start返回帧，ZK，返回响应时间定为10秒
+int zb_get_reply_restore(char *data,inverter_info *inverter);			//读取逆变器远程更新失败，还原指令后的返回帧，ZK，因为还原时间比较长，所以单独写一个函数
+int zb_send_cmd(inverter_info *inverter, char *buff, int length)	;	//zigbee包头
+int zb_get_reply(char *data,inverter_info *inverter);			//读取逆变器的返回帧
 
 
 #endif /*__ZIGBEE_H__*/

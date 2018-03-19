@@ -686,7 +686,7 @@ int zb_get_reply(char *data,inverter_info *inverter)			//读取逆变器的返回帧
 	char inverterid[13] = {'\0'};
 	int temp_size,size;
 
-	if(selectZigbee(100) <= 0)
+	if(selectZigbee(400) <= 0)
 	{
 		printmsg(ECU_DBG_COMM,"Get reply time out");
 		inverter->RSSI=0;
@@ -1036,6 +1036,77 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 	else
 	{
 		return -1;
+	}
+}
+
+
+int zb_get_reply_update_start(char *data,inverter_info *inverter)			//读取逆变器远程更新的Update_start返回帧，ZK，返回响应时间定为10秒
+{
+	int i;
+	char data_all[256];
+	char inverterid[13] = {'\0'};
+	int temp_size,size;
+
+
+	if(selectZigbee(1000) <= 0)
+	{
+		printmsg(ECU_DBG_COMM,"Get reply time out");
+		return -1;
+	}
+	else
+	{
+		temp_size = ZIGBEE_SERIAL.read(&ZIGBEE_SERIAL,0, data_all, 255);
+		size = temp_size -12;
+
+		for(i=0;i<size;i++)
+		{
+			data[i]=data_all[i+12];
+		}
+		printhexmsg(ECU_DBG_COMM,"Reply", data_all, temp_size);
+		sprintf(inverterid,"%02x%02x%02x%02x%02x%02x",data_all[6],data_all[7],data_all[8],data_all[9],data_all[10],data_all[11]);
+		if((size>0)&&(0xFC==data_all[0])&&(0xFC==data_all[1])&&(data_all[2]==inverter->shortaddr/256)&&(data_all[3]==inverter->shortaddr%256)&&(data_all[5]==0xA5)&&(0==strcmp(inverter->uid,inverterid)))
+		{
+			return size;
+		}
+		else
+		{
+			return -1;
+		}
+	}
+}
+
+int zb_get_reply_restore(char *data,inverter_info *inverter)			//读取逆变器远程更新失败，还原指令后的返回帧，ZK，因为还原时间比较长，所以单独写一个函数
+{
+	int i;
+	char data_all[256];
+	char inverterid[13] = {'\0'};
+	int temp_size,size;
+
+if(selectZigbee(1000) <= 0)
+	{
+		printmsg(ECU_DBG_COMM,"Get reply time out");
+		return -1;
+	}
+	else
+	{
+		temp_size = ZIGBEE_SERIAL.read(&ZIGBEE_SERIAL,0, data_all, 255);
+		size = temp_size -12;
+
+		for(i=0;i<size;i++)
+		{
+			data[i]=data_all[i+12];
+		}
+		printhexmsg(ECU_DBG_COMM,"Reply", data_all, temp_size);
+		sprintf(inverterid,"%02x%02x%02x%02x%02x%02x",data_all[6],data_all[7],data_all[8],data_all[9],data_all[10],data_all[11]);
+
+		if((size>0)&&(0xFC==data_all[0])&&(0xFC==data_all[1])&&(data_all[2]==inverter->shortaddr/256)&&(data_all[3]==inverter->shortaddr%256)&&(data_all[5]==0xA5)&&(0==strcmp(inverter->uid,inverterid)))
+		{
+			return size;
+		}
+		else
+		{
+			return -1;
+		}
 	}
 }
 

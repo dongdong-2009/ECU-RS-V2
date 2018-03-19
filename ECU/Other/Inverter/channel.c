@@ -72,7 +72,7 @@ int channel_need_change()
 int saveChannel_change_flag()
 {
 	echo("/tmp/changech.con","1");
-	echo("/config/limiteid.con","1");
+	echo("/yuneng/limiteid.con","1");
 	return 0;
 }
 
@@ -141,7 +141,7 @@ int saveECUChannel(int channel)
 	char buffer[5] = {'\0'};
 
 	snprintf(buffer, sizeof(buffer), "0x%02X", channel);
-	fp = fopen("/config/channel.con", "w");
+	fp = fopen("/yuneng/channel.con", "w");
 	if (fp) {
 		fputs(buffer, fp);
 		fclose(fp);

@@ -102,7 +102,7 @@ int add_id(const char *msg, int num)
 		close(fd);
 	}
 
-	echo("/config/limiteid.con","1");
+	echo("/yuneng/limiteid.con","1");
 	return count;
 }
 
