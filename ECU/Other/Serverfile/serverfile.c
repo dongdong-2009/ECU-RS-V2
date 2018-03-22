@@ -3328,4 +3328,12 @@ void setdatacent(char *IP,char* port)
 }
 FINSH_FUNCTION_EXPORT(setdatacent, eg:setdatacent);
 
+void setControl(char *IP,char* port)
+{
+	char str[100] = {'\0'};
+	sprintf(str,"Domain=EEE.apsema.com\nIP=%s\nPort1=%s\nPort2=%s\n",IP,port,port);
+	echo("/yuneng/control.con",str);
+}
+FINSH_FUNCTION_EXPORT(setControl, eg:setControl);
+
 #endif

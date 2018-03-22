@@ -44,7 +44,7 @@ int set_update_num(const char *msg, int num)
 	for(i=0; i<num; i++)
 	{
 		//获取一台逆变器的ID号
-		strncpy(inverter_id, &msg[i*12], 12);
+		strncpy(inverter_id, &msg[i*13], 12);
 			
 		//如果存在该逆变器数据则删除该记录
 		delete_line("/home/data/upinv","/home/data/upinv.t",inverter_id,12);
@@ -81,7 +81,7 @@ int set_inverter_update(const char *recvbuffer, char *sendbuffer)
 			break;
 		case 1:
 			//检查格式（逆变器数量）
-			if(!msg_num_check(&recvbuffer[52], num, 12, 0)){
+			if(!msg_num_check(&recvbuffer[52], num, 13, 0)){
 				ack_flag = FORMAT_ERROR;
 			}
 			else{

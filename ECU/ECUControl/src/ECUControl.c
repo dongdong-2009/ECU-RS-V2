@@ -1177,10 +1177,10 @@ void ECUControl_thread_entry(void* parameter)
 				resend_alarm_record();
 				delete_alarm_file_resendflag0();		//清空数据resend标志全部为0的目录
 			}
-
+			response_process_result();
 			while(search_alarm_readflag(data,time,&flag,'1'))		//	获取一条resendflag为1的数据
 			{
-				response_process_result();
+				
 				if(compareTime(AlarmDurabletime ,AlarmThistime,AlarmReportinterval))
 				{
 						break;
