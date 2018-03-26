@@ -61,7 +61,7 @@ int phone_add_inverter(int num,const char *uidstring)
 	}
 	printf("%s\n",allbuff);
 	echo("/home/data/id",allbuff);
-	echo("/yuneng/limiteid.con","1");
+	echo("/config/limiteid.con","1");
 	free(allbuff);
 	allbuff = NULL;
 	return 0;
@@ -254,7 +254,7 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 		if(ModeFlag == 0x00)		//DHCP
 		{
 			printmsg(ECU_DBG_WIFI,"dynamic IP");
-			unlink("/yuneng/staticIP.con");
+			unlink("/config/staticIP.con");
 			dhcp_reset();
 		}else if (ModeFlag == 0x01)		//固定IP		
 		{
@@ -262,7 +262,7 @@ void App_SetWiredNetwork(unsigned char * ID,int Data_Len,const char *recvbuffer)
 			//保存网络地址
 			sprintf(buff,"IPAddr=%d.%d.%d.%d\nMSKAddr=%d.%d.%d.%d\nGWAddr=%d.%d.%d.%d\nDNS1Addr=%d.%d.%d.%d\nDNS2Addr=%d.%d.%d.%d\n",IPAddr.IP1,IPAddr.IP2,IPAddr.IP3,IPAddr.IP4,
 			MSKAddr.IP1,MSKAddr.IP2,MSKAddr.IP3,MSKAddr.IP4,GWAddr.IP1,GWAddr.IP2,GWAddr.IP3,GWAddr.IP4,DNS1Addr.IP1,DNS1Addr.IP2,DNS1Addr.IP3,DNS1Addr.IP4,DNS2Addr.IP1,DNS2Addr.IP2,DNS2Addr.IP3,DNS2Addr.IP4);
-			echo("/yuneng/staticIP.con",buff);
+			echo("/config/staticIP.con",buff);
 			//设置固定IP
 			StaticIP(IPAddr,MSKAddr,GWAddr,DNS1Addr,DNS2Addr);
 		}

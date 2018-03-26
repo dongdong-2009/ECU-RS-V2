@@ -111,7 +111,7 @@ int Sendupdatepackage_start(inverter_info *inverter)	//发送单点开始数据包
 	sendbuff[9]=pos%256;
 	sendbuff[10]=0x01;
 	sendbuff[11]=0x01;
-	fp=fopen("/yuneng/upload1.con","r");
+	fp=fopen("/config/upload1.con","r");
 	if(fp==NULL)
 	{}
 	else
@@ -121,7 +121,7 @@ int Sendupdatepackage_start(inverter_info *inverter)	//发送单点开始数据包
 		sendbuff[10]=flag-0x30;
 	}
 
-	fp=fopen("/yuneng/upload2.con","r");
+	fp=fopen("/config/upload2.con","r");
 	if(fp==NULL)
 	{}
 	else
@@ -143,7 +143,7 @@ int Sendupdatepackage_start(inverter_info *inverter)	//发送单点开始数据包
 	crc=crc_array(&sendbuff[2],70);
 	sendbuff[72]=crc/256;
 	sendbuff[73]=crc%256;
-	for(i=0;i<3;i++)
+	for(i=0;i<7;i++)
 	{
 		zb_send_cmd(inverter,(char *)sendbuff,76);
 		printhexmsg(ECU_DBG_COMM,"Ysend",(char *)sendbuff,76);
@@ -155,9 +155,10 @@ int Sendupdatepackage_start(inverter_info *inverter)	//发送单点开始数据包
 			if((data[6]==crc/256)&&(data[7]==crc%256))
 			break;
 		}
+		rt_thread_delay(RT_TICK_PER_SECOND);
 	}
 
-	if(i>=3)								//如果发送3遍指令仍然没有返回正确指令，则返回-1
+	if(i>=7)								//如果发送3遍指令仍然没有返回正确指令，则返回-1
 		return -1;
 	else
 		return 1;							//进入升级流程
@@ -285,9 +286,10 @@ int Complementupdatepackage_single(inverter_info *inverter)	//检查漏掉的数据包并
 		zb_send_cmd(inverter,(char *)checkbuff,76);
 		printmsg(ECU_DBG_COMM,"Complementupdatepackage_single_checkbuff");
 		ret = zb_get_reply((char *)data,inverter);
+		rt_thread_delay(RT_TICK_PER_SECOND);
 		printdecmsg(ECU_DBG_COMM,"ret",ret);
 		i++;
-	}while((-1==ret)&&(14!=ret)&&(i<3));
+	}while((-1==ret)&&(14!=ret)&&(i<7));
 
 	//获取补包开始指令成功
 	if((0x03 == data[2]) && (0x02 == data[3]) && (14 == ret) && (0x42 == data[5]) && (0xFB == data[0]) && (0xFB == data[1]) && (0xFE == data[12]) && (0xFE == data[13]))
@@ -477,7 +479,7 @@ int crc_bin_file(inverter_info *inverter)
 {
 	unsigned char checkbuff[76]={'\0'};
 	unsigned char data[100]={'\0'};
-	int crc;
+	int crc,i = 0;
 	int ret;
 	if(0x01 ==  inverter->model)
 	{
@@ -500,10 +502,15 @@ int crc_bin_file(inverter_info *inverter)
 	crc=crc_array(&checkbuff[2],70);
 	checkbuff[72]=crc/256;
 	checkbuff[73]=crc%256;
-	
-	zb_send_cmd(inverter,(char *)checkbuff,76);
-	printhexmsg(ECU_DBG_COMM,"Ysend",(char *)checkbuff,76);
-	ret = zb_get_reply((char *)data,inverter);
+
+	for(i=0;i<7;i++)
+	{
+		zb_send_cmd(inverter,(char *)checkbuff,76);
+		printhexmsg(ECU_DBG_COMM,"Ysend",(char *)checkbuff,76);
+		ret = zb_get_reply((char *)data,inverter);
+		if((data[2]==0x03)&&(data[3]==0x02)&&(ret%10==0)&&(data[0]==0xFB)&&(data[1]==0xFB)&&(data[4]==0x01)&&(data[8]==0xFE)&&(data[9]==0xFE)) break;
+		rt_thread_delay(RT_TICK_PER_SECOND);
+	}
 	
 	if((data[2]==0x03)&&(data[3]==0x02)&&(ret%10==0)&&(data[0]==0xFB)&&(data[1]==0xFB)&&(data[4]==0x01)&&(data[8]==0xFE)&&(data[9]==0xFE))
 	{
@@ -620,13 +627,14 @@ int remote_update(inverter_info *firstinverter)
 	int update_result = 0;
 	char data[200];
 	char splitdata[4][32];
+	char pre_Time[15] = {"/0"};
 	char Time[15] = {"/0"};
 	char inverter_result[128];
 	inverter_info *curinverter = firstinverter;
 	eRemoteType remoteTypeRet = Remote_UpdateSuccessful; 
 	ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 			
-	for(i=0; (i<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); i++)
+	for(i=0; (i<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); i++,curinverter++)
 	{
 		//读取所在ID行
 		if(1 == read_line("/home/data/upinv",data,curinverter->uid,12))
@@ -637,6 +645,7 @@ int remote_update(inverter_info *firstinverter)
 			if(1 == atoi(splitdata[3]))
 			{
 				printmsg(ECU_DBG_COMM,curinverter->uid);
+				apstime(pre_Time);
 				update_result = remote_update_single(curinverter);
 				printdecmsg(ECU_DBG_COMM,"Update",update_result);
 				apstime(Time);
@@ -663,7 +672,23 @@ int remote_update(inverter_info *firstinverter)
 					sprintf(data,"%s,%d,%s,0\n",curinverter->uid,curinverter->version,Time);
 				}
 				
+				remoteTypeRet = getResult(update_result);
+				sprintf(inverter_result, "%s%02d%06d%sEND", curinverter->uid, remoteTypeRet,curinverter->version, Time);
+				save_inverter_parameters_result2(curinverter->uid, 147,inverter_result);
 
+								
+#if 1
+				memset(inverter_result,0x00,128);
+				sprintf(inverter_result, "%s,%02d,%06d,%s,%s\n", curinverter->uid, remoteTypeRet,curinverter->version, pre_Time,Time);
+				for(j=0;j<3;j++)
+				{		
+					if(1 == insert_line("/tmp/update.tst",inverter_result))
+						break;
+					rt_thread_delay(RT_TICK_PER_SECOND);
+				}	
+				memset(inverter_result,0x00,128);
+				rt_thread_delay(RT_TICK_PER_SECOND*10);
+#else
 				//删除ID所在行
 				delete_line("/home/data/upinv","/home/data/upinv.t",curinverter->uid,12);
 				
@@ -673,12 +698,10 @@ int remote_update(inverter_info *firstinverter)
 						break;
 					rt_thread_delay(RT_TICK_PER_SECOND);
 				}
-				remoteTypeRet = getResult(update_result);
-				sprintf(inverter_result, "%s%02d%06d%sEND", curinverter->uid, remoteTypeRet,curinverter->version, Time);
-				save_inverter_parameters_result2(curinverter->uid, 147,inverter_result);
+#endif
 			}
 		}
-
+		
 	}
 	ECUCommThreadFlag = EN_ECUHEART_ENABLE;
 	return 0;

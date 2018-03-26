@@ -132,7 +132,7 @@ int init_inverter(inverter_info *inverter)
 		}
 	}
 
-	fp = fopen("/yuneng/limiteid.con", "r");
+	fp = fopen("/config/limiteid.con", "r");
 	if(fp)
 	{
 		flag_limitedid = fgetc(fp);
@@ -141,7 +141,7 @@ int init_inverter(inverter_info *inverter)
 	
 	if ('1' == flag_limitedid) {
 		bind_inverters(); //°ó¶¨Äæ±äÆ÷
-		fp = fopen("/yuneng/limiteid.con", "w");
+		fp = fopen("/config/limiteid.con", "w");
 		if (fp) {
 			fputs("0", fp);
 			fclose(fp);

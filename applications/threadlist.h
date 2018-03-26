@@ -90,7 +90,7 @@ typedef enum THREADTYPE {
 //LAN8720A Monitor thread priority
 #define THREAD_PRIORITY_LAN8720_RST						11
 //LED thread priority
-#define THREAD_PRIORITY_LED               				11
+#define THREAD_PRIORITY_LED               				9
 //ID Writethread priority
 #define THREAD_PRIORITY_IDWRITE							18
 //Update thread priority

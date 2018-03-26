@@ -53,7 +53,7 @@ int fileRead(int fd,char* buf,int len)
 int Write_ECUID(char *ECUID)		//ECU ID  12字节
 {
 	char ecuid[13] = {'\0'};
-	FILE *fp = fopen("/yuneng/ecuid.con","w");
+	FILE *fp = fopen("/config/ecuid.con","w");
 	memcpy(ecuid,ECUID,12);
 	ecuid[12] = '\0';
 	fputs(ecuid,fp);
@@ -63,7 +63,7 @@ int Write_ECUID(char *ECUID)		//ECU ID  12字节
 int Read_ECUID(char *ECUID)		//读取ECUID  12字节
 {
 	int fd;
-	fd = open("/yuneng/ecuid.con", O_RDONLY, 0);
+	fd = open("/config/ecuid.con", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		read(fd, ECUID, 13);
@@ -87,7 +87,7 @@ void transformECUID(char * ECUID6,char *ECUID12)
 int Write_IO_INIT_STATU(char *IO_InitStatus)								//IO上电状态
 {
 	char IO_INITStatus[1] = {'\0'};
-	FILE *fp = fopen("/yuneng/IO_Init.con","w");
+	FILE *fp = fopen("/config/IO_Init.con","w");
 	memcpy(IO_INITStatus,IO_InitStatus,1);
 	fputs(IO_INITStatus,fp);
 	fclose(fp);
@@ -97,7 +97,7 @@ int Write_IO_INIT_STATU(char *IO_InitStatus)								//IO上电状态
 int Read_IO_INIT_STATU(char *IO_InitStatus)
 {
 	int fd;
-	fd = open("/yuneng/IO_Init.con", O_RDONLY, 0);
+	fd = open("/config/IO_Init.con", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		read(fd, IO_InitStatus, 1);
@@ -108,7 +108,7 @@ int Read_IO_INIT_STATU(char *IO_InitStatus)
 int Write_WIFI_PW(char *WIFIPasswd,unsigned char Counter)//WIFI密码
 {
 	int fd;
-	fd = open("/yuneng/passwd.con", O_WRONLY|O_CREAT, 0);
+	fd = open("/config/passwd.con", O_WRONLY|O_CREAT, 0);
 	if (fd >= 0)
 	{
 		write(fd, WIFIPasswd, Counter);
@@ -119,7 +119,7 @@ int Write_WIFI_PW(char *WIFIPasswd,unsigned char Counter)//WIFI密码
 int Read_WIFI_PW(char *WIFIPasswd,unsigned char Counter)
 {
 	int fd;
-	fd = open("/yuneng/passwd.con", O_RDONLY, 0);
+	fd = open("/config/passwd.con", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		read(fd, WIFIPasswd, Counter);
@@ -151,7 +151,7 @@ void sysDirDetection(void)
 	dirDetection("/home");
 	dirDetection("/tmp");
 	dirDetection("/ftp");
-	dirDetection("/yuneng");
+	dirDetection("/config");
 	dirDetection("/home/data");
 	dirDetection("/home/record");
 	dirDetection("/home/record/data");
@@ -376,13 +376,13 @@ void echo(const char* filename,const char* string)
 
 void key_init(void)
 {
-	echo("/yuneng/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
+	echo("/config/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
 	rt_hw_ms_delay(20);
-	echo("/yuneng/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
+	echo("/config/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
 	rt_hw_ms_delay(20);
-	echo("/yuneng/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
+	echo("/config/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
 	rt_hw_ms_delay(20);
-	unlink("/yuneng/staticIP.con");
+	unlink("/config/staticIP.con");
 	dhcp_reset();
 
 }
@@ -391,7 +391,7 @@ int initPath(void)
 {
 	mkdir("/tmp",0x777);
 	mkdir("/home",0x777);
-	mkdir("/yuneng",0x777);
+	mkdir("/config",0x777);
 	mkdir("/home/data",0x777);
 	mkdir("/home/record",0x777);
 	mkdir("/home/data/proc_res",0x777);
@@ -400,9 +400,9 @@ int initPath(void)
 	mkdir("/home/record/data",0x777);
 	mkdir("/home/record/power",0x777);
 	mkdir("/home/record/energy",0x777);	
-	echo("/yuneng/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
-	echo("/yuneng/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
-	echo("/yuneng/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
+	echo("/config/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
+	echo("/config/datacent.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8982\nPort2=8982\n");
+	echo("/config/control.con","Domain=ecu.apsema.com\nIP=60.190.131.190\nPort1=8981\nPort2=8981\n");
 	mkdir("/ftp",0x777);
 	mkdir("/home/record/ctldata/",0x777);
 	mkdir("/home/record/almdata/",0x777);
@@ -416,7 +416,7 @@ int initsystem(char *mac)
 {
 	initPath();
 	rt_hw_ms_delay(20);
-	echo("/yuneng/ecumac.con",mac);
+	echo("/config/ecumac.con",mac);
 	
 	return 0;
 }
@@ -435,7 +435,7 @@ void get_mac(rt_uint8_t  dev_addr[6])
 {
 	FILE *fp;
 	char macstr[18] = {'\0'};
-	fp = fopen("/yuneng/ecumac.con","r");
+	fp = fopen("/config/ecumac.con","r");
 	if(fp)
 	{
 		//读取mac地址
@@ -653,7 +653,7 @@ int optimizeFileSystem(int capsize)
 int get_DHCP_Status(void)
 {
 	int fd;
-	fd = open("/yuneng/staticIP.con", O_RDONLY, 0);
+	fd = open("/config/staticIP.con", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		close(fd);
@@ -707,7 +707,7 @@ unsigned short get_panid(void)
 	int fd;
 	unsigned short ret = 0;
 	char buff[17] = {'\0'};
-	fd = open("/yuneng/ECUMAC.CON", O_RDONLY, 0);
+	fd = open("/config/ECUMAC.CON", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		memset(buff, '\0', sizeof(buff));
@@ -739,7 +739,7 @@ char get_channel(void)
 	int fd;
 	char ret = 0;
 	char buff[5] = {'\0'};
-	fd = open("/yuneng/CHANNEL.CON", O_RDONLY, 0);
+	fd = open("/config/CHANNEL.CON", O_RDONLY, 0);
 	if (fd >= 0)
 	{
 		memset(buff, '\0', sizeof(buff));
@@ -759,7 +759,7 @@ char get_channel(void)
 			buff[3] -= 0x57;
 		ret = (buff[2]*16+buff[3]);
 	} else {
-		fd = open("/yuneng/CHANNEL.CON", O_WRONLY | O_CREAT | O_TRUNC, 0);
+		fd = open("/config/CHANNEL.CON", O_WRONLY | O_CREAT | O_TRUNC, 0);
 		if (fd >= 0) {
 			write(fd, "0x17", 5);
 			close(fd);
@@ -3324,7 +3324,7 @@ void setdatacent(char *IP,char* port)
 {
 	char str[100] = {'\0'};
 	sprintf(str,"Domain=EEE.apsema.com\nIP=%s\nPort1=%s\nPort2=%s\n",IP,port,port);
-	echo("/yuneng/datacent.con",str);
+	echo("/config/datacent.con",str);
 }
 FINSH_FUNCTION_EXPORT(setdatacent, eg:setdatacent);
 
@@ -3332,7 +3332,7 @@ void setControl(char *IP,char* port)
 {
 	char str[100] = {'\0'};
 	sprintf(str,"Domain=EEE.apsema.com\nIP=%s\nPort1=%s\nPort2=%s\n",IP,port,port);
-	echo("/yuneng/control.con",str);
+	echo("/config/control.con",str);
 }
 FINSH_FUNCTION_EXPORT(setControl, eg:setControl);
 

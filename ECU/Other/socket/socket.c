@@ -54,7 +54,7 @@ int connect_client_socket(int fd_sock)				//通过有线的方式连接服务器
 	strcpy(domain, CLIENT_SERVER_DOMAIN);
 	strcpy(ip, CLIENT_SERVER_IP);
 
-	fp = fopen("/yuneng/datacent.con", "r");
+	fp = fopen("/config/datacent.con", "r");
 	if(fp)
 	{
 		while(1)
@@ -136,7 +136,7 @@ int connect_control_socket(int fd_sock)				//通过有线的方式连接服务器
 	strcpy(domain, CONTROL_SERVER_DOMAIN);
 	strcpy(ip, CONTROL_SERVER_IP);
 
-	fp = fopen("/yuneng/control.con", "r");
+	fp = fopen("/config/control.con", "r");
 		if(fp)
 		{
 			while(1)
