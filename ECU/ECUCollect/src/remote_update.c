@@ -677,7 +677,7 @@ int remote_update(inverter_info *firstinverter)
 				save_inverter_parameters_result2(curinverter->uid, 147,inverter_result);
 
 								
-#if 1
+#if 0
 				memset(inverter_result,0x00,128);
 				sprintf(inverter_result, "%s,%02d,%06d,%s,%s\n", curinverter->uid, remoteTypeRet,curinverter->version, pre_Time,Time);
 				for(j=0;j<3;j++)
