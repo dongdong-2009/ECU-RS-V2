@@ -55,7 +55,7 @@ int process_rsd_single(void)
 		{	
 			if( inverterInfo[ecu.curSequence].config_status.rsd_config_status == 0)
 			{
-				if(1 == zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],2,2,0))
+				if(1 == zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],2,0,0))
 					inverterInfo[ecu.curSequence].status.function_status =0;
 			}else
 			{
