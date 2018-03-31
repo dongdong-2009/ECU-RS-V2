@@ -649,6 +649,7 @@ int remote_update(inverter_info *firstinverter)
 				update_result = remote_update_single(curinverter);
 				printdecmsg(ECU_DBG_COMM,"Update",update_result);
 				apstime(Time);
+				rt_thread_delay(RT_TICK_PER_SECOND * 10);
 				if(0 == update_result)
 				{	//只有升级成功了才查询版本号
 					for(j=0;j<3;j++)

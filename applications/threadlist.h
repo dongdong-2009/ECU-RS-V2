@@ -114,7 +114,7 @@ typedef enum THREADTYPE {
 #define START_TIME_IDWRITE									1
 #define START_TIME_UPDATE									4
 #define START_TIME_COMM										5	
-#define START_TIME_COLLECT								0			
+#define START_TIME_COLLECT								5			
 #define START_TIME_CONTROL_CLIENT					20 	//150
 #define START_TIME_CLIENT									30			//180
 
