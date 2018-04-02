@@ -19,6 +19,7 @@
 #include "Serverfile.h"
 #include "rtthread.h"
 #include "mycommand.h"
+#include "threadlist.h"
 
 /*********************************************************************
 upinv表格字段：
@@ -89,7 +90,8 @@ int set_inverter_update(const char *recvbuffer, char *sendbuffer)
 				if(set_update_num(&recvbuffer[52], num) > 0)
 					ack_flag = DB_ERROR;
 
-				reboot_timer(10);
+				//reboot_timer(10);
+				restartThread(TYPE_UPDATE);
 			}
 			break;
 		default:
