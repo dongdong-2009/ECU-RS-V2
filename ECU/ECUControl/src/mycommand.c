@@ -40,7 +40,7 @@ static void reboottimeout(void* parameter)
 	reboot();
 }
 
-void reboot_timer(int timeout)			//zigbee串口数据检测 返回0 表示串口没有数据  返回1表示串口有数据
+void reboot_timer(int timeout)			
 {
 	reboottimer = rt_timer_create("reboot", /* 定时器名字为 read */
 					reboottimeout, /* 超时时回调的处理函数 */

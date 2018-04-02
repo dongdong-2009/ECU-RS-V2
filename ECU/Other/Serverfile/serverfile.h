@@ -104,5 +104,7 @@ void delete_alarm_file_resendflag0(void);
 int clear_alarm_send_flag(char *readbuff);
 int update_alarm_send_flag(char *send_date_time);
 void rm_dir(char* dir);
-
+void init_rsdStatus(inverter_info *firstinverter);
+int read_line(char* filename,char *linedata,char* compareData,int len);
+int save_inverter_parameters_result2(char *id, int item, char *inverter_result);
 #endif /*__SERVERFILE_H__*/

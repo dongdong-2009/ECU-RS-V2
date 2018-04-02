@@ -469,19 +469,42 @@ void App_SetIOInitStatus(int Data_Len,const char *recvbuffer)
 	//先对比ECUID是否匹配
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{//匹配成功进行相应的操作
-		//获取IO初始状态
-		APP_Response_IOInitStatus(0x00);
 		
-		//0：低电平（关闭心跳功能）1：高电平（打开心跳功能）
+		
+		//0：低电平（关闭心跳功能）
+		//1：高电平（打开心跳功能）
 		if(recvbuffer[25] == '0'){
-			saveChangeFunctionStatus(2,0,0);
-		}else{
-			saveChangeFunctionStatus(1,2,0);
+			APP_Response_IOInitStatus(0x00);
+			save_rsdFunction_change_flag();
+			saveChangeFunctionStatus(2,0,0);//关闭心跳功能
+			unlink("/tmp/setrsd");
+			unlink("/tmp/rsdcon.con");
+			//重启main线程
+			restartThread(TYPE_DATACOLLECT);
+		}else if(recvbuffer[25] == '1'){
+			APP_Response_IOInitStatus(0x00);
+			save_rsdFunction_change_flag();
+			saveChangeFunctionStatus(1,2,0);//打开心跳功能
+			unlink("/tmp/setrsd");
+			unlink("/tmp/rsdcon.con");
+			//重启main线程
+			restartThread(TYPE_DATACOLLECT);
+		}else if(recvbuffer[25] == '2'){	//单台设置RSD功能
+			int num = (Data_Len -32)/7;
+			APP_Response_IOInitStatus(0x00);
+	
+			insertAppSetRSDInfo(num,(char *)&recvbuffer[29]);
+			insertAppRSDCon(num,(char *)&recvbuffer[29]);
+			//重启main线程
+			restartThread(TYPE_DATACOLLECT);
+		}else if(recvbuffer[25] == '3'){	//查询当前RSD状态
+			APP_Response_IOInitStatus(0x02);
+		}else
+		{
+			;
 		}
 		
-		save_rsdFunction_change_flag();
-		//重启main线程
-		restartThread(TYPE_DATACOLLECT);
+		
 	}else
 	{
 		APP_Response_IOInitStatus(0x01);

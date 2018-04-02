@@ -33,6 +33,8 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 {
 	char status = 0;
 	unsigned char pre_model = inverter->model;  //现将原来的model保存   如果和获取到的不同 更新model表
+	unsigned short pre_version = inverter->version;
+
 	//保存上一轮报警状态数据
 	inverter->status.last_mos_status = inverter->status.mos_status;
 	inverter->status.last_function_status = inverter->status.function_status;
@@ -59,15 +61,15 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	inverter->PV2_Energy = inverter_data[32]*65536*256 + inverter_data[33]*65536 + inverter_data[34]*256 + inverter_data[35];
 
 	inverter->version = inverter_data[36]*256 + inverter_data[37];
-	
+
 	inverter->model =  inverter_data[38];	//获取机型码，如果机型码是00表示历史机型
 									//根据ID值将历史机型更改为对应的机型
-	if(inverter->model == 0x00)
+	if(inverter->model == 0x00 ||inverter->model == 0xff)
 	{
 		if(!memcmp(inverter->uid,"601",3))
 		{
 			inverter->model  = 0x01;
-		}else if (!memcmp(inverter->uid,"611",3))
+		}else if (!memcmp(inverter->uid,"611",3))	//RSD机型码位传的为0xff
 		{
 			inverter->model  = 0x02;
 		}
@@ -108,16 +110,16 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 		inverter->status.mos_status = 1;
 	else
 		inverter->status.mos_status = 0;
-	
-	memcpy(&inverter->parameter_status,&inverter_data[56],2);
 
+	memcpy(&inverter->parameter_status,&inverter_data[56],2);
 	//通讯组BUG解决代码
 	//判断和上一轮PV1和PV2输入电量是否相同，并且PV1 PV2电量多度大于0
 	if((inverter->PV1_Energy == inverter->Last_PV1_Energy)&&(inverter->PV2_Energy == inverter->Last_PV2_Energy) && (inverter->PV1_Energy>0) && (inverter->PV2_Energy>0))
 		return -1;
 	apstime(inverter->LastCommTime);
 	inverter->LastCommTime[14] = '\0';
-	if(pre_model != inverter->model)	//如果model变化了  将ECU的ID更新标志位置1
+
+	if((pre_model != inverter->model) ||(pre_version != inverter->version))	//如果model变化了  将ECU的ID更新标志位置1
 	{
 		ecu.idUpdateFlag = 1;
 	}

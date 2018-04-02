@@ -177,6 +177,12 @@ int Time_difference(char *curTime,char *lastTime)
 	return (GreenSwitch(curDateTime) - GreenSwitch(lastDateTime));
 }
 
+void getcurrenttime(char db_time[])		
+{
+	apstime(db_time);
+	db_time[14] = '\0';
+}
+
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 #include <stdio.h>

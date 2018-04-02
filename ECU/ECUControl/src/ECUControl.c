@@ -13,12 +13,13 @@
 #include "stdlib.h"
 #include "rtc.h"
 #include "socket.h"
-
+#include "inverter_update.h"
 #include "set_rsd_function_switch.h"
 #include "inverter_id.h"
 #include "custom_command.h"
 #include <dfs_posix.h> 
 
+extern rt_mutex_t record_data_lock;
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
@@ -38,6 +39,7 @@ void add_functions()
 	pfun[A102] = response_inverter_id; 			//上报逆变器ID  										OK
 	pfun[A103] = set_inverter_id; 				//设置逆变器ID												OK
 	pfun[A108] = custom_command;				//向ECU发送自定义命令
+	pfun[A136] = set_inverter_update;			//设置逆变器的升级标志		
 	pfun[A160] = set_rsd_function_switch; 			//RSD功能开关									OK
 
 }
@@ -418,6 +420,678 @@ int resend_control_record()
 	return 0;
 }
 
+//根据时间点修改标志
+int change_pro_result_flag(char *item,char flag)  //改变成功返回1，未找到该时间点返回0
+{
+	DIR *dirp;
+	char dir[30] = "/home/data/proc_res";
+	struct dirent *d;
+	char path[100];
+	char fileitem[4] = {'\0'};
+	char *buff = NULL;
+	FILE *fp;
+	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	if(result == RT_EOK)
+	{
+		/* 打开dir目录*/
+		dirp = opendir("/home/data/proc_res");
+		
+		if(dirp == RT_NULL)
+		{
+			printmsg(ECU_DBG_CONTROL_CLIENT,"change_pro_result_flag open directory error");
+			mkdir("/home/data/proc_res",0);
+		}
+		else
+		{
+			/* 读取dir目录*/
+			while ((d = readdir(dirp)) != RT_NULL)
+			{
+				memset(path,0,100);
+				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+				sprintf(path,"%s/%s",dir,d->d_name);
+				//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
+				fp = fopen(path, "r+");
+				if(fp)
+				{
+					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					{
+						if(strlen(buff) > 18)
+						{
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
+							{
+								if(buff[strlen(buff)-2] == '1')
+								{
+									memset(fileitem,0,4);
+									memcpy(fileitem,&buff[strlen(buff)-6],3);				//获取每条记录的时间
+									fileitem[3] = '\0';
+									if(!memcmp(item,fileitem,4))						//每条记录的时间和传入的时间对比，若相同则变更flag				
+									{
+										fseek(fp,-2L,SEEK_CUR);
+										fputc(flag,fp);
+										//print2msg(ECU_DBG_CONTROL_CLIENT,"filetime",filetime);
+										fclose(fp);
+										closedir(dirp);
+										free(buff);
+										buff = NULL;
+										rt_mutex_release(record_data_lock);
+										return 1;
+									}
+								}
+							}
+						}
+						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+						
+					}
+					fclose(fp);
+				}
+				
+			}
+			/* 关闭目录 */
+			closedir(dirp);
+		}
+	}
+	free(buff);
+	buff = NULL;
+	rt_mutex_release(record_data_lock);
+	return 0;
+	
+}
+
+void delete_pro_result_flag0()		//清空数据flag标志全部为0的目录
+{
+	DIR *dirp;
+	char dir[30] = "/home/data/proc_res";
+	struct dirent *d;
+	char path[100];
+	char *buff = NULL;
+	FILE *fp;
+	int flag = 0;
+	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	if(result == RT_EOK)
+	{
+		/* 打开dir目录*/
+		dirp = opendir("/home/data/proc_res");
+		
+		if(dirp == RT_NULL)
+		{
+			printmsg(ECU_DBG_CONTROL_CLIENT,"delete_pro_result_flag0 open directory error");
+			mkdir("/home/data/proc_res",0);
+		}
+		else
+		{
+			/* 读取dir目录*/
+			while ((d = readdir(dirp)) != RT_NULL)
+			{
+				memset(path,0,100);
+				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+				sprintf(path,"%s/%s",dir,d->d_name);
+				flag = 0;
+				//print2msg(ECU_DBG_CONTROL_CLIENT,"delete_file_resendflag0 ",path);
+				//打开文件一行行判断是否有flag!=0的  如果存在直接关闭文件并返回,如果不存在，删除文件
+				fp = fopen(path, "r");
+				if(fp)
+				{
+					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					{
+						if(strlen(buff) > 18)
+						{
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
+							{
+								if(buff[strlen(buff)-2] != '0')			//检测是否存在resendflag != 0的记录   若存在则直接退出函数
+								{
+									flag = 1;
+									break;
+									//fclose(fp);
+									//closedir(dirp);
+									//rt_mutex_release(record_data_lock);
+									//return;
+								}
+							}
+						}
+						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+						
+					}
+					fclose(fp);
+					if(flag == 0)
+					{
+						print2msg(ECU_DBG_CONTROL_CLIENT,"unlink:",path);
+						//遍历完文件都没发现flag != 0的记录直接删除文件
+						unlink(path);
+					}	
+				}
+				
+			}
+			/* 关闭目录 */
+			closedir(dirp);
+		}
+	}
+	free(buff);
+	buff = NULL;
+	rt_mutex_release(record_data_lock);
+	return;
+
+}
+
+void delete_inv_pro_result_flag0()		//清空数据flag标志全部为0的目录
+{
+	DIR *dirp;
+	char dir[30] = "/home/data/iprocres";
+	struct dirent *d;
+	char path[100];
+	char *buff = NULL;
+	FILE *fp;
+	int flag = 0;
+	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	if(result == RT_EOK)
+	{
+		/* 打开dir目录*/
+		dirp = opendir("/home/data/iprocres");
+		
+		if(dirp == RT_NULL)
+		{
+			printmsg(ECU_DBG_CONTROL_CLIENT,"delete_inv_pro_result_flag0 open directory error");
+			mkdir("/home/data/iprocres",0);
+		}
+		else
+		{
+			/* 读取dir目录*/
+			while ((d = readdir(dirp)) != RT_NULL)
+			{
+				memset(path,0,100);
+				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+				sprintf(path,"%s/%s",dir,d->d_name);
+				flag = 0;
+				//print2msg(ECU_DBG_CONTROL_CLIENT,"delete_file_resendflag0 ",path);
+				//打开文件一行行判断是否有flag!=0的  如果存在直接关闭文件并返回,如果不存在，删除文件
+				fp = fopen(path, "r");
+				if(fp)
+				{
+					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					{
+						if(strlen(buff) > 18)
+						{
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ','))
+							{
+								if(buff[strlen(buff)-2] != '0')			//检测是否存在resendflag != 0的记录   若存在则直接退出函数
+								{
+									flag = 1;
+									break;
+									//fclose(fp);
+									//closedir(dirp);
+									//rt_mutex_release(record_data_lock);
+									//return;
+								}
+							}
+						}
+						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+					}
+					fclose(fp);
+					if(flag == 0)
+					{
+						print2msg(ECU_DBG_CONTROL_CLIENT,"unlink:",path);
+						//遍历完文件都没发现flag != 0的记录直接删除文件
+						unlink(path);
+					}	
+				}
+				
+			}
+			/* 关闭目录 */
+			closedir(dirp);
+		}
+	}
+	free(buff);
+	buff = NULL;
+	rt_mutex_release(record_data_lock);
+	return;
+
+}
+
+int change_inv_pro_result_flag(char *item,char flag)  //改变成功返回1，未找到该时间点返回0
+{
+	DIR *dirp;
+	char dir[30] = "/home/data/iprocres";
+	struct dirent *d;
+	char path[100];
+	char fileitem[4] = {'\0'};
+	char *buff = NULL;
+	FILE *fp;
+	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	if(result == RT_EOK)
+	{
+		/* 打开dir目录*/
+		dirp = opendir("/home/data/iprocres");
+		
+		if(dirp == RT_NULL)
+		{
+			printmsg(ECU_DBG_CONTROL_CLIENT,"change_inv_pro_result_flag open directory error");
+			mkdir("/home/data/iprocres",0);
+		}
+		else
+		{
+			/* 读取dir目录*/
+			while ((d = readdir(dirp)) != RT_NULL)
+			{
+				memset(path,0,100);
+				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+				sprintf(path,"%s/%s",dir,d->d_name);
+				//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
+				fp = fopen(path, "r+");
+				if(fp)
+				{
+					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					{
+						if(strlen(buff) > 18)
+						{
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',') )
+							{
+								if(buff[strlen(buff)-2] == '1')
+								{
+									memset(fileitem,0,4);
+									memcpy(fileitem,&buff[strlen(buff)-6],3);				//获取每条记录的时间
+									fileitem[3] = '\0';
+									if(!memcmp(item,fileitem,4))						//每条记录的时间和传入的时间对比，若相同则变更flag				
+									{
+										fseek(fp,-2L,SEEK_CUR);
+										fputc(flag,fp);
+										//print2msg(ECU_DBG_CONTROL_CLIENT,"filetime",filetime);
+										fclose(fp);
+										closedir(dirp);
+										free(buff);
+										buff = NULL;
+										rt_mutex_release(record_data_lock);
+										return 1;
+									}
+								}
+							}
+						}
+						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+					}
+					fclose(fp);
+				}
+				
+			}
+			/* 关闭目录 */
+			closedir(dirp);
+		}
+	}
+	free(buff);
+	buff = NULL;
+	rt_mutex_release(record_data_lock);
+	return 0;
+	
+}
+
+//查询一条flag为1的数据   查询到了返回1  如果没查询到返回0
+/*
+data:表示获取到的数据
+item：表示获取的命令帧
+flag：表示是否还有下一条数据   存在下一条为1   不存在为0
+*/
+int search_pro_result_flag(char *data,char * item, int *flag,char sendflag)	
+{
+	DIR *dirp;
+	char dir[30] = "/home/data/proc_res";
+	struct dirent *d;
+	char path[100];
+	char *buff = NULL;
+	FILE *fp;
+	int nextfileflag = 0;	
+	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	memset(data,'\0',sizeof(data)/sizeof(data[0]));
+	*flag = 0;
+	if(result == RT_EOK)
+	{
+		dirp = opendir("/home/data/proc_res");
+		if(dirp == RT_NULL)
+		{
+			printmsg(ECU_DBG_CONTROL_CLIENT,"search_pro_result_flag open directory error");
+			mkdir("/home/data/proc_res",0);
+		}
+		else
+		{
+			while ((d = readdir(dirp)) != RT_NULL)
+			{
+				memset(path,0,100);
+				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+				sprintf(path,"%s/%s",dir,d->d_name);
+				fp = fopen(path, "r");
+				if(fp)
+				{
+					if(0 == nextfileflag)
+					{
+						while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+						{
+							if(strlen(buff) > 18)	
+							{
+								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
+								{
+									if(buff[strlen(buff)-2] == sendflag)			
+									{
+										memcpy(item,&buff[strlen(buff)-6],3);				//获取每条记录的item
+										memcpy(data,buff,(strlen(buff)-7));
+										data[strlen(buff)-7] = '\n';
+										//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag time",time);
+										//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag data",data);
+										rt_hw_s_delay(1);
+										while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))	
+										{
+											if(strlen(buff) > 18)	
+											{
+												if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
+												{
+													if(buff[strlen(buff)-2] == sendflag)
+													{
+														*flag = 1;
+														fclose(fp);
+														closedir(dirp);
+														free(buff);
+														buff = NULL;
+														rt_mutex_release(record_data_lock);
+														return 1;
+													}
+												}
+											}
+											memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+										}
+
+										nextfileflag = 1;
+										break;
+									}
+								}
+							}
+							memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+						}
+					}else
+					{
+						while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp)) 
+						{
+							if(strlen(buff) > 18)
+							{
+								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+								{
+									if(buff[strlen(buff)-2] == sendflag)
+									{
+										*flag = 1;
+										fclose(fp);
+										closedir(dirp);
+										free(buff);
+										buff = NULL;
+										rt_mutex_release(record_data_lock);
+										return 1;
+									}
+								}
+							}
+							memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+						}
+					}
+					
+					fclose(fp);
+				}
+			}
+			closedir(dirp);
+		}
+	}
+	free(buff);
+	buff = NULL;
+	rt_mutex_release(record_data_lock);
+
+	return nextfileflag;
+
+}
+
+
+//查询一条flag为1的数据   查询到了返回1  如果没查询到返回0
+/*
+data:表示获取到的数据
+item：表示获取的命令帧
+flag：表示是否还有下一条数据   存在下一条为1   不存在为0
+*/
+int search_inv_pro_result_flag(char *data,char * item,char *inverterid, int *flag,char sendflag)	
+{
+	DIR *dirp;
+	char dir[30] = "/home/data/iprocres";
+	struct dirent *d;
+	char path[100];
+	char *buff = NULL;
+	FILE *fp;
+	int nextfileflag = 0;	
+	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	memset(data,'\0',sizeof(data)/sizeof(data[0]));
+	*flag = 0;
+	if(result == RT_EOK)
+	{
+		dirp = opendir("/home/data/iprocres");
+		if(dirp == RT_NULL)
+		{
+			printmsg(ECU_DBG_CONTROL_CLIENT,"search_inv_pro_result_flag open directory error");
+			mkdir("/home/data/iprocres",0);
+		}
+		else
+		{
+			while ((d = readdir(dirp)) != RT_NULL)
+			{
+				memset(path,0,100);
+				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+				sprintf(path,"%s/%s",dir,d->d_name);
+				fp = fopen(path, "r");
+				if(fp)
+				{
+					if(0 == nextfileflag)
+					{
+						while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))  
+						{
+							if(strlen(buff) > 18)
+							{
+								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',') )
+								{
+									if(buff[strlen(buff)-2] == sendflag)			
+									{
+										memcpy(item,&buff[strlen(buff)-6],3);				//获取每条记录的item
+										memcpy(inverterid,&buff[strlen(buff)-19],12);
+										memcpy(data,buff,(strlen(buff)-20));
+										data[strlen(buff)-20] = '\n';
+										//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag time",time);
+										//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag data",data);
+										rt_hw_s_delay(1);
+										while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+										{
+											if(strlen(buff) > 18)
+											{
+												if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+												{
+													if(buff[strlen(buff)-2] == sendflag)
+													{
+														*flag = 1;
+														fclose(fp);
+														closedir(dirp);
+														free(buff);
+														buff = NULL;
+														rt_mutex_release(record_data_lock);
+														return 1;
+													}
+												}
+											}
+											memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+										}
+
+										nextfileflag = 1;
+										break;
+
+									}
+								}
+							}	
+							memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+						}
+					}else
+					{
+						while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))  //?áè?ò?DDêy?Y
+						{
+							if(strlen(buff) > 18)
+							{
+								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',')  )
+								{
+									if(buff[strlen(buff)-2] == sendflag)
+									{
+										*flag = 1;
+										fclose(fp);
+										closedir(dirp);
+										free(buff);
+										buff = NULL;
+										rt_mutex_release(record_data_lock);
+										return 1;
+									}
+								}
+							}
+							memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+						}
+					}
+					
+					fclose(fp);
+				}
+			}
+			closedir(dirp);
+		}
+	}
+	free(buff);
+	buff = NULL;
+	rt_mutex_release(record_data_lock);
+
+	return nextfileflag;
+
+}
+
+
+
+/* 上报process_result表中的信息 */
+int response_process_result()
+{
+	char *sendbuffer = NULL;
+	int sockfd, flag;
+	char inverterId[13] = {'\0'};
+	//int item_num[32] = {0};
+	char *data = NULL;//查询到的数据
+	char item[4] = {'\0'};
+	
+	sendbuffer = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL);
+	data = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL);
+	memset(sendbuffer,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL);
+	memset(data,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL);
+
+	{
+		//查询所有[ECU级别]处理结果
+		//逐条上报ECU级别处理结果
+		while(search_pro_result_flag(data,item,&flag,'1'))
+		{
+			printmsg(ECU_DBG_CONTROL_CLIENT,">>Start Response ECU Process Result");
+			sockfd = Control_client_socket_init();
+			if(sockfd < 0) 
+			{
+#ifdef WIFI_USE	
+
+				//有线连接失败，使用wifi传输 
+				{
+					//发送一条记录
+					if(SendToSocketC(control_client_arg.ip,randport(control_client_arg),data, strlen(data)) < 0){
+						break;
+					}
+					//发送成功则将标志位置0
+					change_pro_result_flag(item,'0');
+					//WIFI_Close(SOCKET_C);
+					printmsg(ECU_DBG_CONTROL_CLIENT,">>End");
+				
+				}
+#endif		
+
+#ifndef WIFI_USE
+		break;
+#endif
+
+			}else
+			{
+				//发送一条记录
+				if(send_socket(sockfd, data, strlen(data)) < 0){
+					close_socket(sockfd);
+					continue;
+				}
+				//发送成功则将标志位置0
+				change_pro_result_flag(item,'0');
+				close_socket(sockfd);
+				printmsg(ECU_DBG_CONTROL_CLIENT,">>End");
+			}
+			memset(data,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL);
+		}				
+		delete_pro_result_flag0();
+		
+		while(search_inv_pro_result_flag(data,item,inverterId,&flag,'1'))
+		{
+			char msg_length[6] = {'\0'};
+			//拼接数据
+			
+			memset(sendbuffer, 0, sizeof(sendbuffer));
+			sprintf(sendbuffer, "APS1300000A%03dAAA0%.12s%04d00000000000000END", atoi(item), ecu.ECUID12, 1);
+			strcat(sendbuffer, data);
+
+			if(sendbuffer[strlen(sendbuffer)-1] == '\n'){
+				sprintf(msg_length, "%05d", strlen(sendbuffer)-1);
+			}
+			else{
+				sprintf(msg_length, "%05d", strlen(sendbuffer));
+				strcat(sendbuffer, "\n");
+			}
+			strncpy(&sendbuffer[5], msg_length, 5);
+			//发送数据
+			printmsg(ECU_DBG_CONTROL_CLIENT,">>Start Response Inverter Process Result");
+			sockfd = Control_client_socket_init();
+			if(sockfd < 0)
+			{
+#ifdef WIFI_USE	
+
+				//有线连接失败，使用wifi传输 
+				{
+					if(SendToSocketC(control_client_arg.ip,randport(control_client_arg),sendbuffer, strlen(sendbuffer)) < 0){
+						break;
+					}
+					change_inv_pro_result_flag(item,'0');
+									
+				}
+#endif	
+
+#ifndef WIFI_USE
+					break;
+#endif
+			}else
+			{
+				if(send_socket(sockfd, sendbuffer, strlen(sendbuffer)) < 0){
+				close_socket(sockfd);
+				continue;
+				}
+				change_inv_pro_result_flag(item,'0');
+				close_socket(sockfd);
+			}
+			memset(data,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL);
+		}
+		delete_inv_pro_result_flag0();
+
+	}
+	free(sendbuffer);
+	sendbuffer = NULL;
+	free(data);
+	data = NULL;
+	return 0;
+}
+
 
 //该线程主要用于数据上传以及远程控制
 void ECUControl_thread_entry(void* parameter)
@@ -475,7 +1149,6 @@ void ECUControl_thread_entry(void* parameter)
 				fclose(fp);
 				if(c=='1')
 				{
-					printf("111111111111\n");
 					result = communication_with_EMA(102);
 					if(result != -1)
 					{
@@ -509,9 +1182,10 @@ void ECUControl_thread_entry(void* parameter)
 				resend_alarm_record();
 				delete_alarm_file_resendflag0();		//清空数据resend标志全部为0的目录
 			}
-
+			response_process_result();
 			while(search_alarm_readflag(data,time,&flag,'1'))		//	获取一条resendflag为1的数据
 			{
+				
 				if(compareTime(AlarmDurabletime ,AlarmThistime,AlarmReportinterval))
 				{
 						break;
@@ -523,6 +1197,7 @@ void ECUControl_thread_entry(void* parameter)
 				memset(data,0,CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 				memset(time,0,15);
 			}
+			
 			delete_alarm_file_resendflag0();		//清空数据resend标志全部为0的目录
 			printmsg(ECU_DBG_CONTROL_CLIENT,"Alarm DATA End");
 		}
@@ -542,8 +1217,12 @@ void commEMA(void)
 {
 	communication_with_EMA(0);
 }
+
+void procResult(void)
+{
+	response_process_result();
+}
 FINSH_FUNCTION_EXPORT(commEMA, eg:commEMA());
-FINSH_FUNCTION_EXPORT(prealarmprocess, eg:prealarmprocess());
-FINSH_FUNCTION_EXPORT(precontrolprocess, eg:precontrolprocess());
+FINSH_FUNCTION_EXPORT(procResult, eg:procResult());
 #endif
 

@@ -293,11 +293,14 @@ static void led_thread_entry(void* parameter)
 					ATFaliedNum = 0;
 				}
 				
+			}else
+			{
+				ATFaliedNum = 0;
 			}
 			index = 0;
 		}
+		kickwatchdog();
 		MCP1316_kickwatchdog();
-		rt_thread_delay( RT_TICK_PER_SECOND/2);
 		cpu_usage_get(&major, &minor);
 		//printf("CPU : %d.%d%\n", major, minor);
     }

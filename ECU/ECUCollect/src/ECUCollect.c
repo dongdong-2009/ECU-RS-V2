@@ -14,6 +14,7 @@
 #include "zigbee.h"
 #include "timer.h"
 #include "rsdFunction.h"
+#include "remote_update.h"
 
 extern unsigned char rateOfProgress;
 extern ecu_info ecu;
@@ -51,6 +52,7 @@ int init_all(inverter_info *inverter)
 	init_inverter(inverter);
 	rateOfProgress = 100;
 	init_tmpdb(inverter);
+	init_rsdStatus(inverter);
 	return 0;
 }
 
@@ -71,6 +73,7 @@ void Collect_Client_Record(void)
 	if(ecu.validNum > 0)
 	{
 		client_Data = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
+		
 		memcpy(client_Data,"APS16AAAAA",10);//
 		//判断是哪种机型
 		for(i = 0;i< ecu.validNum; i++)
@@ -561,9 +564,11 @@ void ECUCollect_thread_entry(void* parameter)
 				//更新手机显示
 				displayonPhone();
 				printmsg(ECU_DBG_COLLECT,"Collect DATA End");
-				process_rsd_single();
+				process_rsd_single();//检测RSD功能是否正确
 				process_IDUpdate();//检测ID表格是否需要更新
-				
+
+
+				remote_update(inverterInfo);
 				if((cur_time_hour>9)&&(1 == ecu.flag_ten_clock_getshortaddr))
 				{
 					get_inverter_shortaddress(inverterInfo);
@@ -575,10 +580,9 @@ void ECUCollect_thread_entry(void* parameter)
 				
 				//对于轮训没有数据的逆变器进行重新获取短地址操作
 				bind_nodata_inverter(inverterInfo);
-			ECUCommThreadFlag = EN_ECUHEART_DISABLE;
+				ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 
 			}
-			
 			
 		}
 		if((CollectClientDurabletime-CollectClientThistime)<=305)
@@ -613,4 +617,3 @@ void ECUCollect_thread_entry(void* parameter)
 		CollectControlDurabletime = acquire_time();			
 	}
 }
-

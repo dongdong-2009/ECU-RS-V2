@@ -53,13 +53,13 @@ void Json_Response_101(int connectSocket)
 				sprintf(&sendbuff[length],",\"type\":1");
 				length = strlen(sendbuff);
 				//输出功率
-				sprintf(&sendbuff[length],",\"op\":%.1f",inverterInfo[i].AveragePower_Output);
+				sprintf(&sendbuff[length],",\"op\":%.1f",inverterInfo[i].AveragePower_Output/10);
 				length = strlen(sendbuff);
 				//PV1输入功率
-				sprintf(&sendbuff[length],",\"ip1\":%.1f",inverterInfo[i].AveragePower1);
+				sprintf(&sendbuff[length],",\"ip1\":%.1f",inverterInfo[i].AveragePower1/10);
 				length = strlen(sendbuff);
 				//PV2输入功率
-				sprintf(&sendbuff[length],",\"ip2\":%.1f",inverterInfo[i].AveragePower2);
+				sprintf(&sendbuff[length],",\"ip2\":%.1f",inverterInfo[i].AveragePower2/10);
 				length = strlen(sendbuff);
 				//输出电量
 				sprintf(&sendbuff[length],",\"oe\":%.6f",((float)inverterInfo[i].EnergyPV_Output)/3600000);
@@ -88,12 +88,28 @@ void Json_Response_101(int connectSocket)
 				if(i != ecu.validNum-1)
 				{
 					//PV2输入电流
-					sprintf(&sendbuff[length],",\"ic2\":%.1f},",((float)inverterInfo[i].PI2)/10);
+					//判断2 路是否有保护，如果没保护，传1路电流
+					if(0 == inverterInfo[i].status.pv2_low_voltage_pritection)
+					{
+						sprintf(&sendbuff[length],",\"ic2\":%.1f},",((float)inverterInfo[i].PI)/10);
+					}else
+					{
+						sprintf(&sendbuff[length],",\"ic2\":%.1f},",((float)inverterInfo[i].PI2)/10);
+					}
+					
 					length = strlen(sendbuff);
 				}else
 				{
 					//PV2输入电流
-					sprintf(&sendbuff[length],",\"ic2\":%.1f}",((float)inverterInfo[i].PI2)/10);
+					//判断2 路是否有保护，如果没保护，传1路电流
+					if(0 == inverterInfo[i].status.pv2_low_voltage_pritection)
+					{
+						sprintf(&sendbuff[length],",\"ic2\":%.1f}",((float)inverterInfo[i].PI)/10);
+					}else
+					{
+						sprintf(&sendbuff[length],",\"ic2\":%.1f}",((float)inverterInfo[i].PI2)/10);
+					}
+					
 					length = strlen(sendbuff);
 				}
 				
@@ -176,6 +192,8 @@ void ECUJsonServer_thread_entry(void* parameter)
 	{
 		/* 创建失败的错误处理 */
 		rt_kprintf("Socket error\n");
+		free(recvbuff);
+		recvbuff = NULL;
 		return;
 	}
 	server_addr.sin_family = AF_INET;
@@ -185,6 +203,8 @@ void ECUJsonServer_thread_entry(void* parameter)
 	
 	if (bind(sock, (struct sockaddr *) &server_addr, sizeof(struct sockaddr))	== -1)
 	{
+		free(recvbuff);
+		recvbuff = NULL;
 		return;	
 	}
 	/* 在SOCKET上进行监听 */
@@ -192,6 +212,8 @@ void ECUJsonServer_thread_entry(void* parameter)
 		{
 		rt_kprintf("Listen error\n");
 		/* release recv buffer */
+		free(recvbuff);
+		recvbuff = NULL;
 		return;
 	}
 		

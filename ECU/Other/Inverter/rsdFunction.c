@@ -51,14 +51,16 @@ int process_rsd_single(void)
 	//如果系统RSD状态和某台RSD设备不同，更改
 	for(ecu.curSequence = 0;ecu.curSequence<ecu.validNum;ecu.curSequence++)
 	{
-		if((inverterInfo[ecu.curSequence].status.comm_failed3_status == 1) && (inverterInfo[ecu.curSequence].shortaddr !=0)  && (inverterInfo[ecu.curSequence].status.function_status != atoi(&ecu.IO_Init_Status)))
+		if((inverterInfo[ecu.curSequence].status.comm_failed3_status == 1) && (inverterInfo[ecu.curSequence].shortaddr !=0)  && (inverterInfo[ecu.curSequence].status.function_status != inverterInfo[ecu.curSequence].config_status.rsd_config_status))
 		{	
-			if(ecu.IO_Init_Status == '0')
+			if( inverterInfo[ecu.curSequence].config_status.rsd_config_status == 0)
 			{
-				zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],2,2,0);	
+				if(1 == zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],2,0,0))
+					inverterInfo[ecu.curSequence].status.function_status =0;
 			}else
 			{
-				zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],1,2,0);
+				if(1 == zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],1,2,0))
+					inverterInfo[ecu.curSequence].status.function_status =1;
 			}
 					
 		}
@@ -71,6 +73,7 @@ int process_rsdFunction_all(void)
 	unsigned char rsdChangeFunctionStatus = 1;
 	unsigned char rsdOnOffStatus = 2;
 	unsigned char rsdTimeout = 0;
+	unsigned char RSDStatus = 0,i =0;
 	//判断是否需要改变功能状态
 	if (rsdFunction_need_change()) {
 		getChangeFunctionStatus(&rsdChangeFunctionStatus,&rsdOnOffStatus,&rsdTimeout);
@@ -82,12 +85,21 @@ int process_rsdFunction_all(void)
 			Write_IO_INIT_STATU("1");
 		else
 			Write_IO_INIT_STATU("0");
-		
+	
 		//清空标志位
 		unlink("/tmp/rsdFun.con");
 		unlink("/tmp/funStatu.con");
-	}
-	return 0;
+		Read_IO_INIT_STATU(&ecu.IO_Init_Status);
+
+		RSDStatus = atoi(&ecu.IO_Init_Status);
+		printf("RSDStatus:%d\n",RSDStatus);
+		for(i=0; i<MAXINVERTERCOUNT; i++)
+		{
+			//初始化配置状态为RSD系统状态
+			inverterInfo[i].config_status.rsd_config_status = RSDStatus;
+		}
+		}
+		return 0;
 	
 }
 
@@ -242,6 +254,104 @@ void insertSetRSDInfo(unsigned short num,char *msg)
 			onoffstatus = atoi(stronoff);
 			rsdTimeout = atoi(strrsdTimeout);
 			sprintf(buff,"%s,%d,%d,%03d\n",inverter_id,FunctionStatus,onoffstatus,rsdTimeout);
+			write(fd,buff,strlen(buff));
+		}
+			
+		close(fd);
+	}
+
+}
+
+void insertRSDCon(unsigned short num,char *msg)
+{
+	int i;
+	char inverter_id[13] = {'\0'};
+	int fd;
+	char buff[50];
+	char strfunstatus[2] = {'\0'};
+	unsigned char FunctionStatus;
+	fd = open("/tmp/rsdcon.con", O_WRONLY  | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{	
+		for(i=0; i<num; i++)
+		{
+			strncpy(inverter_id, &msg[i*20], 12);
+			inverter_id[12] = '\0';
+			memcpy(strfunstatus,&msg[i*20+12],1);
+			FunctionStatus = atoi(strfunstatus);
+			if(FunctionStatus == 0x01)	//使能RSD功能
+			{
+				sprintf(buff,"%s,%d\n",inverter_id,FunctionStatus);
+				write(fd,buff,strlen(buff));
+			}else if (FunctionStatus == 0x02)	//禁止RSD功能
+			{
+				sprintf(buff,"%s,%d\n",inverter_id,FunctionStatus);
+				write(fd,buff,strlen(buff));
+			}
+		
+		}
+			
+		close(fd);
+	}
+
+}
+
+void insertAppSetRSDInfo(unsigned short num,char *msg)
+{
+	int i;
+	char inverter_id[13] = {'\0'};
+	int fd;
+	char buff[50];
+	unsigned char FunctionStatus;
+	fd = open("/tmp/setrsd", O_WRONLY | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{	
+		for(i=0; i<num; i++)
+		{
+			sprintf(inverter_id,"%02x%02x%02x%02x%02x%02x",msg[i*7+0],msg[i*7+1],msg[i*7+2],msg[i*7+3],msg[i*7+4],msg[i*7+5]);
+			inverter_id[12] = '\0';
+			FunctionStatus = msg[i*7+6];
+
+			if(FunctionStatus == 0)//关闭RSD功能
+			{
+				sprintf(buff,"%s,2,0,000\n",inverter_id);
+			}else//开启RSD功能
+			{
+				sprintf(buff,"%s,1,1,000\n",inverter_id);
+			}
+			
+			write(fd,buff,strlen(buff));
+		}
+			
+		close(fd);
+	}
+
+}
+
+void insertAppRSDCon(unsigned short num,char *msg)
+{
+	int i;
+	char inverter_id[13] = {'\0'};
+	int fd;
+	char buff[50];
+	unsigned char FunctionStatus;
+	fd = open("/tmp/rsdcon.con", O_WRONLY  | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{	
+		for(i=0; i<num; i++)
+		{
+			sprintf(inverter_id,"%02x%02x%02x%02x%02x%02x",msg[i*7+0],msg[i*7+1],msg[i*7+2],msg[i*7+3],msg[i*7+4],msg[i*7+5]);
+			inverter_id[12] = '\0';
+			FunctionStatus = msg[i*7+6];
+
+			if(FunctionStatus == 0)//关闭RSD功能
+			{
+				sprintf(buff,"%s,0\n",inverter_id);
+			}else//开启RSD功能
+			{
+				sprintf(buff,"%s,1\n",inverter_id);
+			}
+			
 			write(fd,buff,strlen(buff));
 		}
 			

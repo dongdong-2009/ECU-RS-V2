@@ -1136,6 +1136,16 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUCollect\src\ECUCollect.c</FilePath>
             </File>
+            <File>
+              <FileName>crc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUCollect\src\crc.c</FilePath>
+            </File>
+            <File>
+              <FileName>remote_update.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUCollect\src\remote_update.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1180,6 +1190,11 @@
               <FileName>inverter_id.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUControl\src\inverter_id.c</FilePath>
+            </File>
+            <File>
+              <FileName>inverter_update.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUControl\src\inverter_update.c</FilePath>
             </File>
           </Files>
         </Group>

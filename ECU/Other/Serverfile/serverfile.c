@@ -155,6 +155,8 @@ void sysDirDetection(void)
 	dirDetection("/home/data");
 	dirDetection("/home/record");
 	dirDetection("/home/record/data");
+	dirDetection("/home/data/proc_res");
+	dirDetection("/home/data/IPROCRES");
 	dirDetection("/home/record/power");
 	dirDetection("/home/record/energy");
 	dirDetection("/home/record/CTLDATA");
@@ -294,6 +296,45 @@ void init_tmpdb(inverter_info *firstinverter)
 	}
 }
 
+void init_rsdStatus(inverter_info *firstinverter)
+{
+	int j;
+	char list[2][32];
+	char data[200];
+	unsigned char UID12[13] = {'\0'};
+	FILE *fp;
+	inverter_info *curinverter = firstinverter;
+	fp = fopen("/tmp/rsdcon.con", "r");
+	if(fp)
+	{
+		while(NULL != fgets(data,200,fp))
+		{
+			//print2msg(ECU_DBG_FILE,"ID",data);
+			memset(list,0,sizeof(list));
+			splitString(data,list);
+			//判断是否存在该逆变器
+			//将12位的RSD ID转换为6位的BCD编码ID
+			memcpy(UID12,list[0],12);
+			UID12[12] = '\0';
+			curinverter = firstinverter;
+			
+			for(j=0; (j<ecu.validNum); j++)	
+			{
+
+				if(!memcmp(curinverter->uid,UID12,12))
+				{
+					curinverter->config_status.rsd_config_status = atoi(list[1]);
+					printf("UID %s ,RSDStatus: %d\n",UID12,curinverter->config_status.rsd_config_status);
+					break;
+				}
+				curinverter++;
+			}			
+		}
+		printf("\n\n");
+		fclose(fp);
+	}
+}
+
 //初始化Record锁
 void init_RecordMutex(void)
 {
@@ -353,6 +394,8 @@ int initPath(void)
 	mkdir("/config",0x777);
 	mkdir("/home/data",0x777);
 	mkdir("/home/record",0x777);
+	mkdir("/home/data/proc_res",0x777);
+	mkdir("/home/data/iprocres",0x777);
 	echo("/home/data/ltpower","0.000000");
 	mkdir("/home/record/data",0x777);
 	mkdir("/home/record/power",0x777);
@@ -566,6 +609,20 @@ int optimizeFileSystem(int capsize)
 	//当flash芯片所剩下的容量小于40KB的时候进行一些必要的文件删除操作。
 	if (cap < capsize) 
 	{
+		//删除最前面一天的ECU级别处理结果数据    如果该目录下存在文件的话
+		if(1 == checkOldFile("/home/data/proc_res",oldFile))
+		{
+			unlink(oldFile);
+		}
+		
+		//删除最前面一天的逆变器级别处理结果数据  如果该目录下存在文件的话
+		memset(oldFile,0x00,100);
+		if(1 == checkOldFile("/home/data/iprocres",oldFile))
+		{
+			unlink(oldFile);
+		}
+		
+	
 		//删除最前面一天的ECU级别处理结果数据    如果该目录下存在文件的话
 		if(1 == checkOldFile("/home/record/almdata",oldFile))
 		{
@@ -919,6 +976,59 @@ void save_system_power(int system_power, char *date_time)
 	rt_mutex_release(record_data_lock);
 	
 }
+
+int save_inverter_parameters_result(inverter_info *inverter, int item, char *inverter_result)
+{
+	char dir[50] = "/home/data/iprocres/";
+	char file[9];
+	int fd;
+	char time[20];
+	
+	getcurrenttime(time);
+	memcpy(file,&time[0],8);
+	file[8] = '\0';
+	sprintf(dir,"%s%s.dat",dir,file);
+	print2msg(ECU_DBG_COLLECT,"save_inverter_parameters_result dir",dir);
+	fd = open(dir, O_WRONLY | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{	
+		write(fd,"\n",1);
+		sprintf(inverter_result,"%s,%s,%3d,1\n",inverter_result,inverter->uid,item);
+		print2msg(ECU_DBG_COLLECT,"inverter_result",inverter_result);
+		write(fd,inverter_result,strlen(inverter_result));
+		close(fd);
+	}
+	
+	return 0;
+
+}
+
+int save_inverter_parameters_result2(char *id, int item, char *inverter_result)
+{
+	char dir[50] = "/home/data/iprocres/";
+	char file[9];
+	int fd;
+	char time[20];
+	
+	getcurrenttime(time);
+	memcpy(file,&time[0],8);
+	file[8] = '\0';
+	sprintf(dir,"%s%s.dat",dir,file);
+	print2msg(ECU_DBG_COLLECT,"save_inverter_parameters_result2 DIR",dir);
+	fd = open(dir, O_WRONLY | O_APPEND | O_CREAT,0);
+	if (fd >= 0)
+	{		
+		write(fd,"\n",1);
+		sprintf(inverter_result,"%s,%s,%3d,1\n",inverter_result,id,item);
+		print2msg(ECU_DBG_COLLECT,"inverter_result",inverter_result);
+		write(fd,inverter_result,strlen(inverter_result));
+		close(fd);
+	}
+	
+	return 0;
+
+}
+
 
 //计算两天前的日期
 int calculate_earliest_2_day_ago(char *date,int *earliest_data)
@@ -3181,10 +3291,49 @@ int update_alarm_send_flag(char *send_date_time)
 }
 
 
+int read_line(char* filename,char *linedata,char* compareData,int len)
+{
+	FILE *fin;
+  fin=fopen(filename,"r");
+	if(fin == NULL)
+	{
+		print2msg(ECU_DBG_OTHER,"read_line failure2",filename);
+    return -1;
+	}
+	
+  while(fgets(linedata,100,fin))//浠庡師鏂囦欢璇诲彇涓�琛?
+	{
+		if(!memcmp(linedata,compareData,len))
+		{
+			//瀛樺湪鐩稿悓琛岋紝鍏抽棴鏂囦欢   鐒跺悗杩斿洖1  琛ㄧず瀛樺湪璇ヨ
+			fclose(fin);
+			return 1;
+		}
+	}
+  fclose(fin);
+  return -1;
+}
+
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 FINSH_FUNCTION_EXPORT(initsystem, eg:initsystem("80:97:1B:00:72:1C"));
 FINSH_FUNCTION_EXPORT(echo, eg:echo);
+
+void setdatacent(char *IP,char* port)
+{
+	char str[100] = {'\0'};
+	sprintf(str,"Domain=EEE.apsema.com\nIP=%s\nPort1=%s\nPort2=%s\n",IP,port,port);
+	echo("/config/datacent.con",str);
+}
+FINSH_FUNCTION_EXPORT(setdatacent, eg:setdatacent);
+
+void setControl(char *IP,char* port)
+{
+	char str[100] = {'\0'};
+	sprintf(str,"Domain=EEE.apsema.com\nIP=%s\nPort1=%s\nPort2=%s\n",IP,port,port);
+	echo("/config/control.con",str);
+}
+FINSH_FUNCTION_EXPORT(setControl, eg:setControl);
 
 #endif

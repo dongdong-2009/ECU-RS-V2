@@ -29,6 +29,7 @@
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
 static char SendData[MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9] = {'\0'};
+extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 extern unsigned char rateOfProgress;
 extern ecu_info ecu;
 
@@ -637,11 +638,80 @@ void APP_Response_SetChannel(unsigned char mapflag,char SIGNAL_CHANNEL,char SIGN
 
 void APP_Response_IOInitStatus(unsigned char result)
 {
+	unsigned char inverter_data[8] = {'\0'};
+	int i =0,length = 0,inverter_length =0;
+	
 	//char SendData[20] = {'\0'};
-	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
-	sprintf(SendData,"APS1100150016%02d\n",result);
-	SendToSocketA(SendData ,16);	
+	if((result == 0)||(result == 1))
+	{
+		memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+		sprintf(SendData,"APS1100150016%02d\n",result);
+		SendToSocketA(SendData ,16);	
+	}else if(result == 2)
+	{
+		memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+		if(memcmp(ecu.JsonTime,"00000000000000",14))
+		{
+			sprintf(SendData,"APS110015001600");   //13字节
+
+		
+			length = 15;
+			for(i=0; (i<MAXINVERTERCOUNT)&&(i < ecu.validNum); i++)			
+			{
+				memset(inverter_data,0x00,8);
+
+				inverter_length = 7;
+				//拼接57字节数据包
+				inverter_data[0] = (inverterInfo[i].uid[0] - '0')*0x10 + (inverterInfo[i].uid[1] - '0');
+				inverter_data[1] = (inverterInfo[i].uid[2] - '0')*0x10 + (inverterInfo[i].uid[3] - '0');
+				inverter_data[2] = (inverterInfo[i].uid[4] - '0')*0x10 + (inverterInfo[i].uid[5] - '0');
+				inverter_data[3] = (inverterInfo[i].uid[6] - '0')*0x10 + (inverterInfo[i].uid[7] - '0');
+				inverter_data[4] = (inverterInfo[i].uid[8] - '0')*0x10 + (inverterInfo[i].uid[9] - '0');
+				inverter_data[5] = (inverterInfo[i].uid[10] - '0')*0x10 + (inverterInfo[i].uid[11] - '0');
+
+
+				if(memcmp( inverterInfo[i].LastCollectTime,"00000000000000",14))
+				{
+					inverter_data[6] = inverterInfo[i].status.function_status;
+				}else
+				{
+					inverter_data[6] = 0x02;
+				}
+				
+					
+				
+				memcpy(&SendData[length],inverter_data,inverter_length);
+				length += inverter_length;
+			}
+		}else
+		{
+			sprintf(SendData,"APS110018001600END\n");
+			SendToSocketA(SendData ,19);	
+			return;
+		}
+
+		if(ecu.validNum > 0)
+		{		
+			SendData[length++] = 'E';
+			SendData[length++] = 'N';
+			SendData[length++] = 'D';
+			//改变报文字节长度
+			SendData[5] = (length/1000) + '0';
+			SendData[6] =	((length/100)%10) + '0';
+			SendData[7] = ((length/10)%10) + '0';
+			SendData[8] = ((length)%10) + '0';
+			
+			SendData[length] = '\n';
+			SendToSocketA(SendData ,length+1);
+		}else
+		{
+			sprintf(SendData,"APS110018001600END\n");
+			SendToSocketA(SendData ,19);			
+		}
+	}
+	
 }
+
 
 void APP_Response_GetRSDHistoryInfo(char mapping,char *date_time ,char * UID)
 {

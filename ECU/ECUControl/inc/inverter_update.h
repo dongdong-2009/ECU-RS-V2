@@ -1,30 +1,19 @@
-#ifndef __DATETIME_H__
-#define __DATETIME_H__
+#ifndef __INVERTER_UPDATE_H__
+#define __INVERTER_UPDATE_H__
 /*****************************************************************************/
-/*  File      : datatime.h                                                   */
+/* File      : inverter_update.h                                             */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-03-05 * Shengfeng Dong  * Creation of the file                      */
+/*  2017-04-04 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
+int set_inverter_update(const char *recvbuffer, char *sendbuffer);
 
-int get_time(char *sendcommanddatetime, char *sendcommandtime);
-int acquire_time(void);
-//时间比较
-int compareTime(int durabletime ,int thistime,int reportinterval);
-//获取当前的小时数
-int get_hour(void);
-
-//计算两个时间点的时间差
-int Time_difference(char *curTime,char *lastTime);
-
-void getcurrenttime(char db_time[]);
-
-#endif /*__DATETIME_H__*/
+#endif	/*__INVERTER_UPDATE_H__*/
