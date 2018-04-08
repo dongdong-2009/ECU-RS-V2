@@ -62,13 +62,13 @@ int getaddrOldOrNew(char *id)
 	command[19]=((id[8]-0x30)*16+(id[9]-0x30));
 	command[20]=((id[10]-0x30)*16+(id[11]-0x30));
 
-	//å‘é€ä¸ŠæŠ¥å•å°é€†å˜å™¨IDçš„å‘½ä»¤
+	//·¢ËÍÉÏ±¨µ¥Ì¨Äæ±äÆ÷IDµÄÃüÁî
 	clear_zbmodem();
 	ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL, 0,command, 21);
 	print2msg(ECU_DBG_COMM,"Get each inverter's short address", id);
 	printhexmsg(ECU_DBG_COMM,"Sent", command, 21);
 
-	//æ¥æ”¶
+	//½ÓÊÕ
 	ret = zigbeeRecvMsg(recvMsg, 5);
 	snprintf(inverterid, sizeof(inverterid), "%02x%02x%02x%02x%02x%02x",
 			recvMsg[4], recvMsg[5], recvMsg[6], recvMsg[7], recvMsg[8], recvMsg[9]);
@@ -76,7 +76,7 @@ int getaddrOldOrNew(char *id)
 		&& (0xFF == recvMsg[2])
 		&& (0xFF == recvMsg[3])
 		&& (0 == strcmp(id, inverterid))) {
-		//è·å–çŸ­åœ°å€æˆåŠŸ
+		//»ñÈ¡¶ÌµØÖ·³É¹¦
 		short_addr = recvMsg[0]*256 + recvMsg[1];
 		curinverter = inverterInfo;
 		for(index=0; (index<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); index++, curinverter++)			//æœ‰æ•ˆé€†å˜å™¨è½®è®­
@@ -102,8 +102,8 @@ int getaddrOldOrNew(char *id)
 			}
 		}
 
-		//æš‚å­˜ç»‘å®šæ ‡å¿—
-			curinverter = inverterInfo;
+		//Ôİ´æ°ó¶¨±êÖ¾
+		curinverter = inverterInfo;
 		for(index=0; (index<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); index++, curinverter++)			//æœ‰æ•ˆé€†å˜å™¨è½®è®­
 		{
 			if(!strcmp(curinverter->uid,inverterid))
@@ -180,35 +180,35 @@ void getshortadd(char *recvbuff)
 }
 
 
-//ç»‘å®šé€†å˜å™¨
+//°ó¶¨Äæ±äÆ÷
 void bind_inverters()
 {
   int num = 0,i = 0,index = 0;
 	inverter_info *curinverter = inverterInfo;
 	unsigned short temppanid=ecu.panid;int k;
 	char recvbuff[256];
-   //0.è®¾ç½®ä¿¡é“
+   //0.ÉèÖÃĞÅµÀ
    rateOfProgress = 0;
    process_channel();
    rateOfProgress = 40;
-   zb_change_ecu_panid(); //å°†ECUçš„PANIDå’Œä¿¡é“è®¾ç½®æˆé…ç½®æ–‡ä»¶ä¸­çš„
+   zb_change_ecu_panid(); //½«ECUµÄPANIDºÍĞÅµÀÉèÖÃ³ÉÅäÖÃÎÄ¼şÖĞµÄ
 
-	//1.ç»‘å®šå·²ç»æœ‰çŸ­åœ°å€çš„é€†å˜å™¨,å¦‚ç»‘å®šå¤±è´¥ï¼Œåˆ™éœ€è¦é‡æ–°è·å–çŸ­åœ°å€	
-	//å¯¹æ¯ä¸ªé€†å˜å™¨è¿›è¡Œç»‘å®š
+	//1.°ó¶¨ÒÑ¾­ÓĞ¶ÌµØÖ·µÄÄæ±äÆ÷,Èç°ó¶¨Ê§°Ü£¬ÔòĞèÒªÖØĞÂ»ñÈ¡¶ÌµØÖ·
+	//¶ÔÃ¿¸öÄæ±äÆ÷½øĞĞ°ó¶¨
 	curinverter = inverterInfo;
 	for(index=0; (index<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); index++, curinverter++)			//æœ‰æ•ˆé€†å˜å™¨è½®è®­
 	{
 		if((curinverter->shortaddr != 0)&&(curinverter->status.bindflag == 0))
 		{
 			if (!zb_off_report_id_and_bind(curinverter->shortaddr)) {
-				//ç»‘å®šå¤±è´¥,é‡ç½®çŸ­åœ°å€
+				//°ó¶¨Ê§°Ü,ÖØÖÃ¶ÌµØÖ·
 				curinverter->shortaddr = 0;
 			}
 		}
 	}	
 
 	rateOfProgress = 41;
-	//***æ–°ç»„ç½‘æ–¹æ¡ˆ
+	//***ĞÂ×éÍø·½°¸
 	
 	curinverter = inverterInfo;
 	num = 0;
@@ -221,7 +221,7 @@ void bind_inverters()
 	if(num>0)
 	{
 		rateOfProgress = 42;
-		//æ¸…ç©ºçŸ­åœ°å€
+		//Çå¿Õ¶ÌµØÖ·
 		zb_restore_ecu_panid_0xffff(ecu.channel);
 		rateOfProgress = 43;
 		for(i=0;i<5;i++)
@@ -268,7 +268,7 @@ void bind_inverters()
 			}
 		}
 		rateOfProgress=65;
-		for(i=0;i<3;i++)			//æ–°ç»„ç½‘
+		for(i=0;i<3;i++)			//ĞÂ×éÍø
 		{
 			curinverter = inverterInfo;
 			for(index=0; (index<MAXINVERTERCOUNT)&&(12==strlen(curinverter->uid)); index++, curinverter++)			//æœ‰æ•ˆé€†å˜å™¨è½®è®­
@@ -292,7 +292,7 @@ void bind_inverters()
 				}
 			}
 		}
-		//æ—§ç»„ç½‘
+		//¾É×éÍø
 		rateOfProgress=90;
 		ecu.panid=temppanid;
 		curinverter = inverterInfo;

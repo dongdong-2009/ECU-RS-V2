@@ -623,7 +623,7 @@ int remote_update_single(inverter_info *inverter)
 
 int remote_update(inverter_info *firstinverter)
 {
-	int i=0, j=0,version_ret = 0;
+	int i=0, j=0,version_ret = 0,k = 0;
 	int update_result = 0;
 	char data[200];
 	char splitdata[4][32];
@@ -631,6 +631,7 @@ int remote_update(inverter_info *firstinverter)
 	char Time[15] = {"/0"};
 	char inverter_result[128];
 	inverter_info *curinverter = firstinverter;
+	unsigned  updateNum = 0;	//需要尝试升级的次数
 	eRemoteType remoteTypeRet = Remote_UpdateSuccessful; 
 	ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 			
@@ -641,10 +642,19 @@ int remote_update(inverter_info *firstinverter)
 		{
 			splitString(data,splitdata);
 			memset(data,0x00,200);
-			
-			if(1 == atoi(splitdata[3]))
+			updateNum = atoi(splitdata[3]);
+			if(updateNum >= 1)	//需要升级的次数大于1，进行升级。升级成功了改为0 升级失败减1
 			{
 				printmsg(ECU_DBG_COMM,curinverter->uid);
+				
+				for(k=0;k<3;k++)
+				{
+					if(-1==zb_test_communication())
+						zigbee_reset();
+					else
+						break;
+				}
+				
 				apstime(pre_Time);
 				update_result = remote_update_single(curinverter);
 				printdecmsg(ECU_DBG_COMM,"Update",update_result);
@@ -670,14 +680,14 @@ int remote_update(inverter_info *firstinverter)
 					}
 				}else
 				{
-					sprintf(data,"%s,%d,%s,0\n",curinverter->uid,curinverter->version,Time);
+					sprintf(data,"%s,%d,%s,%d\n",curinverter->uid,curinverter->version,Time,(updateNum-1));
 				}
 				
 				remoteTypeRet = getResult(update_result);
 				sprintf(inverter_result, "%s%02d%06d%sEND", curinverter->uid, remoteTypeRet,curinverter->version, Time);
 				save_inverter_parameters_result2(curinverter->uid, 147,inverter_result);
 
-								
+
 #if 0
 				memset(inverter_result,0x00,128);
 				sprintf(inverter_result, "%s,%02d,%06d,%s,%s\n", curinverter->uid, remoteTypeRet,curinverter->version, pre_Time,Time);
@@ -689,7 +699,7 @@ int remote_update(inverter_info *firstinverter)
 				}	
 				memset(inverter_result,0x00,128);
 				rt_thread_delay(RT_TICK_PER_SECOND*10);
-#else
+#else 
 				//删除ID所在行
 				delete_line("/home/data/upinv","/home/data/upinv.t",curinverter->uid,12);
 				

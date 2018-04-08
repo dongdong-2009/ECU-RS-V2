@@ -20,6 +20,7 @@
 #include "rtthread.h"
 #include "mycommand.h"
 #include "threadlist.h"
+#include "dfs_posix.h"
 
 /*********************************************************************
 upinv表格字段：
@@ -41,22 +42,25 @@ int set_update_num(const char *msg, int num)
 	int i, err_count = 0;
 	char inverter_id[13] = {'\0'};
 	char str[100] = {'\0'};
-	
-	for(i=0; i<num; i++)
-	{
-		//获取一台逆变器的ID号
-		strncpy(inverter_id, &msg[i*13], 12);
-			
-		//如果存在该逆变器数据则删除该记录
-		delete_line("/home/data/upinv","/home/data/upinv.t",inverter_id,12);
-		sprintf(str,"%s,,,1\n",inverter_id);
-		//插入数据
-		if(-1 == insert_line("/home/data/upinv",str))
+	int fd;
+	char updateNum[2] = {'\0'};
+	fd = open("/home/data/upinv", O_WRONLY  | O_CREAT,0);
+	if (fd >= 0)
+	{		
+		for(i=0; i<num; i++)
 		{
-			err_count++;
-		}	
-	}
+			//获取一台逆变器的ID号
+			strncpy(inverter_id, &msg[i*13], 12);
+			updateNum[0] = msg[i*13 + 12];
+			updateNum[1] = '\0';
+			sprintf(str,"%s,,,%s\n",inverter_id,updateNum);
+			write(fd,str,strlen(str));
+		}
 
+		
+		close(fd);
+	}
+	
 	return err_count;
 }
 
