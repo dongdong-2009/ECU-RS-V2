@@ -44,7 +44,7 @@ int set_update_num(const char *msg, int num)
 	char str[100] = {'\0'};
 	int fd;
 	char updateNum[2] = {'\0'};
-	fd = open("/home/data/upinv", O_WRONLY  | O_CREAT,0);
+	fd = open("/home/data/upinv", O_WRONLY  | O_TRUNC | O_CREAT,0);
 	if (fd >= 0)
 	{		
 		for(i=0; i<num; i++)
