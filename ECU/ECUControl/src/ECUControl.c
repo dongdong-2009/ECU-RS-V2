@@ -1004,13 +1004,14 @@ int response_process_result()
 				{
 					//发送一条记录
 					if(SendToSocketC(control_client_arg.ip,randport(control_client_arg),data, strlen(data)) < 0){
+						AT_CIPCLOSE('4');
 						break;
 					}
 					//发送成功则将标志位置0
 					change_pro_result_flag(item,'0');
 					//WIFI_Close(SOCKET_C);
 					printmsg(ECU_DBG_CONTROL_CLIENT,">>End");
-				
+					AT_CIPCLOSE('4');
 				}
 #endif		
 
@@ -1061,10 +1062,11 @@ int response_process_result()
 				//有线连接失败，使用wifi传输 
 				{
 					if(SendToSocketC(control_client_arg.ip,randport(control_client_arg),sendbuffer, strlen(sendbuffer)) < 0){
+						AT_CIPCLOSE('4');
 						break;
 					}
 					change_inv_pro_result_flag(item,'0');
-									
+					AT_CIPCLOSE('4');				
 				}
 #endif	
 

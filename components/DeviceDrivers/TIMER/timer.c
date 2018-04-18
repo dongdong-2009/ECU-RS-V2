@@ -127,7 +127,6 @@ void TIM2_IRQHandler(void)   //TIM2中断
 			timeout_WIFI_RST_Time++;
 			//产生超时时间
 			COMM_Timeout_Event = 1;
-
 			if(timeout_WIFI_RST_Time > 64800)
 			{
 				timeout_WIFI_RST_Time = 0;

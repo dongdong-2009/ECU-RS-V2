@@ -38,6 +38,7 @@
 #include "socket.h"
 #include "rtc.h"
 #include "mcp1316.h"
+#include "debug.h"
 
 
 #ifdef RT_USING_DFS
@@ -234,6 +235,7 @@ void rt_init_thread_entry(void* parameter)
 #ifdef RAK475_MODULE	
 	uart5_init(115200);					//RAK475相应波特率 串口初始化
 #endif 
+	TIM2_Int_Init(14999, 6399);    //心跳包超时事件定时器初始化
 	WIFI_Reset();
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
@@ -301,6 +303,7 @@ static void led_thread_entry(void* parameter)
 		}
 		kickwatchdog();
 		MCP1316_kickwatchdog();
+		rt_thread_delay( RT_TICK_PER_SECOND/2);
 		cpu_usage_get(&major, &minor);
 		//printf("CPU : %d.%d%\n", major, minor);
     }
@@ -341,7 +344,6 @@ static void lan8720_rst_thread_entry(void* parameter)
 			printf("reboot :%s\n",Time);
 			reboot();
 		}
-
 			
       	rt_thread_delay( RT_TICK_PER_SECOND*50 );
 	}
