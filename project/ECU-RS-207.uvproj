@@ -1156,6 +1156,11 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUClient\src\ECUClient.c</FilePath>
             </File>
+            <File>
+              <FileName>datelist.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUClient\src\datelist.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

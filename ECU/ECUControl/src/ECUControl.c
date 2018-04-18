@@ -18,6 +18,7 @@
 #include "inverter_id.h"
 #include "custom_command.h"
 #include <dfs_posix.h> 
+#include "datelist.h"
 
 extern rt_mutex_t record_data_lock;
 extern ecu_info ecu;
@@ -430,9 +431,13 @@ int change_pro_result_flag(char *item,char flag)  //¸Ä±ä³É¹¦·µ»Ø1£¬Î´ÕÒµ½¸ÃÊ±¼äµ
 	char fileitem[4] = {'\0'};
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* ´ò¿ªdirÄ¿Â¼*/
@@ -445,55 +450,62 @@ int change_pro_result_flag(char *item,char flag)  //¸Ä±ä³É¹¦·µ»Ø1£¬Î´ÕÒµ½¸ÃÊ±¼äµ
 		}
 		else
 		{
-			/* ¶ÁÈ¡dirÄ¿Â¼*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				//´ò¿ªÎÄ¼þÒ»ÐÐÐÐÅÐ¶ÏÊÇ·ñÓÐflag=2µÄ  Èç¹û´æÔÚÖ±½Ó¹Ø±ÕÎÄ¼þ²¢·µ»Ø1
-				fp = fopen(path, "r+");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//¶ÁÈ¡Êý¾Ý
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			//´ò¿ªÎÄ¼þÒ»ÐÐÐÐÅÐ¶ÏÊÇ·ñÓÐflag=2µÄ  Èç¹û´æÔÚÖ±½Ó¹Ø±ÕÎÄ¼þ²¢·µ»Ø1
+			fp = fopen(path, "r+");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
 				{
-					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					if(strlen(buff) > 18)
 					{
-						if(strlen(buff) > 18)
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
 						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
+							if(buff[strlen(buff)-2] == '1')
 							{
-								if(buff[strlen(buff)-2] == '1')
+								memset(fileitem,0,4);
+								memcpy(fileitem,&buff[strlen(buff)-6],3);				//»ñÈ¡Ã¿Ìõ¼ÇÂ¼µÄÊ±¼ä
+								fileitem[3] = '\0';
+								if(!memcmp(item,fileitem,4))						//Ã¿Ìõ¼ÇÂ¼µÄÊ±¼äºÍ´«ÈëµÄÊ±¼ä¶Ô±È£¬ÈôÏàÍ¬Ôò±ä¸üflag				
 								{
-									memset(fileitem,0,4);
-									memcpy(fileitem,&buff[strlen(buff)-6],3);				//»ñÈ¡Ã¿Ìõ¼ÇÂ¼µÄÊ±¼ä
-									fileitem[3] = '\0';
-									if(!memcmp(item,fileitem,4))						//Ã¿Ìõ¼ÇÂ¼µÄÊ±¼äºÍ´«ÈëµÄÊ±¼ä¶Ô±È£¬ÈôÏàÍ¬Ôò±ä¸üflag				
-									{
-										fseek(fp,-2L,SEEK_CUR);
-										fputc(flag,fp);
-										//print2msg(ECU_DBG_CONTROL_CLIENT,"filetime",filetime);
-										fclose(fp);
-										closedir(dirp);
-										free(buff);
-										buff = NULL;
-										rt_mutex_release(record_data_lock);
-										return 1;
-									}
+									fseek(fp,-2L,SEEK_CUR);
+									fputc(flag,fp);
+									//print2msg(ECU_DBG_CONTROL_CLIENT,"filetime",filetime);
+									fclose(fp);
+									free(buff);
+									buff = NULL;
+									list_destroy(&Head);
+									rt_mutex_release(record_data_lock);
+									return 1;
 								}
 							}
 						}
-						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
-						
 					}
-					fclose(fp);
+					memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+					
 				}
-				
+				fclose(fp);
 			}
-			/* ¹Ø±ÕÄ¿Â¼ */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return 0;
 	
@@ -507,10 +519,14 @@ void delete_pro_result_flag0()		//Çå¿ÕÊý¾Ýflag±êÖ¾È«²¿Îª0µÄÄ¿Â¼
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	int flag = 0;
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* ´ò¿ªdirÄ¿Â¼*/
@@ -523,54 +539,58 @@ void delete_pro_result_flag0()		//Çå¿ÕÊý¾Ýflag±êÖ¾È«²¿Îª0µÄÄ¿Â¼
 		}
 		else
 		{
-			/* ¶ÁÈ¡dirÄ¿Â¼*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				flag = 0;
-				//print2msg(ECU_DBG_CONTROL_CLIENT,"delete_file_resendflag0 ",path);
-				//´ò¿ªÎÄ¼þÒ»ÐÐÐÐÅÐ¶ÏÊÇ·ñÓÐflag!=0µÄ  Èç¹û´æÔÚÖ±½Ó¹Ø±ÕÎÄ¼þ²¢·µ»Ø,Èç¹û²»´æÔÚ£¬É¾³ýÎÄ¼þ
-				fp = fopen(path, "r");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//¶ÁÈ¡Êý¾Ý
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			flag = 0;
+			//print2msg(ECU_DBG_CONTROL_CLIENT,"delete_file_resendflag0 ",path);
+			//´ò¿ªÎÄ¼þÒ»ÐÐÐÐÅÐ¶ÏÊÇ·ñÓÐflag!=0µÄ  Èç¹û´æÔÚÖ±½Ó¹Ø±ÕÎÄ¼þ²¢·µ»Ø,Èç¹û²»´æÔÚ£¬É¾³ýÎÄ¼þ
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
 				{
-					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					if(strlen(buff) > 18)
 					{
-						if(strlen(buff) > 18)
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
 						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
+							if(buff[strlen(buff)-2] != '0')			//¼ì²âÊÇ·ñ´æÔÚresendflag != 0µÄ¼ÇÂ¼   Èô´æÔÚÔòÖ±½ÓÍË³öº¯Êý
 							{
-								if(buff[strlen(buff)-2] != '0')			//¼ì²âÊÇ·ñ´æÔÚresendflag != 0µÄ¼ÇÂ¼   Èô´æÔÚÔòÖ±½ÓÍË³öº¯Êý
-								{
-									flag = 1;
-									break;
-									//fclose(fp);
-									//closedir(dirp);
-									//rt_mutex_release(record_data_lock);
-									//return;
-								}
+								flag = 1;
+								break;
+
 							}
 						}
-						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
-						
 					}
-					fclose(fp);
-					if(flag == 0)
-					{
-						print2msg(ECU_DBG_CONTROL_CLIENT,"unlink:",path);
-						//±éÀúÍêÎÄ¼þ¶¼Ã»·¢ÏÖflag != 0µÄ¼ÇÂ¼Ö±½ÓÉ¾³ýÎÄ¼þ
-						unlink(path);
-					}	
+					memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+					
 				}
-				
+				fclose(fp);
+				if(flag == 0)
+				{
+					print2msg(ECU_DBG_CONTROL_CLIENT,"unlink:",path);
+					//±éÀúÍêÎÄ¼þ¶¼Ã»·¢ÏÖflag != 0µÄ¼ÇÂ¼Ö±½ÓÉ¾³ýÎÄ¼þ
+					unlink(path);
+				}	
 			}
-			/* ¹Ø±ÕÄ¿Â¼ */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return;
 
@@ -584,10 +604,14 @@ void delete_inv_pro_result_flag0()		//Çå¿ÕÊý¾Ýflag±êÖ¾È«²¿Îª0µÄÄ¿Â¼
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	int flag = 0;
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* ´ò¿ªdirÄ¿Â¼*/
@@ -600,53 +624,56 @@ void delete_inv_pro_result_flag0()		//Çå¿ÕÊý¾Ýflag±êÖ¾È«²¿Îª0µÄÄ¿Â¼
 		}
 		else
 		{
-			/* ¶ÁÈ¡dirÄ¿Â¼*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				flag = 0;
-				//print2msg(ECU_DBG_CONTROL_CLIENT,"delete_file_resendflag0 ",path);
-				//´ò¿ªÎÄ¼þÒ»ÐÐÐÐÅÐ¶ÏÊÇ·ñÓÐflag!=0µÄ  Èç¹û´æÔÚÖ±½Ó¹Ø±ÕÎÄ¼þ²¢·µ»Ø,Èç¹û²»´æÔÚ£¬É¾³ýÎÄ¼þ
-				fp = fopen(path, "r");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//¶ÁÈ¡Êý¾Ý
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			flag = 0;
+			//print2msg(ECU_DBG_CONTROL_CLIENT,"delete_file_resendflag0 ",path);
+			//´ò¿ªÎÄ¼þÒ»ÐÐÐÐÅÐ¶ÏÊÇ·ñÓÐflag!=0µÄ  Èç¹û´æÔÚÖ±½Ó¹Ø±ÕÎÄ¼þ²¢·µ»Ø,Èç¹û²»´æÔÚ£¬É¾³ýÎÄ¼þ
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
 				{
-					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					if(strlen(buff) > 18)
 					{
-						if(strlen(buff) > 18)
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ','))
 						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ','))
+							if(buff[strlen(buff)-2] != '0')			//¼ì²âÊÇ·ñ´æÔÚresendflag != 0µÄ¼ÇÂ¼   Èô´æÔÚÔòÖ±½ÓÍË³öº¯Êý
 							{
-								if(buff[strlen(buff)-2] != '0')			//¼ì²âÊÇ·ñ´æÔÚresendflag != 0µÄ¼ÇÂ¼   Èô´æÔÚÔòÖ±½ÓÍË³öº¯Êý
-								{
-									flag = 1;
-									break;
-									//fclose(fp);
-									//closedir(dirp);
-									//rt_mutex_release(record_data_lock);
-									//return;
-								}
+								flag = 1;
+								break;
 							}
 						}
-						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 					}
-					fclose(fp);
-					if(flag == 0)
-					{
-						print2msg(ECU_DBG_CONTROL_CLIENT,"unlink:",path);
-						//±éÀúÍêÎÄ¼þ¶¼Ã»·¢ÏÖflag != 0µÄ¼ÇÂ¼Ö±½ÓÉ¾³ýÎÄ¼þ
-						unlink(path);
-					}	
+					memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 				}
-				
+				fclose(fp);
+				if(flag == 0)
+				{
+					print2msg(ECU_DBG_CONTROL_CLIENT,"unlink:",path);
+					//±éÀúÍêÎÄ¼þ¶¼Ã»·¢ÏÖflag != 0µÄ¼ÇÂ¼Ö±½ÓÉ¾³ýÎÄ¼þ
+					unlink(path);
+				}	
 			}
-			/* ¹Ø±ÕÄ¿Â¼ */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return;
 
@@ -661,9 +688,13 @@ int change_inv_pro_result_flag(char *item,char flag)  //¸Ä±ä³É¹¦·µ»Ø1£¬Î´ÕÒµ½¸ÃÊ
 	char fileitem[4] = {'\0'};
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* ´ò¿ªdirÄ¿Â¼*/
@@ -676,54 +707,61 @@ int change_inv_pro_result_flag(char *item,char flag)  //¸Ä±ä³É¹¦·µ»Ø1£¬Î´ÕÒµ½¸ÃÊ
 		}
 		else
 		{
-			/* ¶ÁÈ¡dirÄ¿Â¼*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				//´ò¿ªÎÄ¼þÒ»ÐÐÐÐÅÐ¶ÏÊÇ·ñÓÐflag=2µÄ  Èç¹û´æÔÚÖ±½Ó¹Ø±ÕÎÄ¼þ²¢·µ»Ø1
-				fp = fopen(path, "r+");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//¶ÁÈ¡Êý¾Ý
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			//´ò¿ªÎÄ¼þÒ»ÐÐÐÐÅÐ¶ÏÊÇ·ñÓÐflag=2µÄ  Èç¹û´æÔÚÖ±½Ó¹Ø±ÕÎÄ¼þ²¢·µ»Ø1
+			fp = fopen(path, "r+");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
 				{
-					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					if(strlen(buff) > 18)
 					{
-						if(strlen(buff) > 18)
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',') )
 						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',') )
+							if(buff[strlen(buff)-2] == '1')
 							{
-								if(buff[strlen(buff)-2] == '1')
+								memset(fileitem,0,4);
+								memcpy(fileitem,&buff[strlen(buff)-6],3);				//»ñÈ¡Ã¿Ìõ¼ÇÂ¼µÄÊ±¼ä
+								fileitem[3] = '\0';
+								if(!memcmp(item,fileitem,4))						//Ã¿Ìõ¼ÇÂ¼µÄÊ±¼äºÍ´«ÈëµÄÊ±¼ä¶Ô±È£¬ÈôÏàÍ¬Ôò±ä¸üflag				
 								{
-									memset(fileitem,0,4);
-									memcpy(fileitem,&buff[strlen(buff)-6],3);				//»ñÈ¡Ã¿Ìõ¼ÇÂ¼µÄÊ±¼ä
-									fileitem[3] = '\0';
-									if(!memcmp(item,fileitem,4))						//Ã¿Ìõ¼ÇÂ¼µÄÊ±¼äºÍ´«ÈëµÄÊ±¼ä¶Ô±È£¬ÈôÏàÍ¬Ôò±ä¸üflag				
-									{
-										fseek(fp,-2L,SEEK_CUR);
-										fputc(flag,fp);
-										//print2msg(ECU_DBG_CONTROL_CLIENT,"filetime",filetime);
-										fclose(fp);
-										closedir(dirp);
-										free(buff);
-										buff = NULL;
-										rt_mutex_release(record_data_lock);
-										return 1;
-									}
+									fseek(fp,-2L,SEEK_CUR);
+									fputc(flag,fp);
+									//print2msg(ECU_DBG_CONTROL_CLIENT,"filetime",filetime);
+									fclose(fp);
+									free(buff);
+									buff = NULL;
+									list_destroy(&Head);
+									rt_mutex_release(record_data_lock);
+									return 1;
 								}
 							}
 						}
-						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 					}
-					fclose(fp);
+					memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 				}
-				
+				fclose(fp);
 			}
-			/* ¹Ø±ÕÄ¿Â¼ */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return 0;
 	
@@ -743,12 +781,16 @@ int search_pro_result_flag(char *data,char * item, int *flag,char sendflag)
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	int nextfileflag = 0;	
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 	memset(data,'\0',sizeof(data)/sizeof(data[0]));
 	*flag = 0;
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		dirp = opendir("/home/data/proc_res");
@@ -761,88 +803,104 @@ int search_pro_result_flag(char *data,char * item, int *flag,char sendflag)
 		{
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				fp = fopen(path, "r");
-				if(fp)
-				{
-					if(0 == nextfileflag)
-					{
-						while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
-						{
-							if(strlen(buff) > 18)	
-							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
-								{
-									if(buff[strlen(buff)-2] == sendflag)			
-									{
-										memcpy(item,&buff[strlen(buff)-6],3);				//»ñÈ¡Ã¿Ìõ¼ÇÂ¼µÄitem
-										memcpy(data,buff,(strlen(buff)-7));
-										data[strlen(buff)-7] = '\n';
-										//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag time",time);
-										//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag data",data);
-										rt_hw_s_delay(1);
-										while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))	
-										{
-											if(strlen(buff) > 18)	
-											{
-												if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
-												{
-													if(buff[strlen(buff)-2] == sendflag)
-													{
-														*flag = 1;
-														fclose(fp);
-														closedir(dirp);
-														free(buff);
-														buff = NULL;
-														rt_mutex_release(record_data_lock);
-														return 1;
-													}
-												}
-											}
-											memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
-										}
-
-										nextfileflag = 1;
-										break;
-									}
-								}
-							}
-							memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
-						}
-					}else
-					{
-						while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp)) 
-						{
-							if(strlen(buff) > 18)
-							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
-								{
-									if(buff[strlen(buff)-2] == sendflag)
-									{
-										*flag = 1;
-										fclose(fp);
-										closedir(dirp);
-										free(buff);
-										buff = NULL;
-										rt_mutex_release(record_data_lock);
-										return 1;
-									}
-								}
-							}
-							memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
-						}
-					}
-					
-					fclose(fp);
-				}
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
 			}
 			closedir(dirp);
 		}
+		list_sort(Head);
+		
+		//¶ÁÈ¡Êý¾Ý
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			if(tmp->date <= 20100101) 
+			{
+				unlink(path);
+				continue;	//Èç¹ûÊ±¼äµãÐ¡ÓÚ2010 01 01 µÄ»°£¬Ìø¹ý¸ÃÎÄ¼þ
+			}
+			
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				if(0 == nextfileflag)
+				{
+					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+					{
+						if(strlen(buff) > 18)	
+						{
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
+							{
+								if(buff[strlen(buff)-2] == sendflag)			
+								{
+									memcpy(item,&buff[strlen(buff)-6],3);				//»ñÈ¡Ã¿Ìõ¼ÇÂ¼µÄitem
+									memcpy(data,buff,(strlen(buff)-7));
+									data[strlen(buff)-7] = '\n';
+									//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag time",time);
+									//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag data",data);
+									rt_hw_s_delay(1);
+									while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))	
+									{
+										if(strlen(buff) > 18)	
+										{
+											if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') )
+											{
+												if(buff[strlen(buff)-2] == sendflag)
+												{
+													*flag = 1;
+													fclose(fp);
+													free(buff);
+													buff = NULL;
+													list_destroy(&Head);
+													rt_mutex_release(record_data_lock);
+													return 1;
+												}
+											}
+										}
+										memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+									}
+									nextfileflag = 1;
+									break;
+								}
+							}
+						}
+						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+					}
+				}else
+				{
+					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp)) 
+					{
+						if(strlen(buff) > 18)
+						{
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+							{
+								if(buff[strlen(buff)-2] == sendflag)
+								{
+									*flag = 1;
+									fclose(fp);
+									free(buff);
+									buff = NULL;
+									list_destroy(&Head);
+									rt_mutex_release(record_data_lock);
+									return 1;
+								}
+							}
+						}
+						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+					}
+				}
+				
+				fclose(fp);
+			}
+		}
+
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 
 	return nextfileflag;
@@ -864,12 +922,16 @@ int search_inv_pro_result_flag(char *data,char * item,char *inverterid, int *fla
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	int nextfileflag = 0;	
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 	memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
 	memset(data,'\0',sizeof(data)/sizeof(data[0]));
 	*flag = 0;
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		dirp = opendir("/home/data/iprocres");
@@ -882,94 +944,108 @@ int search_inv_pro_result_flag(char *data,char * item,char *inverterid, int *fla
 		{
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				fp = fopen(path, "r");
-				if(fp)
-				{
-					if(0 == nextfileflag)
-					{
-						while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))  
-						{
-							if(strlen(buff) > 18)
-							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',') )
-								{
-									if(buff[strlen(buff)-2] == sendflag)			
-									{
-										memcpy(item,&buff[strlen(buff)-6],3);				//»ñÈ¡Ã¿Ìõ¼ÇÂ¼µÄitem
-										memcpy(inverterid,&buff[strlen(buff)-19],12);
-										memcpy(data,buff,(strlen(buff)-20));
-										data[strlen(buff)-20] = '\n';
-										//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag time",time);
-										//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag data",data);
-										rt_hw_s_delay(1);
-										while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
-										{
-											if(strlen(buff) > 18)
-											{
-												if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
-												{
-													if(buff[strlen(buff)-2] == sendflag)
-													{
-														*flag = 1;
-														fclose(fp);
-														closedir(dirp);
-														free(buff);
-														buff = NULL;
-														rt_mutex_release(record_data_lock);
-														return 1;
-													}
-												}
-											}
-											memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
-										}
-
-										nextfileflag = 1;
-										break;
-
-									}
-								}
-							}	
-							memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
-						}
-					}else
-					{
-						while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))  //?¨¢¨¨?¨°?DD¨ºy?Y
-						{
-							if(strlen(buff) > 18)
-							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',')  )
-								{
-									if(buff[strlen(buff)-2] == sendflag)
-									{
-										*flag = 1;
-										fclose(fp);
-										closedir(dirp);
-										free(buff);
-										buff = NULL;
-										rt_mutex_release(record_data_lock);
-										return 1;
-									}
-								}
-							}
-							memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
-						}
-					}
-					
-					fclose(fp);
-				}
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
 			}
 			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//¶ÁÈ¡Êý¾Ý
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			if(tmp->date <= 20100101) 
+			{
+				unlink(path);
+				continue;	//Èç¹ûÊ±¼äµãÐ¡ÓÚ2010 01 01 µÄ»°£¬Ìø¹ý¸ÃÎÄ¼þ
+			}
+			
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				if(0 == nextfileflag)
+				{
+					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))  
+					{
+						if(strlen(buff) > 18)
+						{
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',') )
+							{
+								if(buff[strlen(buff)-2] == sendflag)			
+								{
+									memcpy(item,&buff[strlen(buff)-6],3);				//»ñÈ¡Ã¿Ìõ¼ÇÂ¼µÄitem
+									memcpy(inverterid,&buff[strlen(buff)-19],12);
+									memcpy(data,buff,(strlen(buff)-20));
+									data[strlen(buff)-20] = '\n';
+									//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag time",time);
+									//print2msg(ECU_DBG_CONTROL_CLIENT,"search_readflag data",data);
+									rt_hw_s_delay(1);
+									while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))
+									{
+										if(strlen(buff) > 18)
+										{
+											if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+											{
+												if(buff[strlen(buff)-2] == sendflag)
+												{
+													*flag = 1;
+													fclose(fp);
+													free(buff);
+													buff = NULL;
+													list_destroy(&Head);
+													rt_mutex_release(record_data_lock);
+													return 1;
+												}
+											}
+										}
+										memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+									}
+									nextfileflag = 1;
+									break;
+									}
+							}
+						}	
+						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+					}
+				}else
+				{
+					while(NULL != fgets(buff,(MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18),fp))  //?¨¢¨¨?¨°?DD¨ºy?Y
+					{
+						if(strlen(buff) > 18)
+						{
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-7] == ',') && (buff[strlen(buff)-20] == ',')  )
+							{
+								if(buff[strlen(buff)-2] == sendflag)
+								{
+									*flag = 1;
+									fclose(fp);
+									free(buff);
+									buff = NULL;
+									list_destroy(&Head);
+									rt_mutex_release(record_data_lock);
+									return 1;
+								}
+							}
+						}
+						memset(buff,'\0',MAXINVERTERCOUNT*RECORDLENGTH+RECORDTAIL+18);
+					}
+				}
+				
+				fclose(fp);
+			}
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 
 	return nextfileflag;
-
+	
 }
 
 

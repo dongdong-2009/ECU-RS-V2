@@ -12,6 +12,7 @@
 #include "string.h"
 #include "rtc.h"
 #include "threadlist.h"
+#include "datelist.h"
 
 
 extern ecu_info ecu;
@@ -2003,9 +2004,13 @@ int detection_resendflag2(void)		//存在返回1，不存在返回0
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
 	memset(buff,'\0',CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2018,51 +2023,58 @@ int detection_resendflag2(void)		//存在返回1，不存在返回0
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				//print2msg(ECU_DBG_CLIENT,"detection_resendflag2",path);
-				//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
-				fp = fopen(path, "r");
-				if(fp)
-				{
-					while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))
-					{
-						if(strlen(buff) > 18)
-						{
-							//检查是否符合格式
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
-							{
-								if(buff[strlen(buff)-2] == '2')			//检测最后一个字节的resendflag是否为2   如果发现是2  关闭文件并且return 1
-								{
-									fclose(fp);
-									closedir(dirp);
-									free(buff);
-									buff = NULL;
-									rt_mutex_release(record_data_lock);
-									return 1;
-								}		
-							}
-						}
-						
-					}
-					fclose(fp);
-				}
-				
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
 			}
-			/* 关闭目录 */
 			closedir(dirp);
 		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			//print2msg(ECU_DBG_CLIENT,"detection_resendflag2",path);
+			//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))
+				{
+					if(strlen(buff) > 18)
+					{
+						//检查是否符合格式
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+						{
+							if(buff[strlen(buff)-2] == '2')			//检测最后一个字节的resendflag是否为2   如果发现是2  关闭文件并且return 1
+							{
+								fclose(fp);
+								free(buff);
+								buff = NULL;
+								list_destroy(&Head);
+								rt_mutex_release(record_data_lock);
+								return 1;
+							}		
+						}
+					}
+					
+				}
+				fclose(fp);
+			}
+		}
+
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return 0;
 }
-
 
 int change_resendflag(char *time,char flag)  //改变成功返回1，未找到该时间点返回0
 {
@@ -2073,9 +2085,13 @@ int change_resendflag(char *time,char flag)  //改变成功返回1，未找到该时间点返回
 	char filetime[15] = {'\0'};
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
 	memset(buff,'\0',CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2088,50 +2104,57 @@ int change_resendflag(char *time,char flag)  //改变成功返回1，未找到该时间点返回
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
-				fp = fopen(path, "r+");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
+			fp = fopen(path, "r+");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))
 				{
-					while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))
+					if(strlen(buff) > 18)
 					{
-						if(strlen(buff) > 18)
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+							memset(filetime,0,15);
+							memcpy(filetime,&buff[strlen(buff)-17],14);				//获取每条记录的时间
+							filetime[14] = '\0';
+							if(!memcmp(time,filetime,14))						//每条记录的时间和传入的时间对比，若相同则变更flag				
 							{
-								memset(filetime,0,15);
-								memcpy(filetime,&buff[strlen(buff)-17],14);				//获取每条记录的时间
-								filetime[14] = '\0';
-								if(!memcmp(time,filetime,14))						//每条记录的时间和传入的时间对比，若相同则变更flag				
-								{
-									fseek(fp,-2L,SEEK_CUR);
-									fputc(flag,fp);
-									//print2msg(ECU_DBG_CLIENT,"change_resendflag",filetime);
-									fclose(fp);
-									closedir(dirp);
-									free(buff);
-									buff = NULL;
-									rt_mutex_release(record_data_lock);
-									return 1;
-								}
+								fseek(fp,-2L,SEEK_CUR);
+								fputc(flag,fp);
+								//print2msg(ECU_DBG_CLIENT,"change_resendflag",filetime);
+								fclose(fp);
+								free(buff);
+								buff = NULL;
+								list_destroy(&Head);
+								rt_mutex_release(record_data_lock);
+								return 1;
 							}
 						}
 					}
-					fclose(fp);
 				}
-				
+				fclose(fp);
 			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return 0;
 	
@@ -2152,11 +2175,15 @@ int search_readflag(char *data,char * time, int *flag,char sendflag)
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	int nextfileflag = 0;	//0表示当前文件找到了数据，1表示需要从后面的文件查找数据
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
 	memset(buff,'\0',CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
 	*flag = 0;
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2168,90 +2195,103 @@ int search_readflag(char *data,char * time, int *flag,char sendflag)
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				fp = fopen(path, "r");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			if(tmp->date <= 20100101) 
+			{
+				unlink(path);
+				continue;	//如果时间点小于2010 01 01 的话，跳过该文件
+			}
+			
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				if(0 == nextfileflag)
 				{
-					if(0 == nextfileflag)
+					while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))  //读取一行数据
 					{
-						while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))  //读取一行数据
+						if(strlen(buff) > 18)
 						{
-							if(strlen(buff) > 18)
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+								if(buff[strlen(buff)-2] == sendflag)			//检测最后一个字节的resendflag是否为1
 								{
-									if(buff[strlen(buff)-2] == sendflag)			//检测最后一个字节的resendflag是否为1
+									memcpy(time,&buff[strlen(buff)-17],14);				//获取每条记录的时间
+									memcpy(data,buff,(strlen(buff)-18));
+									data[strlen(buff)-18] = '\n';
+									//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
+									//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
+									rt_hw_ms_delay(1);
+									while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
 									{
-										memcpy(time,&buff[strlen(buff)-17],14);				//获取每条记录的时间
-										memcpy(data,buff,(strlen(buff)-18));
-										data[strlen(buff)-18] = '\n';
-										//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
-										//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
-										rt_hw_ms_delay(1);
-										while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
+										if(strlen(buff) > 18)
 										{
-											if(strlen(buff) > 18)
+											if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 											{
-												if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+												if(buff[strlen(buff)-2] == sendflag)
 												{
-													if(buff[strlen(buff)-2] == sendflag)
-													{
-														*flag = 1;
-														fclose(fp);
-														closedir(dirp);
-														free(buff);
-														buff = NULL;
-														rt_mutex_release(record_data_lock);
-														return 1;
-													}
+													*flag = 1;
+													fclose(fp);
+													free(buff);
+													buff = NULL;
+													list_destroy(&Head);
+													rt_mutex_release(record_data_lock);
+													return 1;
 												}
 											}
 										}
-
-										nextfileflag = 1;
-										break;
 									}
+										nextfileflag = 1;
+									break;
 								}
 							}
-								
 						}
-					}else
+							
+					}
+				}else
+				{
+					while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))  //读取一行数据
 					{
-						while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))  //读取一行数据
+						if(strlen(buff) > 18)
 						{
-							if(strlen(buff) > 18)
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+								if(buff[strlen(buff)-2] == sendflag)
 								{
-									if(buff[strlen(buff)-2] == sendflag)
-									{
-										*flag = 1;
-										fclose(fp);
-										closedir(dirp);
-										free(buff);
-										buff = NULL;
-										rt_mutex_release(record_data_lock);
-										return 1;
-									}
+									*flag = 1;
+									fclose(fp);
+									free(buff);
+									buff = NULL;
+									list_destroy(&Head);
+									rt_mutex_release(record_data_lock);
+									return 1;
 								}
 							}
 						}
 					}
-					
-					fclose(fp);
 				}
+				
+				fclose(fp);
 			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 
 	return nextfileflag;
@@ -2268,9 +2308,13 @@ void delete_file_resendflag0(void)
 	char *buff = NULL;
 	FILE *fp;
 	int flag = 0;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
 	memset(buff,'\0',CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2283,50 +2327,57 @@ void delete_file_resendflag0(void)
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				flag = 0;
-				//print2msg(ECU_DBG_CLIENT,"delete_file_resendflag0 ",path);
-				//打开文件一行行判断是否有flag!=0的  如果存在直接关闭文件并返回,如果不存在，删除文件
-				fp = fopen(path, "r");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			flag = 0;
+			//print2msg(ECU_DBG_CLIENT,"delete_file_resendflag0 ",path);
+			//打开文件一行行判断是否有flag!=0的  如果存在直接关闭文件并返回,如果不存在，删除文件
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				
+				while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))
 				{
-					
-					while(NULL != fgets(buff,(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER),fp))
+					if(strlen(buff) > 18)
 					{
-						if(strlen(buff) > 18)
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+							if(buff[strlen(buff)-2] != '0')			//检测是否存在resendflag != 0的记录   若存在则直接退出函数
 							{
-								if(buff[strlen(buff)-2] != '0')			//检测是否存在resendflag != 0的记录   若存在则直接退出函数
-								{
-									flag = 1;
-									break;
-								}
+								flag = 1;
+								break;
 							}
 						}
-						
 					}
-					fclose(fp);
-					if(flag == 0)
-					{
-						print2msg(ECU_DBG_CLIENT,"unlink:",path);
-						//遍历完文件都没发现flag != 0的记录直接删除文件
-						unlink(path);
-					}	
+					
 				}
-				
+				fclose(fp);
+				if(flag == 0)
+				{
+					print2msg(ECU_DBG_CLIENT,"unlink:",path);
+					//遍历完文件都没发现flag != 0的记录直接删除文件
+					unlink(path);
+				}	
 			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return;
 
@@ -2418,9 +2469,13 @@ int detection_control_resendflag2(void)		//存在返回1，不存在返回0
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(buff,'\0',CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2433,47 +2488,55 @@ int detection_control_resendflag2(void)		//存在返回1，不存在返回0
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				//print2msg(ECU_DBG_CLIENT,"detection_resendflag2",path);
-				//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
-				fp = fopen(path, "r");
-				if(fp)
-				{
-					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
-					{
-						if(strlen(buff) > 18)
-						{
-							//检查是否符合格式
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
-							{
-								if(buff[strlen(buff)-2] == '2')			//检测最后一个字节的resendflag是否为2   如果发现是2  关闭文件并且return 1
-								{
-									fclose(fp);
-									closedir(dirp);
-									free(buff);
-									buff = NULL;
-									rt_mutex_release(record_data_lock);
-									return 1;
-								}		
-							}
-						}
-						
-					}
-					fclose(fp);
-				}
-				
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
 			}
-			/* 关闭目录 */
 			closedir(dirp);
 		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			//print2msg(ECU_DBG_CLIENT,"detection_resendflag2",path);
+			//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
+				{
+					if(strlen(buff) > 18)
+					{
+						//检查是否符合格式
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+						{
+							if(buff[strlen(buff)-2] == '2')			//检测最后一个字节的resendflag是否为2   如果发现是2  关闭文件并且return 1
+							{
+								fclose(fp);
+								free(buff);
+								buff = NULL;
+								list_destroy(&Head);
+								rt_mutex_release(record_data_lock);
+								return 1;
+							}		
+						}
+					}
+					
+				}
+				fclose(fp);
+			}
+		}
+		
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return 0;
 }
@@ -2488,9 +2551,13 @@ int change_control_resendflag(char *time,char flag)  //改变成功返回1，未找到该时
 	char filetime[15] = {'\0'};
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(buff,'\0',CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2503,50 +2570,58 @@ int change_control_resendflag(char *time,char flag)  //改变成功返回1，未找到该时
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
-				fp = fopen(path, "r+");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
+			fp = fopen(path, "r+");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
 				{
-					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
+					if(strlen(buff) > 18)
 					{
-						if(strlen(buff) > 18)
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+							memset(filetime,0,15);
+							memcpy(filetime,&buff[strlen(buff)-17],14);				//获取每条记录的时间
+							filetime[14] = '\0';
+							if(!memcmp(time,filetime,14))						//每条记录的时间和传入的时间对比，若相同则变更flag				
 							{
-								memset(filetime,0,15);
-								memcpy(filetime,&buff[strlen(buff)-17],14);				//获取每条记录的时间
-								filetime[14] = '\0';
-								if(!memcmp(time,filetime,14))						//每条记录的时间和传入的时间对比，若相同则变更flag				
-								{
-									fseek(fp,-2L,SEEK_CUR);
-									fputc(flag,fp);
-									//print2msg(ECU_DBG_CLIENT,"change_resendflag",filetime);
-									fclose(fp);
-									closedir(dirp);
-									free(buff);
-									buff = NULL;
-									rt_mutex_release(record_data_lock);
-									return 1;
-								}
+								fseek(fp,-2L,SEEK_CUR);
+								fputc(flag,fp);
+								//print2msg(ECU_DBG_CLIENT,"change_resendflag",filetime);
+								fclose(fp);
+								free(buff);
+								buff = NULL;
+								list_destroy(&Head);
+								rt_mutex_release(record_data_lock);
+								return 1;
 							}
 						}
 					}
-					fclose(fp);
 				}
-				
+				fclose(fp);
 			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
+
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return 0;
 	
@@ -2567,11 +2642,15 @@ int search_control_readflag(char *data,char * time, int *flag,char sendflag)
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	int nextfileflag = 0;	//0表示当前文件找到了数据，1表示需要从后面的文件查找数据
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(buff,'\0',CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	*flag = 0;
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2583,91 +2662,103 @@ int search_control_readflag(char *data,char * time, int *flag,char sendflag)
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				fp = fopen(path, "r");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			if(tmp->date <= 20100101) 
+			{
+				unlink(path);
+				continue;	//如果时间点小于2010 01 01 的话，跳过该文件
+			}
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				if(0 == nextfileflag)
 				{
-					if(0 == nextfileflag)
+					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))  //读取一行数据
 					{
-						while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))  //读取一行数据
+						if(strlen(buff) > 18)
 						{
-							if(strlen(buff) > 18)
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+								if(buff[strlen(buff)-2] == sendflag)			//检测最后一个字节的resendflag是否为1
 								{
-									if(buff[strlen(buff)-2] == sendflag)			//检测最后一个字节的resendflag是否为1
+									memcpy(time,&buff[strlen(buff)-17],14);				//获取每条记录的时间
+									memcpy(data,buff,(strlen(buff)-18));
+									data[strlen(buff)-18] = '\n';
+									//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
+									//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
+									rt_hw_ms_delay(1);
+									while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
 									{
-										memcpy(time,&buff[strlen(buff)-17],14);				//获取每条记录的时间
-										memcpy(data,buff,(strlen(buff)-18));
-										data[strlen(buff)-18] = '\n';
-										//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
-										//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
-										rt_hw_ms_delay(1);
-										while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
+										if(strlen(buff) > 18)
 										{
-											if(strlen(buff) > 18)
+											if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 											{
-												if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+												if(buff[strlen(buff)-2] == sendflag)
 												{
-													if(buff[strlen(buff)-2] == sendflag)
-													{
-														*flag = 1;
-														fclose(fp);
-														closedir(dirp);
-														free(buff);
-														buff = NULL;
-														rt_mutex_release(record_data_lock);
-														return 1;
-													}
-												}	
-											}
-													
+													*flag = 1;
+													fclose(fp);
+													free(buff);
+													buff = NULL;
+													list_destroy(&Head);
+													rt_mutex_release(record_data_lock);
+													return 1;
+												}
+											}	
 										}
-
-										nextfileflag = 1;
-										break;
+												
 									}
+									nextfileflag = 1;
+									break;
 								}
 							}
-								
 						}
-					}else
+							
+					}
+				}else
+				{
+					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))  //读取一行数据
 					{
-						while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))  //读取一行数据
+						if(strlen(buff) > 18)
 						{
-							if(strlen(buff) > 18)
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+								if(buff[strlen(buff)-2] == sendflag)
 								{
-									if(buff[strlen(buff)-2] == sendflag)
-									{
-										*flag = 1;
-										fclose(fp);
-										closedir(dirp);
-										free(buff);
-										buff = NULL;
-										rt_mutex_release(record_data_lock);
-										return 1;
-									}
+									*flag = 1;
+									fclose(fp);
+									free(buff);
+									buff = NULL;
+									list_destroy(&Head);
+									rt_mutex_release(record_data_lock);
+									return 1;
 								}
 							}
 						}
 					}
-					
-					fclose(fp);
 				}
+				
+				fclose(fp);
 			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 
 	return nextfileflag;
@@ -2684,9 +2775,13 @@ void delete_control_file_resendflag0(void)
 	char *buff = NULL;
 	FILE *fp;
 	int flag = 0;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(buff,'\0',CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2699,12 +2794,22 @@ void delete_control_file_resendflag0(void)
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
 				memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
+				sprintf(path,"%s/%d.dat",dir,tmp->date);
 				flag = 0;
 				//print2msg(ECU_DBG_CLIENT,"delete_file_resendflag0 ",path);
 				//打开文件一行行判断是否有flag!=0的  如果存在直接关闭文件并返回,如果不存在，删除文件
@@ -2733,14 +2838,12 @@ void delete_control_file_resendflag0(void)
 						unlink(path);
 					}	
 				}
-				
-			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
+
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return;
 
@@ -2915,9 +3018,13 @@ int detection_alarm_resendflag2(void)		//存在返回1，不存在返回0
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(buff,'\0',CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2930,46 +3037,53 @@ int detection_alarm_resendflag2(void)		//存在返回1，不存在返回0
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				//print2msg(ECU_DBG_CLIENT,"detection_resendflag2",path);
-				//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
-				fp = fopen(path, "r");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			//print2msg(ECU_DBG_CLIENT,"detection_resendflag2",path);
+			//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
 				{
-					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
-					{
-						if(strlen(buff) > 18)
-						{	
-							//检查是否符合格式
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+					if(strlen(buff) > 18)
+					{	
+						//检查是否符合格式
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+						{
+							if(buff[strlen(buff)-2] == '2')			//检测最后一个字节的resendflag是否为2   如果发现是2  关闭文件并且return 1
 							{
-								if(buff[strlen(buff)-2] == '2')			//检测最后一个字节的resendflag是否为2   如果发现是2  关闭文件并且return 1
-								{
-									fclose(fp);
-									closedir(dirp);
-									free(buff);
-									buff = NULL;
-									rt_mutex_release(record_data_lock);
-									return 1;
-								}		
-							}
+								fclose(fp);
+								free(buff);
+								buff = NULL;
+								list_destroy(&Head);
+								rt_mutex_release(record_data_lock);
+								return 1;
+							}		
 						}
 					}
-					fclose(fp);
 				}
-				
+				fclose(fp);
 			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return 0;
 }
@@ -2984,9 +3098,13 @@ int change_alarm_resendflag(char *time,char flag)  //改变成功返回1，未找到该时间
 	char filetime[15] = {'\0'};
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(buff,'\0',CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -2999,50 +3117,57 @@ int change_alarm_resendflag(char *time,char flag)  //改变成功返回1，未找到该时间
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
-				fp = fopen(path, "r+");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			//打开文件一行行判断是否有flag=2的  如果存在直接关闭文件并返回1
+			fp = fopen(path, "r+");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
 				{
-					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
+					if(strlen(buff) > 18)
 					{
-						if(strlen(buff) > 18)
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+							memset(filetime,0,15);
+							memcpy(filetime,&buff[strlen(buff)-17],14);				//获取每条记录的时间
+							filetime[14] = '\0';
+							if(!memcmp(time,filetime,14))						//每条记录的时间和传入的时间对比，若相同则变更flag				
 							{
-								memset(filetime,0,15);
-								memcpy(filetime,&buff[strlen(buff)-17],14);				//获取每条记录的时间
-								filetime[14] = '\0';
-								if(!memcmp(time,filetime,14))						//每条记录的时间和传入的时间对比，若相同则变更flag				
-								{
-									fseek(fp,-2L,SEEK_CUR);
-									fputc(flag,fp);
-									//print2msg(ECU_DBG_CLIENT,"change_resendflag",filetime);
-									fclose(fp);
-									closedir(dirp);
-									free(buff);
-									buff = NULL;
-									rt_mutex_release(record_data_lock);
-									return 1;
-								}
+								fseek(fp,-2L,SEEK_CUR);
+								fputc(flag,fp);
+								//print2msg(ECU_DBG_CLIENT,"change_resendflag",filetime);
+								fclose(fp);
+								free(buff);
+								buff = NULL;
+								list_destroy(&Head);
+								rt_mutex_release(record_data_lock);
+								return 1;
 							}
 						}
 					}
-					fclose(fp);
 				}
-				
+				fclose(fp);
 			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return 0;
 	
@@ -3063,11 +3188,15 @@ int search_alarm_readflag(char *data,char * time, int *flag,char sendflag)
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	int nextfileflag = 0;	//0表示当前文件找到了数据，1表示需要从后面的文件查找数据
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(buff,'\0',CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	*flag = 0;
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -3079,90 +3208,104 @@ int search_alarm_readflag(char *data,char * time, int *flag,char sendflag)
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				fp = fopen(path, "r");
-				if(fp)
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
+			}
+			closedir(dirp);
+		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			if(tmp->date <= 20100101) 
+			{
+				unlink(path);
+				continue;	//如果时间点小于2010 01 01 的话，跳过该文件
+			}
+			
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				if(0 == nextfileflag)
 				{
-					if(0 == nextfileflag)
+					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))  //读取一行数据
 					{
-						while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))  //读取一行数据
+						if(strlen(buff) > 18)
 						{
-							if(strlen(buff) > 18)
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 							{
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+								if(buff[strlen(buff)-2] == sendflag)			//检测最后一个字节的resendflag是否为1
 								{
-									if(buff[strlen(buff)-2] == sendflag)			//检测最后一个字节的resendflag是否为1
+									memcpy(time,&buff[strlen(buff)-17],14);				//获取每条记录的时间
+									memcpy(data,buff,(strlen(buff)-18));
+									data[strlen(buff)-18] = '\n';
+									//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
+									//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
+									rt_hw_ms_delay(1);
+									while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
 									{
-										memcpy(time,&buff[strlen(buff)-17],14);				//获取每条记录的时间
-										memcpy(data,buff,(strlen(buff)-18));
-										data[strlen(buff)-18] = '\n';
-										//print2msg(ECU_DBG_CLIENT,"search_readflag time",time);
-										//print2msg(ECU_DBG_CLIENT,"search_readflag data",data);
-										rt_hw_ms_delay(1);
-										while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))	//再往下读数据，寻找是否还有要发送的数据
+										if(strlen(buff) > 18)
 										{
-											if(strlen(buff) > 18)
+											if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
 											{
-												if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+												if(buff[strlen(buff)-2] == sendflag)
 												{
-													if(buff[strlen(buff)-2] == sendflag)
-													{
-														*flag = 1;
-														fclose(fp);
-														closedir(dirp);
-														free(buff);
-														buff = NULL;
-														rt_mutex_release(record_data_lock);
-														return 1;
-													}
+													*flag = 1;
+													fclose(fp);
+													free(buff);
+													buff = NULL;
+													list_destroy(&Head);
+													rt_mutex_release(record_data_lock);
+													return 1;
 												}
 											}
-														
 										}
-
-										nextfileflag = 1;
-										break;
+													
 									}
-								}
-							}
-						}
-					}else
-					{
-						while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))  //读取一行数据
-						{
-							if(strlen(buff) > 18)
-							{	
-								if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
-								{
-									if(buff[strlen(buff)-2] == sendflag)
-									{
-										*flag = 1;
-										fclose(fp);
-										closedir(dirp);
-										free(buff);
-										buff = NULL;
-										rt_mutex_release(record_data_lock);
-										return 1;
-									}
+									nextfileflag = 1;
+									break;
 								}
 							}
 						}
 					}
-					
-					fclose(fp);
+				}else
+				{
+					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))  //读取一行数据
+					{
+						if(strlen(buff) > 18)
+						{	
+							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+							{
+								if(buff[strlen(buff)-2] == sendflag)
+								{
+									*flag = 1;
+									fclose(fp);
+									free(buff);
+									buff = NULL;
+									list_destroy(&Head);
+									rt_mutex_release(record_data_lock);
+									return 1;
+								}
+							}
+						}
+					}
 				}
+				
+				fclose(fp);
 			}
-			/* 关闭目录 */
-			closedir(dirp);
 		}
+
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 
 	return nextfileflag;
@@ -3178,10 +3321,14 @@ void delete_alarm_file_resendflag0(void)
 	char path[100];
 	char *buff = NULL;
 	FILE *fp;
+	struct list *Head = NULL;
+	struct list *tmp;
+	char data_str[9] = {'\0'};
 	int flag = 0;
 	rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
 	buff = malloc(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 	memset(buff,'\0',CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
+	Head = list_create(-1);
 	if(result == RT_EOK)
 	{
 		/* 打开dir目录*/
@@ -3194,49 +3341,57 @@ void delete_alarm_file_resendflag0(void)
 		}
 		else
 		{
-			/* 读取dir目录*/
 			while ((d = readdir(dirp)) != RT_NULL)
 			{
-				memset(path,0,100);
-				memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
-				sprintf(path,"%s/%s",dir,d->d_name);
-				flag = 0;
-				//print2msg(ECU_DBG_CLIENT,"delete_file_resendflag0 ",path);
-				//打开文件一行行判断是否有flag!=0的  如果存在直接关闭文件并返回,如果不存在，删除文件
-				fp = fopen(path, "r");
-				if(fp)
-				{
-					while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
-					{
-						if(strlen(buff) > 18)
-						{
-							if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
-							{
-								if(buff[strlen(buff)-2] != '0')			//检测是否存在resendflag != 0的记录   若存在则直接退出函数
-								{
-									flag = 1;
-									break;
-								}
-							}
-						}
-						
-					}
-					fclose(fp);
-					if(flag == 0)
-					{
-						print2msg(ECU_DBG_CLIENT,"unlink:",path);
-						//遍历完文件都没发现flag != 0的记录直接删除文件
-						unlink(path);
-					}	
-				}
-				
+				memcpy(data_str,d->d_name,8);
+				data_str[8] = '\0';
+				list_addhead(Head,atoi(data_str)); 
 			}
-			/* 关闭目录 */
 			closedir(dirp);
 		}
+		list_sort(Head);
+		
+		//读取数据
+		for(tmp = Head->next; tmp != Head; tmp = tmp->next)
+		{
+			memset(path,0,100);
+			memset(buff,0,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER));
+			sprintf(path,"%s/%d.dat",dir,tmp->date);
+			flag = 0;
+			//print2msg(ECU_DBG_CLIENT,"delete_file_resendflag0 ",path);
+			//打开文件一行行判断是否有flag!=0的  如果存在直接关闭文件并返回,如果不存在，删除文件
+			fp = fopen(path, "r");
+			if(fp)
+			{
+				while(NULL != fgets(buff,(CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER),fp))
+				{
+					if(strlen(buff) > 18)
+					{
+						if((buff[strlen(buff)-3] == ',') && (buff[strlen(buff)-18] == ',') )
+						{
+							if(buff[strlen(buff)-2] != '0')			//检测是否存在resendflag != 0的记录   若存在则直接退出函数
+							{
+								flag = 1;
+								break;
+							}
+						}
+					}
+					
+				}
+				fclose(fp);
+				if(flag == 0)
+				{
+					print2msg(ECU_DBG_CLIENT,"unlink:",path);
+					//遍历完文件都没发现flag != 0的记录直接删除文件
+					unlink(path);
+				}	
+			}
+		}
+
 	}
 	free(buff);
 	buff = NULL;
+	list_destroy(&Head);
 	rt_mutex_release(record_data_lock);
 	return;
 

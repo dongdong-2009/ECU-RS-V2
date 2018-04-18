@@ -344,7 +344,6 @@ int ESP07S_sendData(char *data ,int length)
 	{
 		if(1 == detectionSENDOK(Cur))
 		{
-			//printf("AT+CWMODE3 :+ok\n");
 			return 0;
 		}
 		rt_thread_delay(1);
@@ -467,7 +466,6 @@ int WIFI_Test(void)
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT:+ok\n");
 			clear_WIFI();
 			return 0;
 		}
@@ -484,13 +482,12 @@ int AT_CWSAP(char *ECUID,char *PASSWD)			//≈‰÷√ECU»»µ„√˚◊÷
 	char AT[100] = { '\0' };
 	clear_WIFI();
 	sprintf(AT,"AT+CWSAP_DEF=\"ECU_R_%s\",\"%s\",11,3\r\n",ECUID,PASSWD);
-	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT+CWSAP :+ok\n");
+			printf("%s",AT);
 			clear_WIFI();
 			return 0;
 		}
@@ -528,13 +525,13 @@ int AT_CWJAP_DEF(char *SSID,char *PASSWD)			//≈‰÷√ECU¡¨Ω”Œﬁœﬂ¬∑”…∆˜√˚
 	char AT[100] = { '\0' };
 	clear_WIFI();
 	sprintf(AT,"AT+CWJAP_DEF=\"%s\",\"%s\"\r\n",SSID,PASSWD);
-	printf("%s",AT);
+	
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 1500;i++)
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT+AT_CWJAP_DEF :+ok\n");
+			printf("%s",AT);
 			clear_WIFI();
 			return 0;
 		}
@@ -568,7 +565,6 @@ int detectionJAPStatus(int size,char *info,unsigned char *LinksStatus)		//ºÏ≤‚µΩ
 						}
 					}
 					memcpy(info,&USART_RX_BUF[SSIDStart],(SSIDEnd-SSIDStart));
-					printf("info:%s\n",info);
 					*LinksStatus = 1;
 					return 1;
 				}
@@ -587,7 +583,7 @@ int AT_CWJAPStatus(char *info)			//≤È—ØECU¡¨Ω”Œﬁœﬂ¬∑”…∆˜√˚ ∑µªÿ1±Ì æªÒ»°≥…π¶¡¨Ω”
 	char AT[100] = { '\0' };
 	clear_WIFI();
 	sprintf(AT,"AT+CWJAP?\r\n");
-	printf("%s",AT);
+	
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
@@ -659,7 +655,6 @@ int AT_CIPMUX1(void)			//…Ë÷√∂‡¡¨Ω”AT√¸¡Ó
 	{
 		if(1 == detectionOK(Cur))
 		{
-			//printf("AT+CIPMUX :+ok\n");
 			clear_WIFI();
 			return 0;
 		}
@@ -678,7 +673,6 @@ int AT_CIPSERVER(void)			//…Ë÷√∂‡¡¨Ω”AT√¸¡Ó
 	{
 		if(1 == detectionOK(Cur))
 		{
-			//printf("AT+CIPSERVER=1,8899 :+ok\n");
 			clear_WIFI();
 			return 0;
 		}
@@ -701,7 +695,6 @@ int AT_CIPSTART(char ConnectID,char *connectType,char *IP,int port)			//≈‰÷√ECU¡
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("%s +ok\n",AT);
 			clear_WIFI();
 			return 0;
 		}
@@ -717,13 +710,11 @@ int AT_CIPCLOSE(char ConnectID)			//≈‰÷√ECU¡¨Ω”Œﬁœﬂ¬∑”…∆˜√˚
 	char AT[100] = { '\0' };
 	clear_WIFI();
 	sprintf(AT,"AT+CIPCLOSE=%c\r\n",ConnectID);
-	//printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 100;i++)
 	{
 		if((1 == detectionOK(Cur))||(1 == detectionUNLINK(Cur)))
 		{
-			printf("AT+AT_CIPCLOSE :%c +ok\n",ConnectID);
 			clear_WIFI();
 			return 0;
 		}
@@ -740,13 +731,11 @@ int AT_CIPSEND(char ConnectID,int size)			//≈‰÷√ECU¡¨Ω”Œﬁœﬂ¬∑”…∆˜√˚
 	char AT[100] = { '\0' };
 	clear_WIFI();
 	sprintf(AT,"AT+CIPSEND=%c,%d\r\n",ConnectID,size);
-	//printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
 		if(1 == detectionOK(Cur))
 		{
-			//printf("AT+AT_CIPSEND :+ok\n");
 			clear_WIFI();
 			return 0;
 		}
@@ -762,7 +751,6 @@ int AT_CIPAP_DEF(void)			//≈‰÷√ECU¡¨Ω”Œﬁœﬂ¬∑”…∆˜√˚
 	char AT[100] = { '\0' };
 	clear_WIFI();
 	sprintf(AT,"AT+CIPAP_DEF=\"10.10.100.254\"\r\n");
-	printf("%s",AT);
 	WIFI_SendData(AT, (strlen(AT)+1));
 	for(i = 0;i< 200;i++)
 	{
