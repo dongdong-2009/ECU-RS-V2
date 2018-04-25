@@ -21,9 +21,11 @@
 #include "channel.h"
 #include "rsdFunction.h"
 #include "debug.h"
+#include "third_inverter.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
+extern inverter_third_info thirdInverterInfo[MAX_THIRD_INVERTER_COUNT];
 
 int switchChannel(unsigned char *buff)
 {
@@ -62,6 +64,38 @@ int phone_add_inverter(int num,const char *uidstring)
 	printf("%s\n",allbuff);
 	echo("/home/data/id",allbuff);
 	echo("/config/limiteid.con","1");
+	free(allbuff);
+	allbuff = NULL;
+	return 0;
+}
+
+int phone_add_thirdinverter(int num,const char *uidstring)
+{
+	int i = 0,length = 0,buff_len = 0;
+	char buff[60] = { '\0' };
+	char thirdID[32] = {'\0'};
+	unsigned short address = 0;
+	char thirdFactory[16] = {'\0'};
+	char thirdType[16] = {'\0'};
+	char *allbuff = NULL;
+	allbuff = malloc(2500);
+	memset(allbuff,'\0',2500);
+	
+	for(i = 0; i < num; i++)
+	{
+		memcpy(thirdID,&uidstring[i*53],32);
+		address = uidstring[i*53 +32];
+		memcpy(thirdFactory,&uidstring[i*53 +33],10);
+		memcpy(thirdType,&uidstring[i*53 +43],10);
+		
+		memset(buff,'\0',60);
+		sprintf(buff,"%s,%d,,%s,%s,\n",thirdID,address,thirdFactory,thirdType);
+		buff_len = strlen(buff);
+		memcpy(&allbuff[length],buff,buff_len);
+		length +=buff_len;
+	}
+	printf("%s\n",allbuff);
+	echo("/home/data/thirdid",allbuff);
 	free(allbuff);
 	allbuff = NULL;
 	return 0;
@@ -128,11 +162,9 @@ void App_GetSystemInfo(int Data_Len,const char *recvbuffer)
 	//先对比ECUID是否匹配
 	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
 	{	//匹配成功进行相应的操作
-		SEGGER_RTT_printf(0, "COMMAND_SYSTEMINFO  Mapping\n");
 		APP_Response_SystemInfo(0x00,inverterInfo,ecu.validNum);
 	}	else
 	{	//不匹配
-		SEGGER_RTT_printf(0, "COMMAND_SYSTEMINFO   Not Mapping");
 		APP_Response_SystemInfo(0x01,inverterInfo,0);
 	}
 
@@ -197,7 +229,6 @@ void App_SetNetwork(int Data_Len,const char *recvbuffer)
 	}	else
 	{	//不匹配
 		APP_Response_SetNetwork(0x01);
-		SEGGER_RTT_printf(0, "COMMAND_SETNETWORK   Not Mapping");
 	}
 
 }
@@ -301,7 +332,6 @@ void App_SetWIFIPasswd(int Data_Len,const char *recvbuffer)
 		int oldLen,newLen;
 				
 		Resolve2Str(OldPassword,&oldLen,NewPassword,&newLen,(char *)&recvbuffer[28]);								
-		SEGGER_RTT_printf(0, "COMMAND_SETWIFIPASSWORD %d %s %d %s\n",oldLen,OldPassword,newLen,NewPassword);
 								
 		//读取旧密码，如果旧密码相同，设置新密码
 		Read_WIFI_PW(EEPROMPasswd,100);
@@ -631,3 +661,58 @@ void APP_GetFunctionStatusInfo(int Data_Len,const char *recvbuffer)
 		APP_Response_GetFunctionStatusInfo(0x01);
 	}
 }
+
+void APP_RegisterThirdInverter(int Data_Len,const char *recvbuffer)
+{
+	int cmd = 0;
+	char cmd_str[3] = {'\0'};
+	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 33 ",(char *)recvbuffer);
+	memcpy(cmd_str,&recvbuffer[25],2);
+	cmd_str[2] = '\0';
+	cmd = atoi(cmd_str);
+	
+	//先对比ECUID是否匹配
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{	//匹配成功进行相应的操作
+		//判断是注册命令还是读取命令
+		
+		if(cmd == 1)
+		{
+			
+			int AddNum = 0;
+			int i = 0;
+			inverter_third_info *curThirdinverter = thirdInverterInfo;
+			AddNum = (WIFI_Recv_SocketA_LEN - 33)/53;
+			printf("num:%d\n",AddNum);
+			
+			APP_Response_RegisterThirdInverter(cmd,0x00);
+			
+			//将数据写入EEPROM
+			phone_add_thirdinverter(AddNum,(char *)&recvbuffer[30]);	
+			
+			for(i=0; i<MAX_THIRD_INVERTER_COUNT; i++, curThirdinverter++)
+			{
+				rt_memset(curThirdinverter->inverterid, '\0', sizeof(curThirdinverter->inverterid));		//清空逆变器UID
+			}
+			
+			get_ThirdID_from_file(thirdInverterInfo);
+			//重启main线程
+			restartThread(TYPE_DATACOLLECT);
+			
+		}else if(cmd == 2)
+		{
+			APP_Response_RegisterThirdInverter(cmd,0x00);
+		}else
+		{
+			return;
+		}
+		
+		
+	}	else
+	{	//不匹配
+		APP_Response_RegisterThirdInverter(cmd,0x01);
+	}
+	
+}
+
+

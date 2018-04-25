@@ -74,5 +74,6 @@ void APP_Response_SetECUAPInfo(unsigned char result);
 void APP_Response_GetECUAPList(char mapping,char *list);
 //23 命令回应
 void APP_Response_GetFunctionStatusInfo(char mapping);
-
+//33 命令回应
+void APP_Response_RegisterThirdInverter(int cmd,unsigned char result);
 #endif /*__APPCOMM_H__*/

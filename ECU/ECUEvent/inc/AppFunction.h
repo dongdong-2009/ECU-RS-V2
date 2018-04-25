@@ -25,5 +25,6 @@ void APP_GetECUAPInfo(int Data_Len,const char *recvbuffer) ;			//获取ECU连接AP信
 void APP_SetECUAPInfo(int Data_Len,const char *recvbuffer); 			//设置ECU连接AP
 void APP_ListECUAPInfo(int Data_Len,const char *recvbuffer); 			//列举ECU 查询到的AP信息
 void APP_GetFunctionStatusInfo(int Data_Len,const char *recvbuffer);
+void APP_RegisterThirdInverter(int Data_Len,const char *recvbuffer);	//注册第三方逆变器接口
 #endif	/*__APP_FUNCTION_H__*/
 

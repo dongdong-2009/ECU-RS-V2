@@ -83,7 +83,7 @@ void add_APP_functions(void)
 	pfun_Phone[P0021] = APP_SetECUAPInfo;		//功率电流电压曲线
 	pfun_Phone[P0022] = APP_ListECUAPInfo;		//功率电流电压曲线
 	pfun_Phone[P0023] = APP_GetFunctionStatusInfo;
-
+	pfun_Phone[P0033] = APP_RegisterThirdInverter;	//获取第三方逆变器
 
 }
 
@@ -157,10 +157,9 @@ void process_WIFIEvent_ESP07S(void)
 	//判断是否有WIFI接收事件
 	if(WIFI_Recv_SocketA_Event == 1)
 	{
-		SEGGER_RTT_printf(0,"WIFI_Recv_Event start\n");
 		process_WIFI();
 		WIFI_Recv_SocketA_Event = 0;
-		SEGGER_RTT_printf(0,"WIFI_Recv_Event end\n");
+
 	}
 
 }

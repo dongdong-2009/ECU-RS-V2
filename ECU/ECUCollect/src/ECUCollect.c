@@ -15,10 +15,12 @@
 #include "timer.h"
 #include "rsdFunction.h"
 #include "remote_update.h"
+#include "third_inverter.h"
 
 extern unsigned char rateOfProgress;
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
+extern inverter_third_info thirdInverterInfo[MAX_THIRD_INVERTER_COUNT];
 unsigned char ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 unsigned short comm_failed_Num = 0;
 
@@ -51,6 +53,7 @@ int init_all(inverter_info *inverter)
 	//zb_test_communication();
 	init_inverter(inverter);
 	rateOfProgress = 100;
+	init_Third_Inverter(thirdInverterInfo);
 	init_tmpdb(inverter);
 	init_rsdStatus(inverter);
 	return 0;

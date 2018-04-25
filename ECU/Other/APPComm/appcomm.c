@@ -20,6 +20,7 @@
 #include "serverfile.h"
 #include "rtc.h"
 #include "threadlist.h"
+#include "third_inverter.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -30,6 +31,7 @@
 /*****************************************************************************/
 static char SendData[MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9] = {'\0'};
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
+extern inverter_third_info thirdInverterInfo[MAX_THIRD_INVERTER_COUNT];
 extern unsigned char rateOfProgress;
 extern ecu_info ecu;
 
@@ -895,3 +897,54 @@ void APP_Response_GetFunctionStatusInfo(char mapping)
 	}		
 	SendToSocketA(SendData ,packlength);
 }
+
+//ECU-RS设置组网回应
+void APP_Response_RegisterThirdInverter(int cmd,unsigned char result)
+{
+	int packlength = 0,index =0;
+	inverter_third_info *curThirdInverter = thirdInverterInfo;
+	char uid[54];
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+	if(result == 0x00)
+	{
+		if(cmd == 1)
+		{
+			sprintf(SendData,"APS1100170033%02d%02d\n",cmd,result);
+			SendToSocketA(SendData ,18);
+		}else if(cmd == 2)
+		{
+			sprintf(SendData,"APS11001500330200");
+			packlength = 17;
+			for(index=0; (index<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdInverter->inverterid) > 0); index++, curThirdInverter++)
+			{
+				memset(uid,'\0',54);
+				memcpy(uid,curThirdInverter->inverterid,32);
+				uid[32] = curThirdInverter->inverter_addr;
+				memcpy(&uid[33],curThirdInverter->factory,10);
+				memcpy(&uid[43],curThirdInverter->type,10);
+				memcpy(&SendData[packlength],uid,53);	
+				packlength += 53;
+			}
+			
+			SendData[packlength++] = 'E';
+			SendData[packlength++] = 'N';
+			SendData[packlength++] = 'D';
+			
+			SendData[5] = (packlength/1000) + '0';
+			SendData[6] = ((packlength/100)%10) + '0';
+			SendData[7] = ((packlength/10)%10) + '0';
+			SendData[8] = ((packlength)%10) + '0';
+			SendData[packlength++] = '\n';
+			SendToSocketA(SendData ,packlength);
+		}else
+		{
+			return;
+		}
+	
+	}else
+	{
+		sprintf(SendData,"APS1100170033%02d%02d\n",cmd,result);
+		SendToSocketA(SendData ,18);
+	}
+}
+

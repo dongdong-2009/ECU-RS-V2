@@ -39,7 +39,7 @@
 #include "rtc.h"
 #include "mcp1316.h"
 #include "debug.h"
-
+#include "usart485.h"
 
 #ifdef RT_USING_DFS
 #include <dfs_fs.h>
@@ -241,6 +241,7 @@ void rt_init_thread_entry(void* parameter)
 	init_RecordMutex();
 	initSocketArgs();
 	sysDirDetection();
+	usart485_init(9600);
 }
 
 /*****************************************************************************/
