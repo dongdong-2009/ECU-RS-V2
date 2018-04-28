@@ -48,7 +48,8 @@ int init_ecu(void)
 	ecu.JsonTime[14] = '\0';
 	ecu.polling_total_times = 0;
 	ecu.idUpdateFlag = 0;
-	
+	ecu.ThirdIDUpdateFlag = 0;
+	ecu.thirdCommNum = 0;
 	return 0;
 }
 

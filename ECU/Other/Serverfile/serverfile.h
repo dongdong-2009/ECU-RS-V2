@@ -46,6 +46,7 @@ int file_get_array(MyArray *array, int num, const char *filename);
 void save_last_collect_info(void);
 void save_collect_info(char *curTime);
 void dirDetection(char *path);
+void save_json_record(char sendbuff[], char *date_time);
 void sysDirDetection(void);
 int delete_line(char* filename,char* temfilename,char* compareData,int len);
 int search_line(char* filename,char* compareData,int len);

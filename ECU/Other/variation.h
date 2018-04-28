@@ -25,6 +25,7 @@
 #define CLIENT_RECORD_ECU_HEAD					78
 #define CLIENT_RECORD_INVERTER_LENGTH           104
 #define CLIENT_RECORD_OTHER						100
+#define CLIENT_RECORD_JSON						10000
 
 #define CONTROL_RECORD_HEAD						18
 #define CONTROL_RECORD_ECU_HEAD					33
@@ -167,7 +168,7 @@ typedef struct ecu_info_t{
     int polling_total_times;			//ECU一天之中总的轮询次数 ZK
     unsigned char idUpdateFlag;		//id更新标志
     unsigned char ThirdIDUpdateFlag;		//第三方逆变器id更新标志
-
+    int thirdCommNum;
 
 }ecu_info;
 
@@ -195,7 +196,7 @@ typedef struct inverter_third_info_t{
     float PV_Current[MAX_PV_NUM];                       //直流电流		最多4路
     float AC_Voltage[MAX_AC_NUM];                       //交流电压		3相电压
     float AC_Current[MAX_AC_NUM];                       //交流电流		3相电压
-    float Grid_Frequency;                      //电网频率
+    float Grid_Frequency[MAX_AC_NUM];                      //电网频率
     float Temperature;                           //机内温度
     int Reactive_Power;                        //无功功率
     int Active_Power;                          //有功功率
@@ -203,24 +204,6 @@ typedef struct inverter_third_info_t{
     float Daily_Energy;                        //日发电量
     float Life_Energy;                         //历史发电量
     float Current_Energy;                      //本轮发电量	//日发电量计算
-
-    //char Sys_Time[14];                         //系统时间
-    //int Single_Power[MAX_CHANNEL_NUM];         //汇流板单路功率
-    int Input_Total_Power;                     //输入总功率
-    //int PV_Num;                                //当前连接的PV数
-    float Series_Current[MAX_CHANNEL_NUM];                   //汇流板单路电流
-    //int MPPT_Input_Power;                      //MPPT输入功率
-    float AB_Voltage;                          //AB线电压
-    float BC_Voltage;                          //BC线电压
-    float CA_Voltage;                          //CA线电压
-    //int Peak_Active_Power;                     //有功功率峰值
-    //float Hour_Energy;                         //小时发电量
-    float Month_Energy;                        //月发电量
-    //float Year_Energy;                         //年发电量
-    //int Power_Hours;                           //发电小时数
-
-    //int Status;                                //运行状态
-    //int Alarm;                                 //告警
 
     int (*GetData_ThirdInverter)(struct inverter_third_info_t *curThirdinverter);
 }inverter_third_info;

@@ -46,6 +46,60 @@ int switchChannel(unsigned char *buff)
 	return ret;
 }
 
+int ResolveServerInfo(const char *string,ECUServerInfo_t *serverInfo)
+{
+	char cmd[3] = {'\0'};
+	unsigned char cmdNO = 0;
+	char domainLenStr[4] = {'\0'};
+	unsigned char domainLen = 0;
+	
+	memcpy(cmd,&string[25],2);
+	cmdNO = atoi(cmd);
+	if((cmdNO<=0) ||(cmdNO>=7))
+		return -1;
+	serverInfo->serverCmdType = (eServerCmdType)atoi(cmd);
+	if((serverInfo->serverCmdType == SERVER_UPDATE_GET)||(serverInfo->serverCmdType == SERVER_CLIENT_GET)||(serverInfo->serverCmdType == SERVER_CONTROL_GET))
+		return 0;
+	memcpy(domainLenStr,&string[30],3);
+	domainLen = atoi(domainLenStr);
+	memcpy(serverInfo->domain,&string[33],domainLen);
+
+	memcpy(serverInfo->IP,&string[33+domainLen],4);
+
+	serverInfo->Port1 = string[37+domainLen]*256 + string[38+domainLen];
+	serverInfo->Port2 = string[39+domainLen]*256 + string[40+domainLen];
+	return 0;
+	
+}
+
+int Save_Server(ECUServerInfo_t *serverInfo)
+{	
+	char *buff = NULL;
+	buff = malloc(512);
+	memset(buff,'\0',512);
+	printf("%d\n",serverInfo->serverCmdType);
+	printf("%s\n",serverInfo->domain);
+	printf("%d,%d,%d,%d,\n",serverInfo->IP[0],serverInfo->IP[1],serverInfo->IP[2],serverInfo->IP[3]);
+	printf("%d\n",serverInfo->Port1);
+	printf("%d\n",serverInfo->Port2);
+	if(serverInfo->serverCmdType == SERVER_UPDATE_SET)
+	{
+		sprintf(buff,"Domain=%s\nIP=%d.%d.%d.%d\nPort=%d\nuser=zhyf\npassword=yuneng\n",serverInfo->domain,serverInfo->IP[0],serverInfo->IP[1],serverInfo->IP[2],serverInfo->IP[3],serverInfo->Port1);
+		echo("/config/ftpadd.con", buff);
+	}else if(serverInfo->serverCmdType == SERVER_CLIENT_SET)
+	{
+		sprintf(buff,"Domain=%s\nIP=%d.%d.%d.%d\nPort1=%d\nPort2=%d\n",serverInfo->domain,serverInfo->IP[0],serverInfo->IP[1],serverInfo->IP[2],serverInfo->IP[3],serverInfo->Port1,serverInfo->Port2);
+		echo("/config/datacent.con",buff);
+	}else if(serverInfo->serverCmdType == SERVER_CONTROL_SET)
+	{
+		sprintf(buff,"Timeout=10\nReport_Interval=15\nDomain=%s\nIP=%d.%d.%d.%d\nPort1=%d\nPort2=%d\n",serverInfo->domain,serverInfo->IP[0],serverInfo->IP[1],serverInfo->IP[2],serverInfo->IP[3],serverInfo->Port1,serverInfo->Port2);
+		echo("/config/control.con",buff);
+	}
+	free(buff);
+	buff = NULL;
+	
+	return 0;
+}
 
 int phone_add_inverter(int num,const char *uidstring)
 {
@@ -660,6 +714,29 @@ void APP_GetFunctionStatusInfo(int Data_Len,const char *recvbuffer)
 	{
 		APP_Response_GetFunctionStatusInfo(0x01);
 	}
+}
+
+void APP_ServerInfo(int Data_Len,const char *recvbuffer) 			
+{
+	int ret = 0;
+	ECUServerInfo_t serverInfo;
+	print2msg(ECU_DBG_WIFI,"WIFI_Recv_Event 24 ",(char *)recvbuffer);
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{
+		//判断是具体哪条命令
+		ret = ResolveServerInfo(recvbuffer,&serverInfo);
+		if(ret == 0)
+		{	
+			APP_Response_ServerInfo(0x00,&serverInfo);
+		}else
+		{
+			return;
+		}	
+	}else
+	{
+		APP_Response_ServerInfo(0x01,&serverInfo);
+	}
+	
 }
 
 void APP_RegisterThirdInverter(int Data_Len,const char *recvbuffer)

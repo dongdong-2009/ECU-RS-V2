@@ -59,6 +59,10 @@ typedef enum THREADTYPE {
 #define CONTROL_SERVER_IP					"60.190.131.190"
 #define CONTROL_SERVER_PORT1			8981
 #define CONTROL_SERVER_PORT2			8981
+
+#define UPDATE_SERVER_DOMAIN				"ecu.apsema.com"
+#define UPDATE_SERVER_IP					"60.190.131.190"
+#define UPDATE_SERVER_PORT1				9219
 #else
 
 #define CLIENT_SERVER_DOMAIN		""

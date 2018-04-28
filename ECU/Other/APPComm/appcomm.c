@@ -21,6 +21,7 @@
 #include "rtc.h"
 #include "threadlist.h"
 #include "third_inverter.h"
+#include "stdlib.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -51,6 +52,208 @@ int Resolve_RecvData(char *RecvData,int* Data_Len,int* Command_Id)
 	*Command_Id = (RecvData[9]-'0')*1000 + (RecvData[10]-'0')*100 + (RecvData[11]-'0')*10 + (RecvData[12]-'0');;
 	return 0;
 }
+
+int Resolve_Server(ECUServerInfo_t *serverInfo)
+{
+	//如果serverCmdType 为获取指令，解析对应文件到结构体中
+	char IP_Str[20] = {'\0'};
+	char temp[4] = {'\0'};
+	unsigned char IP_Str_site = 0;
+	unsigned char site = 0;
+	int i = 0;
+	FILE *fp;
+	char *buff = NULL;
+	buff = malloc(512);
+	memset(buff,'\0',512);
+	if(serverInfo->serverCmdType == SERVER_UPDATE_GET)
+	{
+		//初始化电量上传参数
+		fp = fopen("/config/FTPADD.CON", "r");
+		if(fp)
+		{
+			while(1)
+			{
+				memset(buff, '\0', 512);
+				fgets(buff, 512, fp);
+				if(!strlen(buff))
+					break;
+				if(!strncmp(buff, "Domain", 6))
+				{
+					memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
+					strcpy(serverInfo->domain, &buff[7]);
+					if('\n' == serverInfo->domain[strlen(serverInfo->domain)-1])
+					{
+						serverInfo->domain[strlen(serverInfo->domain)-1] = '\0';
+					}
+						
+				}
+				if(!strncmp(buff, "IP", 2))
+				{
+					strcpy(IP_Str, &buff[3]);
+					if('\n' == IP_Str[strlen(IP_Str)-1])
+						IP_Str[strlen(IP_Str)-1] = '\0';
+					//解析到serverInfo中去
+					for(i = 0;i<(strlen(IP_Str)+1);i++)
+					{
+						if((IP_Str[i] =='.') ||(IP_Str[i] =='\0'))
+						{
+							memset(temp,'\0',4);
+							memcpy(temp,&IP_Str[IP_Str_site],i-IP_Str_site);
+							serverInfo->IP[site] = atoi(temp);
+							IP_Str_site = i+1;
+							site++;
+						}
+					}
+					
+				}
+				if(!strncmp(buff, "Port", 4))
+					serverInfo->Port1=atoi(&buff[5]);
+
+				serverInfo->Port2=0;
+
+			}
+			fclose(fp);
+		}
+		else
+		{
+			memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
+			memcpy(serverInfo->domain,UPDATE_SERVER_DOMAIN,strlen(UPDATE_SERVER_DOMAIN));
+			serverInfo->IP[0] = 60;
+			serverInfo->IP[1] = 190;
+			serverInfo->IP[2] = 131;
+			serverInfo->IP[3] = 190;
+			serverInfo->Port1 = UPDATE_SERVER_PORT1;
+			serverInfo->Port2 = 0;			
+		}
+	}else if(serverInfo->serverCmdType == SERVER_CLIENT_GET)
+	{
+		//初始化电量上传参数
+		fp = fopen("/config/datacent.con", "r");
+		if(fp)
+		{
+			while(1)
+			{
+				memset(buff, '\0', 512);
+				fgets(buff, 512, fp);
+				if(!strlen(buff))
+					break;
+				if(!strncmp(buff, "Domain", 6))
+				{
+					memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
+					strcpy(serverInfo->domain, &buff[7]);
+					if('\n' == serverInfo->domain[strlen(serverInfo->domain)-1])
+					{
+						serverInfo->domain[strlen(serverInfo->domain)-1] = '\0';
+					}
+						
+				}
+				if(!strncmp(buff, "IP", 2))
+				{
+					strcpy(IP_Str, &buff[3]);
+					if('\n' == IP_Str[strlen(IP_Str)-1])
+						IP_Str[strlen(IP_Str)-1] = '\0';
+					//解析到serverInfo中去
+					for(i = 0;i<(strlen(IP_Str)+1);i++)
+					{
+						if((IP_Str[i] =='.') ||(IP_Str[i] =='\0'))
+						{
+							memset(temp,'\0',4);
+							memcpy(temp,&IP_Str[IP_Str_site],i-IP_Str_site);
+							serverInfo->IP[site] = atoi(temp);
+							IP_Str_site = i+1;
+							site++;
+						}
+					}
+					
+				}
+				if(!strncmp(buff, "Port1", 5))
+					serverInfo->Port1=atoi(&buff[6]);
+				if(!strncmp(buff, "Port2", 5))
+					serverInfo->Port2=atoi(&buff[6]);
+			}
+			fclose(fp);	
+		}
+		else
+		{
+			memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
+			memcpy(serverInfo->domain,CLIENT_SERVER_DOMAIN,strlen(CLIENT_SERVER_DOMAIN));
+			serverInfo->IP[0] = 60;
+			serverInfo->IP[1] = 190;
+			serverInfo->IP[2] = 131;
+			serverInfo->IP[3] = 190;
+			serverInfo->Port1 = CLIENT_SERVER_PORT1;
+			serverInfo->Port2 = CLIENT_SERVER_PORT2;			
+		}
+		
+	}else if(serverInfo->serverCmdType == SERVER_CONTROL_GET)
+	{
+		//初始化电量上传参数
+		fp = fopen("/config/CONTROL.CON", "r");
+		if(fp)
+		{
+			while(1)
+			{
+				memset(buff, '\0', 512);
+				fgets(buff, 512, fp);
+				if(!strlen(buff))
+					break;
+				if(!strncmp(buff, "Domain", 6))
+				{
+					memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
+					strcpy(serverInfo->domain, &buff[7]);
+					if('\n' == serverInfo->domain[strlen(serverInfo->domain)-1])
+					{
+						serverInfo->domain[strlen(serverInfo->domain)-1] = '\0';
+					}
+						
+				}
+				if(!strncmp(buff, "IP", 2))
+				{
+					strcpy(IP_Str, &buff[3]);
+					if('\n' == IP_Str[strlen(IP_Str)-1])
+						IP_Str[strlen(IP_Str)-1] = '\0';
+					//解析到serverInfo中去
+					for(i = 0;i<(strlen(IP_Str)+1);i++)
+					{
+						if((IP_Str[i] =='.') ||(IP_Str[i] =='\0'))
+						{
+							memset(temp,'\0',4);
+							memcpy(temp,&IP_Str[IP_Str_site],i-IP_Str_site);
+							serverInfo->IP[site] = atoi(temp);
+							IP_Str_site = i+1;
+							site++;
+						}
+					}
+					
+				}
+				if(!strncmp(buff, "Port1", 5))
+					serverInfo->Port1=atoi(&buff[6]);
+				if(!strncmp(buff, "Port2", 5))
+					serverInfo->Port2=atoi(&buff[6]);
+
+			}
+			fclose(fp);
+		}
+		else
+		{
+			memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
+			memcpy(serverInfo->domain,CONTROL_SERVER_DOMAIN,strlen(CONTROL_SERVER_DOMAIN));
+			serverInfo->IP[0] = 60;
+			serverInfo->IP[1] = 190;
+			serverInfo->IP[2] = 131;
+			serverInfo->IP[3] = 190;
+			serverInfo->Port1 = CONTROL_SERVER_PORT1;
+			serverInfo->Port2 = CONTROL_SERVER_PORT2;			
+		}
+	}
+
+	free(buff);
+	buff = NULL;
+	
+	return 0;
+	
+}
+
 
 //ECU-RS获取基本信息回应
 void APP_Response_BaseInfo(ecu_info curecu,int Length,char * Version,inverter_info *inverter)
@@ -894,6 +1097,117 @@ void APP_Response_GetFunctionStatusInfo(char mapping)
 	{
 		sprintf(SendData,"APS110015002301\n");
 		packlength = 16;
+	}		
+	SendToSocketA(SendData ,packlength);
+}
+
+void APP_Response_ServerInfo(char mapping,ECUServerInfo_t *serverInfo)
+{
+	int packlength = 0;
+	int domain_len = 0;
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);
+	
+	if(mapping == 0x00)
+	{
+		Resolve_Server(serverInfo);
+		domain_len = strlen(serverInfo->domain);
+		if(serverInfo->serverCmdType == SERVER_UPDATE_GET)
+		{	//从文件中读取对应的信息
+			sprintf(SendData,"APS1100150024%02d00%03d",SERVER_UPDATE_GET,domain_len);
+			packlength = 20;
+			//域名
+			memcpy(&SendData[packlength],serverInfo->domain,domain_len);
+			packlength += domain_len;
+			//IP
+			SendData[packlength++] = serverInfo->IP[0];
+			SendData[packlength++] = serverInfo->IP[1];
+			SendData[packlength++] = serverInfo->IP[2];
+			SendData[packlength++] = serverInfo->IP[3];
+			//Port1
+			SendData[packlength++] = serverInfo->Port1/256;
+			SendData[packlength++] = serverInfo->Port1%256;
+			//Port2
+			SendData[packlength++] = serverInfo->Port2/256;
+			SendData[packlength++] = serverInfo->Port2%256;
+			//Port3
+			SendData[packlength++] = 0;
+			SendData[packlength++] = 0;
+			
+			
+		}else if(serverInfo->serverCmdType == SERVER_CLIENT_GET)
+		{
+			sprintf(SendData,"APS1100150024%02d00%03d",SERVER_CLIENT_GET,domain_len);
+			packlength = 20;
+			memcpy(&SendData[packlength],serverInfo->domain,domain_len);
+			packlength += domain_len;
+			//IP
+			SendData[packlength++] = serverInfo->IP[0];
+			SendData[packlength++] = serverInfo->IP[1];
+			SendData[packlength++] = serverInfo->IP[2];
+			SendData[packlength++] = serverInfo->IP[3];
+			//Port1
+			SendData[packlength++] = serverInfo->Port1/256;
+			SendData[packlength++] = serverInfo->Port1%256;
+			//Port2
+			SendData[packlength++] = serverInfo->Port2/256;
+			SendData[packlength++] = serverInfo->Port2%256;
+			//Port3
+			SendData[packlength++] = 0;
+			SendData[packlength++] = 0;
+		}else if(serverInfo->serverCmdType == SERVER_CONTROL_GET)
+		{
+			sprintf(SendData,"APS1100150024%02d00%03d",SERVER_CONTROL_GET,domain_len);
+			packlength = 20;
+			memcpy(&SendData[packlength],serverInfo->domain,domain_len);
+			packlength += domain_len;
+			//IP
+			SendData[packlength++] = serverInfo->IP[0];
+			SendData[packlength++] = serverInfo->IP[1];
+			SendData[packlength++] = serverInfo->IP[2];
+			SendData[packlength++] = serverInfo->IP[3];
+			//Port1
+			SendData[packlength++] = serverInfo->Port1/256;
+			SendData[packlength++] = serverInfo->Port1%256;
+			//Port2
+			SendData[packlength++] = serverInfo->Port2/256;
+			SendData[packlength++] = serverInfo->Port2%256;
+			//Port3
+			SendData[packlength++] = 0;
+			SendData[packlength++] = 0;
+		}else if(serverInfo->serverCmdType == SERVER_UPDATE_SET)
+		{
+			sprintf(SendData,"APS1100150024%02d00",SERVER_UPDATE_SET);
+			Save_Server(serverInfo);
+			packlength = 17;
+		}else if(serverInfo->serverCmdType == SERVER_CLIENT_SET)
+		{
+			sprintf(SendData,"APS1100150024%02d00",SERVER_CLIENT_SET);
+			Save_Server(serverInfo);
+			packlength = 17;
+		}else if(serverInfo->serverCmdType == SERVER_CONTROL_SET)
+		{
+			sprintf(SendData,"APS1100150024%02d00",SERVER_CONTROL_SET);
+			Save_Server(serverInfo);
+			packlength = 17;
+		}else
+		{
+			return;
+		}
+		
+		SendData[packlength++] = 'E';
+		SendData[packlength++] = 'N';
+		SendData[packlength++] = 'D';
+		
+		SendData[5] = (packlength/1000) + '0';
+		SendData[6] = ((packlength/100)%10) + '0';
+		SendData[7] = ((packlength/10)%10) + '0';
+		SendData[8] = ((packlength)%10) + '0';
+		SendData[packlength++] = '\n';
+		
+	}else
+	{
+		sprintf(SendData,"APS1100170024%02d01\n",serverInfo->serverCmdType );
+		packlength = 18;
 	}		
 	SendToSocketA(SendData ,packlength);
 }

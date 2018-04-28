@@ -29,7 +29,7 @@
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
 inverter_third_info thirdInverterInfo[MAX_THIRD_INVERTER_COUNT];
-
+extern ecu_info ecu;
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -58,7 +58,7 @@ void updateThirdID(void)	//更新第三方逆变器ID
     if(fp)
     {
         curThirdinverter = thirdInverterInfo;
-        for(i=0; (i<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdinverter->inverterid) >= 0); i++, curThirdinverter++)
+        for(i=0; (i<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdinverter->inverterid) > 0); i++, curThirdinverter++)
         {
             fprintf(fp,"%s,%d,%d,%s,%s,%d\n",curThirdinverter->inverterid,curThirdinverter->inverter_addr,
                     curThirdinverter->third_status.inverter_addr_flag,curThirdinverter->factory,curThirdinverter->type,curThirdinverter->third_status.autoget_addr);
@@ -99,11 +99,11 @@ int get_ThirdID_from_file(inverter_third_info *firstThirdinverter)
             print2msg(ECU_DBG_COMM,"ID",data);
             memset(list,0,sizeof(list));
             splitString(data,list);
-	    printf("%s,%s,%s,%s,%s,%s\n",list[0],list[1],list[2],list[3],list[4],list[5]);
+            printf("%s,%s,%s,%s,%s,%s\n",list[0],list[1],list[2],list[3],list[4],list[5]);
             //判断是否存在该逆变器
             curThirdinverter = firstThirdinverter;
             sameflag=0;
-            for(j=0; ((j<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdinverter->inverterid) >= 0)); j++)
+            for(j=0; ((j<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdinverter->inverterid) > 0)); j++)
             {
                 if(!memcmp(list[0],curThirdinverter->inverterid,strlen(list[0])))
                     sameflag = 1;
@@ -216,7 +216,7 @@ void init_Third_Inverter(inverter_third_info *thirdInverter)
 {
     int i = 0,j = 0;
     inverter_third_info *curThirdInverter = thirdInverter;
-   
+
     //初始化第三方逆变器结构体
     for(i=0; i<MAX_THIRD_INVERTER_COUNT; i++, curThirdInverter++)
     {
@@ -228,7 +228,7 @@ void init_Third_Inverter(inverter_third_info *thirdInverter)
         curThirdInverter->third_status.inverter_addr_flag =0;
         curThirdInverter->third_status.autoget_addr = 0;
         curThirdInverter->third_status.communication_flag = 0 ;
-		
+
         for(j = 0;j< MAX_PV_NUM;j++)
         {
             curThirdInverter->PV_Voltage[j] = 0;
@@ -245,7 +245,9 @@ void init_Third_Inverter(inverter_third_info *thirdInverter)
         {
             curThirdInverter->AC_Current[j] = 0;
         }
-        curThirdInverter->Grid_Frequency = 0;
+        curThirdInverter->Grid_Frequency[0] = 0;
+        curThirdInverter->Grid_Frequency[1] = 0;
+        curThirdInverter->Grid_Frequency[2] = 0;
         curThirdInverter->Temperature = 0;
         curThirdInverter->Reactive_Power = 0;
         curThirdInverter->Active_Power = 0;
@@ -254,16 +256,6 @@ void init_Third_Inverter(inverter_third_info *thirdInverter)
         curThirdInverter->Life_Energy = 0;
         curThirdInverter->Current_Energy = 0;
 
-        curThirdInverter->Input_Total_Power = 0;
-        for(j = 0;j < MAX_CHANNEL_NUM;j++)
-        {
-            curThirdInverter->Series_Current[j] = 0;
-        }
-
-        curThirdInverter->AB_Voltage = 0;
-        curThirdInverter->BC_Voltage = 0;
-        curThirdInverter->CA_Voltage = 0;
-        curThirdInverter->Month_Energy = 0;
         curThirdInverter	->GetData_ThirdInverter = NULL;
     }
     //从文件中读取第三方ID信息
@@ -289,12 +281,15 @@ void getAllThirdInverterData(void)
 {
     int i = 0;
     inverter_third_info *curThirdInverter = thirdInverterInfo;
-
+    ecu.thirdCommNum = 0;
     for(i=0; ((i<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdInverter->inverterid) > 0)); i++,curThirdInverter++)
     {
         if((curThirdInverter->GetData_ThirdInverter))
         {
-            curThirdInverter->GetData_ThirdInverter(curThirdInverter);
+            if(0 == curThirdInverter->GetData_ThirdInverter(curThirdInverter))
+            {
+            	ecu.thirdCommNum++;
+            }
         }
 
     }
@@ -304,13 +299,13 @@ void getAllThirdInverterData(void)
 #include <finsh.h>
 void initThird(void)
 {
-	init_Third_Inverter(thirdInverterInfo);
+    init_Third_Inverter(thirdInverterInfo);
 }
 FINSH_FUNCTION_EXPORT(initThird , initThird.)
 
 void get_Third(void)
 {
-	getAllThirdInverterData();
+    getAllThirdInverterData();
 }
 FINSH_FUNCTION_EXPORT(get_Third , get_Third.)
 #endif

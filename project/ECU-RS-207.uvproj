@@ -1176,6 +1176,11 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUCollect\src\third_inverter_SG.c</FilePath>
             </File>
+            <File>
+              <FileName>protocol_json.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUCollect\src\protocol_json.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

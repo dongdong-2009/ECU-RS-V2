@@ -81,62 +81,84 @@ static int ResolveData_SG_DeviceInfo1(inverter_third_info *curThirdinverter,unsi
     }else if(SG49K5J == pWords[0])
     {
         strcpy(curThirdinverter->type,"SG49K5J");
+    }else if(SG30KTL_M == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG30KTL-M");
     }else
     {
         ;
     }
     curThirdinverter->Daily_Energy = (float)pWords[3] / 10;				//当天发电量
-    curThirdinverter->Life_Energy = pWords[4] *65536 + pWords[5];	//历史发电量
+    curThirdinverter->Life_Energy = pWords[4]+ pWords[5] *65536 ;	//历史发电量
     curThirdinverter->Temperature = (float)((signed short)pWords[8]) / 10;	//温度
-    curThirdinverter->PV_Voltage[0] = (float)pWords[11]	/ 10;			//直流电压1
-    curThirdinverter->PV_Current[0] = (float)pWords[12] / 10;			//直流电流1
-    curThirdinverter->PV_Voltage[1] = (float)pWords[13]	/ 10;			//直流电压2
-    curThirdinverter->PV_Current[1] = (float)pWords[14] / 10;			//直流电流2
-    curThirdinverter->PV_Voltage[2] = (float)pWords[15]	/ 10;			//直流电压3
-    curThirdinverter->PV_Current[2] = (float)pWords[16] / 10;			//直流电流3
-    curThirdinverter->Input_Total_Power = pWords[17] *65536 + pWords[18];	//输入总功率
+    if(pWords[11]== 0xFFFF)
+        curThirdinverter->PV_Voltage[0] = 0;			//直流电压1
+    else
+        curThirdinverter->PV_Voltage[0] = (float)pWords[11]	/ 10;			//直流电压1
+
+    if(pWords[12]== 0xFFFF)
+        curThirdinverter->PV_Current[0] = 0;			//直流电流1
+    else
+        curThirdinverter->PV_Current[0] = (float)pWords[12] / 10;			//直流电流1
+
+    if(pWords[13]== 0xFFFF)
+        curThirdinverter->PV_Voltage[1] = 0;			//直流电压2
+    else
+        curThirdinverter->PV_Voltage[1] = (float)pWords[13]	/ 10;			//直流电压2
+
+    if(pWords[14]== 0xFFFF)
+        curThirdinverter->PV_Current[1] = 0;			//直流电流2
+    else
+        curThirdinverter->PV_Current[1] = (float)pWords[14] / 10;			//直流电流2
+
+    if(pWords[15]== 0xFFFF)
+        curThirdinverter->PV_Voltage[2] = 0;
+    else
+        curThirdinverter->PV_Voltage[2] = (float)pWords[15]	/ 10;			//直流电压3
+
+    if(pWords[16]== 0xFFFF)
+        curThirdinverter->PV_Current[2] = 0;
+    else
+        curThirdinverter->PV_Current[2] = (float)pWords[16] / 10;			//直流电流3
     //判断是相电压还是线电压
     if(2 == pWords[2])	//线电压
     {
-        curThirdinverter->AC_Voltage[0] = -1;
-        curThirdinverter->AC_Voltage[1] = -1;
-        curThirdinverter->AC_Voltage[2] = -1;
-        curThirdinverter->AB_Voltage = (float)pWords[19] / 10;
-        curThirdinverter->BC_Voltage = (float)pWords[20] / 10;
-        curThirdinverter->CA_Voltage = (float)pWords[21] / 10;
+        curThirdinverter->AC_Voltage[0] = (float)pWords[19] / 10 / 1.73205;
+        curThirdinverter->AC_Voltage[1] =  (float)pWords[20] / 10 / 1.73205;
+        curThirdinverter->AC_Voltage[2] = (float)pWords[21] / 10 / 1.73205;
+
         curThirdinverter->AC_Current[0] = (float)pWords[22] / 10;
         curThirdinverter->AC_Current[1] = (float)pWords[23] / 10;
         curThirdinverter->AC_Current[2] = (float)pWords[24] / 10;
+        curThirdinverter->Grid_Frequency[0] = curThirdinverter->Grid_Frequency[1] = curThirdinverter->Grid_Frequency[2]  = (float)pWords[36] / 10;			//电网频率
 
     }else if(1 == pWords[2])			//相电压
     {
         curThirdinverter->AC_Voltage[0] = (float)pWords[19] / 10;	//L1
         curThirdinverter->AC_Voltage[1] = (float)pWords[20] / 10;
         curThirdinverter->AC_Voltage[2] = (float)pWords[21] / 10;
-        curThirdinverter->AB_Voltage = -1;
-        curThirdinverter->BC_Voltage = -1;
-        curThirdinverter->CA_Voltage = -1;
+
         curThirdinverter->AC_Current[0] = (float)pWords[22] / 10;
         curThirdinverter->AC_Current[1] = (float)pWords[23] / 10;
         curThirdinverter->AC_Current[2] = (float)pWords[24] / 10;
-    }else			
+        curThirdinverter->Grid_Frequency[0] = curThirdinverter->Grid_Frequency[1] = curThirdinverter->Grid_Frequency[2]  = (float)pWords[36] / 10;			//电网频率
+    }else
     {
         curThirdinverter->AC_Voltage[0] = (float)pWords[19] / 10;
-        curThirdinverter->AC_Voltage[1] = -1;
-        curThirdinverter->AC_Voltage[2] = -1;
-        curThirdinverter->AB_Voltage = -1;
-        curThirdinverter->BC_Voltage = -1;
-        curThirdinverter->CA_Voltage = -1;
+        curThirdinverter->AC_Voltage[1] = 0;
+        curThirdinverter->AC_Voltage[2] = 0;
         curThirdinverter->AC_Current[0] = (float)pWords[22] / 10;
-        curThirdinverter->AC_Current[1] = -1;
-        curThirdinverter->AC_Current[2] = -1;
+        curThirdinverter->AC_Current[1] = 0;
+        curThirdinverter->AC_Current[2] = 0;
+        curThirdinverter->Grid_Frequency[0] = (float)pWords[36] / 10;			//电网频率
+        curThirdinverter->Grid_Frequency[1] = curThirdinverter->Grid_Frequency[2]  = 0;
     }
     
 
-    curThirdinverter->Reactive_Power = pWords[33] *65536 + pWords[34];                        //无功功率
-    curThirdinverter->Active_Power = pWords[31] *65536 + pWords[32];                          //有功功率
+    curThirdinverter->Reactive_Power = pWords[33]  + pWords[34]*65536;                        //无功功率
+    curThirdinverter->Active_Power = pWords[31] + pWords[32] *65536;                          //有功功率
     curThirdinverter->Power_Factor = (float)((signed short)pWords[35]) / 1000;                        //功率因数
-    curThirdinverter->Grid_Frequency = (float)pWords[36] / 10;			//电网频率
+    
 
 
     if(curThirdinverter->Daily_Energy > Daily_Energy_last)	//当前一轮发电量大于上一轮的发电量
@@ -144,7 +166,7 @@ static int ResolveData_SG_DeviceInfo1(inverter_third_info *curThirdinverter,unsi
         curThirdinverter->Current_Energy = curThirdinverter->Daily_Energy - Daily_Energy_last;
     }else
     {
-        curThirdinverter->Current_Energy = curThirdinverter->Daily_Energy;
+        curThirdinverter->Current_Energy = 0;
     }
 
     return 0;
@@ -166,34 +188,14 @@ static int ResolveData_SG_DeviceInfo1(inverter_third_info *curThirdinverter,unsi
 /*****************************************************************************/
 static int ResolveData_SG_DeviceInfo2(inverter_third_info *curThirdinverter,unsigned short *pWords)
 {
-    curThirdinverter->PV_Voltage[3] = (float)pWords[15]	/ 10;			//直流电压4
-    curThirdinverter->PV_Current[3] = (float)pWords[16] / 10;			//直流电流4
-    curThirdinverter->Month_Energy = (float)(pWords[33] *65536 + pWords[34]) / 10;
-    return 0;
-}
-
-/*****************************************************************************/
-/* Function Description:                                                     */
-/*****************************************************************************/
-/*   Resolve BUS Board                                                       */
-/*****************************************************************************/
-/* Parameters:                                                               */
-/*****************************************************************************/
-/*   inverter_third_info[in/out] third Inverter Point                        */
-/*   pWords[int]  resolve short                                              */
-/*****************************************************************************/
-/* Return Values:                                                            */
-/*****************************************************************************/
-/*   resolve result                                                          */
-/*****************************************************************************/
-static int ResolveData_SG_BUSBoard(inverter_third_info *curThirdinverter,unsigned short *pWords)
-{
-    int i = 0;
-    //将16路汇流板电流赋值给对应结构体
-    for(i = 0; i < MAX_CHANNEL_NUM ; i++)
-    {
-        curThirdinverter->Series_Current[i] = (float)pWords[i] / 100;
-    }
+    if(pWords[15]== 0xFFFF)
+        curThirdinverter->PV_Voltage[3] = 0;
+    else
+        curThirdinverter->PV_Voltage[3] = (float)pWords[15]	/ 10;			//直流电压4
+    if(pWords[16]== 0xFFFF)
+        curThirdinverter->PV_Current[3] = 0;			//直流电流4
+    else
+        curThirdinverter->PV_Current[3] = (float)pWords[16] / 10;			//直流电流4
     return 0;
 }
 
@@ -259,37 +261,6 @@ static int GetData_SG_DeviceInfo_2(inverter_third_info *curThirdinverter)
     }
 }
 
-/*****************************************************************************/
-/* Function Description:                                                     */
-/*****************************************************************************/
-/*   Get DeviceInfo Bus Board                                                */
-/*****************************************************************************/
-/* Parameters:                                                               */
-/*****************************************************************************/
-/*   curThirdinverter[in/out] third Inverter Point                           */
-/*****************************************************************************/
-/* Return Values:                                                            */
-/*****************************************************************************/
-/*   request result                                                          */
-/*****************************************************************************/
-static int GetData_SG_BusBoard(inverter_third_info *curThirdinverter)
-{
-    unsigned char nbReadWords = 0;	//读取到字节
-    int ret = 0;
-    unsigned short pWords[128] = {0};
-    ret = read_N_InWords(curThirdinverter->inverter_addr, (SG_BUSBOARD_ARRRESS-1),
-                         SG_BUSBOARD_LENGTH, &nbReadWords,pWords);
-    if(0 == ret)
-    {
-        //解析汇流板信息
-        ResolveData_SG_BUSBoard(curThirdinverter,pWords);
-        return 0;
-    }else
-    {
-        return -1;
-    }
-
-}
 
 static void Debug_SG_info(inverter_third_info *curThirdinverter)
 {
@@ -299,15 +270,14 @@ static void Debug_SG_info(inverter_third_info *curThirdinverter)
     printf("PV_Current:%f %f %f %f \n",curThirdinverter->PV_Current[0],curThirdinverter->PV_Current[1],curThirdinverter->PV_Current[2],curThirdinverter->PV_Current[3]);
     printf("AC_Voltage:%f %f %f \n",curThirdinverter->AC_Voltage[0],curThirdinverter->AC_Voltage[1],curThirdinverter->AC_Voltage[2]);
     printf("AC_Current:%f %f %f \n",curThirdinverter->AC_Current[0],curThirdinverter->AC_Current[1],curThirdinverter->AC_Current[2]);
-    printf("Grid_Frequency:%f ",curThirdinverter->Grid_Frequency);
-    printf("Temperature:%f ",curThirdinverter->Temperature);
+    printf("Grid_Frequency:%f %f %f\n",curThirdinverter->Grid_Frequency[0],curThirdinverter->Grid_Frequency[1],curThirdinverter->Grid_Frequency[2]);
+    printf("Temperature:%f \n",curThirdinverter->Temperature);
     printf("Reactive_Power:%d ",curThirdinverter->Reactive_Power);
     printf("Active_Power:%d \n",curThirdinverter->Active_Power);
-    printf("Power_Factor:%f ",curThirdinverter->Power_Factor);
-    printf("Daily_Energy:%f ",curThirdinverter->Daily_Energy);
+    printf("Power_Factor:%f \n",curThirdinverter->Power_Factor);
+    printf("Daily_Energy:%f \n",curThirdinverter->Daily_Energy);
     printf("Life_Energy:%f \n",curThirdinverter->Life_Energy);
-    printf("Current_Energy:%f ",curThirdinverter->Current_Energy);
-    printf("Month_Energy:%f ",curThirdinverter->Month_Energy);
+    printf("Current_Energy:%f \n",curThirdinverter->Current_Energy);
 
 }
 /*****************************************************************************/
@@ -333,30 +303,25 @@ int GetData_ThirdInverter_SG(inverter_third_info *curThirdinverter)
         ret = GetData_SG_DeviceInfo_2(curThirdinverter);
         if(0 == ret)
         {
-            //获取汇流板信息
-            ret = GetData_SG_BusBoard(curThirdinverter);
-            if(0 == ret)	//读取汇流板成功
+            //判断addrflag绑定标志是否变化
+            curThirdinverter->third_status.communication_flag = 1;
+            if(curThirdinverter->third_status.inverter_addr_flag == 0)
             {
-                //判断addrflag绑定标志是否变化
-                curThirdinverter->third_status.communication_flag = 1;
-                if(curThirdinverter->third_status.inverter_addr_flag == 0)
-                {
-                    curThirdinverter->third_status.inverter_addr_flag = 1;
-                    ecu.ThirdIDUpdateFlag = 1;
-                }
-		Debug_SG_info(curThirdinverter);
-                return 0;
-            }else
-            {
-                return -3;
+                curThirdinverter->third_status.inverter_addr_flag = 1;
+                ecu.ThirdIDUpdateFlag = 1;
             }
+            Debug_SG_info(curThirdinverter);
+            return 0;
+
         }else
         {
+            curThirdinverter->third_status.communication_flag = 0;
             return -2;
         }
 
     }else
     {
+        curThirdinverter->third_status.communication_flag = 0;
         return -1;
     }
 

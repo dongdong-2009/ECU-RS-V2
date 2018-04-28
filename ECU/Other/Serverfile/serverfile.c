@@ -1942,6 +1942,36 @@ void save_record(char sendbuff[], char *date_time)
 }
 
 
+void save_json_record(char sendbuff[], char *date_time)
+{
+	char dir[50] = "/home/record/data/";
+	char file[9];
+	char other[50]= {'\0'};
+	rt_err_t result;
+	int fd;
+	
+	memcpy(file,&date_time[0],8);
+	file[8] = '\0';
+	sprintf(dir,"%s%s.dat",dir,file);
+	print2msg(ECU_DBG_FILE,"save_record DIR",dir);
+	result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+	if(result == RT_EOK)
+	{
+		fd = open(dir, O_WRONLY | O_APPEND | O_CREAT,0);
+		if (fd >= 0)
+		{	
+			write(fd,"\n",1);
+			write(fd,sendbuff,strlen(sendbuff));
+			sprintf(other,",%s,1\n",date_time);
+			//print2msg(ECU_DBG_MAIN,"save_record",sendbuff);
+			write(fd,other,strlen(other));
+			close(fd);
+		}
+	}
+	rt_mutex_release(record_data_lock);
+	
+}
+
 //保存最后一轮通讯相关数据
 void save_last_collect_info(void)
 {

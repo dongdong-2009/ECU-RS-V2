@@ -24,6 +24,7 @@ typedef enum
 {
     SG60KTL 	= 0x010f,
     SG60KU 		= 0x0136,
+    SG30KTL_M 		= 0x0027,
     SG33KTL_M = 0x0134,
     SG40KTL_M	= 0x0135,
     SG50KTL_M = 0x011B,

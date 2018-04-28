@@ -1,6 +1,24 @@
 #ifndef __APP_FUNCTION_H__
 #define __APP_FUNCTION_H__
 
+typedef enum  {
+  SERVER_UPDATE_GET = 1,
+  SERVER_CLIENT_GET = 2,
+  SERVER_CONTROL_GET = 3,
+  SERVER_UPDATE_SET = 4,
+  SERVER_CLIENT_SET = 5,
+  SERVER_CONTROL_SET = 6
+}eServerCmdType;
+typedef struct ECUServerInfo {
+	eServerCmdType serverCmdType;
+	char domain[100];
+	unsigned char IP[4];
+	unsigned short Port1;
+	unsigned short Port2;
+		  
+} ECUServerInfo_t;
+
+int Save_Server(ECUServerInfo_t *serverInfo);
 void App_GetBaseInfo(int Data_Len,const char *recvbuffer);
 void App_GetSystemInfo(int Data_Len,const char *recvbuffer);
 void App_GetPowerCurve(int Data_Len,const char *recvbuffer);
@@ -25,6 +43,7 @@ void APP_GetECUAPInfo(int Data_Len,const char *recvbuffer) ;			//获取ECU连接AP信
 void APP_SetECUAPInfo(int Data_Len,const char *recvbuffer); 			//设置ECU连接AP
 void APP_ListECUAPInfo(int Data_Len,const char *recvbuffer); 			//列举ECU 查询到的AP信息
 void APP_GetFunctionStatusInfo(int Data_Len,const char *recvbuffer);
+void APP_ServerInfo(int Data_Len,const char *recvbuffer) ;
 void APP_RegisterThirdInverter(int Data_Len,const char *recvbuffer);	//注册第三方逆变器接口
 #endif	/*__APP_FUNCTION_H__*/
 

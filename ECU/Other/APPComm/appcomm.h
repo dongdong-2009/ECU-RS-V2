@@ -17,7 +17,7 @@
 #include "variation.h"
 #include "arch/sys_arch.h"
 #include "variation.h"
-
+#include "AppFunction.h"
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
@@ -74,6 +74,8 @@ void APP_Response_SetECUAPInfo(unsigned char result);
 void APP_Response_GetECUAPList(char mapping,char *list);
 //23 命令回应
 void APP_Response_GetFunctionStatusInfo(char mapping);
+
+void APP_Response_ServerInfo(char mapping,ECUServerInfo_t *serverInfo);
 //33 命令回应
 void APP_Response_RegisterThirdInverter(int cmd,unsigned char result);
 #endif /*__APPCOMM_H__*/
