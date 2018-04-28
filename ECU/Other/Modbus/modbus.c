@@ -7,7 +7,7 @@
 
 #define MAX_SEND_TRAME_SIZE          256
 #define MAX_RECV_TRAME_SIZE          4096
-#define READ_MODBUS_TIMEOUT	    10000		//modbus每次读等待时间ms
+#define READ_MODBUS_TIMEOUT	    1000		//modbus每次读等待时间ms
 
 /*****************************************************************************/
 /* Function Description:                                                     */

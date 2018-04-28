@@ -341,10 +341,10 @@ void Collect_Client_Record(void)
 
         }
 
-	if((commNum > 0)||(ecu.thirdCommNum >0))
-	{
-		protocol_JSON(curTime,thirdInverterInfo,client_Data);
-	}
+        if((commNum > 0)||(ecu.thirdCommNum >0))
+        {
+            protocol_JSON(curTime,thirdInverterInfo,client_Data);
+        }
 
         free(client_Data);
         client_Data = NULL;
@@ -540,6 +540,11 @@ int process_IDUpdate(void)
         updateID();
         ecu.idUpdateFlag = 0;
     }
+    if(1 == ecu.ThirdIDUpdateFlag)
+    {
+        updateThirdID();
+        ecu.ThirdIDUpdateFlag = 0;
+    }
     return 0;
 }
 
@@ -567,7 +572,7 @@ void ECUCollect_thread_entry(void* parameter)
                 ECUCommThreadFlag = EN_ECUHEART_DISABLE;
                 getalldata();
                 ECUCommThreadFlag = EN_ECUHEART_ENABLE;
-	       getAllThirdInverterData();	//获取第三方逆变器数据
+                getAllThirdInverterData();	//获取第三方逆变器数据
                 optimizeFileSystem(300);
                 printmsg(ECU_DBG_COLLECT,"Collect DATA Start");
                 //采集实时数据

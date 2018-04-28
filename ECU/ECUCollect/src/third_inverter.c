@@ -19,6 +19,7 @@
 #include "debug.h"
 #include "Serverfile.h"
 #include "third_inverter_SG.h"
+#include "third_inverter_SA.h"
 #include "rtthread.h"
 
 /*****************************************************************************/
@@ -192,11 +193,16 @@ void addGetData_ThirdInverter(inverter_third_info *firstThirdinverter)
         if(!memcmp(curThirdInverter->factory,"SG",2))
         {
             curThirdInverter->GetData_ThirdInverter = GetData_ThirdInverter_SG;
-        }else
-        {
-            curThirdInverter->GetData_ThirdInverter = NULL;
-        }
-    }
+		}
+		else if(!memcmp(curThirdInverter->factory,"SA",2))
+		{
+			curThirdInverter->GetData_ThirdInverter = GetData_ThirdInverter_SA;
+		}
+		else
+		{
+		    curThirdInverter->GetData_ThirdInverter = NULL;
+		}
+	}
 }
 
 /*****************************************************************************/
@@ -288,11 +294,31 @@ void getAllThirdInverterData(void)
         {
             if(0 == curThirdInverter->GetData_ThirdInverter(curThirdInverter))
             {
-            	ecu.thirdCommNum++;
+                Debug_ThirdInverter_info(curThirdInverter);
+                ecu.thirdCommNum++;
             }
         }
 
     }
+}
+
+void Debug_ThirdInverter_info(inverter_third_info *curThirdinverter)
+{
+    printf("third ID:%s inverter_addr:%d factory:%s type:%s \n",curThirdinverter->inverterid,curThirdinverter->inverter_addr,curThirdinverter->factory,curThirdinverter->type);
+    printf("inverter_addr_flag:%d autoget_addr:%d communication_flag:%d \n",curThirdinverter->third_status.inverter_addr_flag,curThirdinverter->third_status.autoget_addr,curThirdinverter->third_status.communication_flag);
+    printf("PV_Voltage:%f %f %f %f \n",curThirdinverter->PV_Voltage[0],curThirdinverter->PV_Voltage[1],curThirdinverter->PV_Voltage[2],curThirdinverter->PV_Voltage[3]);
+    printf("PV_Current:%f %f %f %f \n",curThirdinverter->PV_Current[0],curThirdinverter->PV_Current[1],curThirdinverter->PV_Current[2],curThirdinverter->PV_Current[3]);
+    printf("AC_Voltage:%f %f %f \n",curThirdinverter->AC_Voltage[0],curThirdinverter->AC_Voltage[1],curThirdinverter->AC_Voltage[2]);
+    printf("AC_Current:%f %f %f \n",curThirdinverter->AC_Current[0],curThirdinverter->AC_Current[1],curThirdinverter->AC_Current[2]);
+    printf("Grid_Frequency:%f %f %f\n",curThirdinverter->Grid_Frequency[0],curThirdinverter->Grid_Frequency[1],curThirdinverter->Grid_Frequency[2]);
+    printf("Temperature:%f \n",curThirdinverter->Temperature);
+    printf("Reactive_Power:%d ",curThirdinverter->Reactive_Power);
+    printf("Active_Power:%d \n",curThirdinverter->Active_Power);
+    printf("Power_Factor:%f \n",curThirdinverter->Power_Factor);
+    printf("Daily_Energy:%f \n",curThirdinverter->Daily_Energy);
+    printf("Life_Energy:%f \n",curThirdinverter->Life_Energy);
+    printf("Current_Energy:%f \n",curThirdinverter->Current_Energy);
+
 }
 
 #ifdef RT_USING_FINSH

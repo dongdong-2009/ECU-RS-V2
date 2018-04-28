@@ -63,9 +63,15 @@ static int ResolveData_SG_DeviceInfo1(inverter_third_info *curThirdinverter,unsi
     }else if(SG60KU == pWords[0])
     {
         strcpy(curThirdinverter->type,"SG60KU");
+    }else if(SG30KTL_M == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG30KTL-M");
     }else if(SG33KTL_M == pWords[0])
     {
         strcpy(curThirdinverter->type,"SG33KTL-M");
+    }else if(SG36KTL_M == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG36KTL-M");
     }else if(SG40KTL_M == pWords[0])
     {
         strcpy(curThirdinverter->type,"SG40KTL-M");
@@ -81,9 +87,27 @@ static int ResolveData_SG_DeviceInfo1(inverter_third_info *curThirdinverter,unsi
     }else if(SG49K5J == pWords[0])
     {
         strcpy(curThirdinverter->type,"SG49K5J");
-    }else if(SG30KTL_M == pWords[0])
+    }else if(SG8KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG30KTL-M");
+        strcpy(curThirdinverter->type,"SG8KTL-M");
+    }else if(SG10KTL_M == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG10KTL-M");
+    }else if(SG12KTL_M == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG12KTL-M");
+    }else if(SG80KTL == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG80KTL");
+    }else if(SG80KTL_M == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG80KTL-M");
+    }else if(SG80HV == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG80HV");
+    }else if(SG125HV == pWords[0])
+    {
+        strcpy(curThirdinverter->type,"SG125HV");
     }else
     {
         ;
@@ -262,24 +286,6 @@ static int GetData_SG_DeviceInfo_2(inverter_third_info *curThirdinverter)
 }
 
 
-static void Debug_SG_info(inverter_third_info *curThirdinverter)
-{
-    printf("third ID:%s inverter_addr:%d factory:%s type:%s \n",curThirdinverter->inverterid,curThirdinverter->inverter_addr,curThirdinverter->factory,curThirdinverter->type);
-    printf("inverter_addr_flag:%d autoget_addr:%d communication_flag:%d \n",curThirdinverter->third_status.inverter_addr_flag,curThirdinverter->third_status.autoget_addr,curThirdinverter->third_status.communication_flag);
-    printf("PV_Voltage:%f %f %f %f \n",curThirdinverter->PV_Voltage[0],curThirdinverter->PV_Voltage[1],curThirdinverter->PV_Voltage[2],curThirdinverter->PV_Voltage[3]);
-    printf("PV_Current:%f %f %f %f \n",curThirdinverter->PV_Current[0],curThirdinverter->PV_Current[1],curThirdinverter->PV_Current[2],curThirdinverter->PV_Current[3]);
-    printf("AC_Voltage:%f %f %f \n",curThirdinverter->AC_Voltage[0],curThirdinverter->AC_Voltage[1],curThirdinverter->AC_Voltage[2]);
-    printf("AC_Current:%f %f %f \n",curThirdinverter->AC_Current[0],curThirdinverter->AC_Current[1],curThirdinverter->AC_Current[2]);
-    printf("Grid_Frequency:%f %f %f\n",curThirdinverter->Grid_Frequency[0],curThirdinverter->Grid_Frequency[1],curThirdinverter->Grid_Frequency[2]);
-    printf("Temperature:%f \n",curThirdinverter->Temperature);
-    printf("Reactive_Power:%d ",curThirdinverter->Reactive_Power);
-    printf("Active_Power:%d \n",curThirdinverter->Active_Power);
-    printf("Power_Factor:%f \n",curThirdinverter->Power_Factor);
-    printf("Daily_Energy:%f \n",curThirdinverter->Daily_Energy);
-    printf("Life_Energy:%f \n",curThirdinverter->Life_Energy);
-    printf("Current_Energy:%f \n",curThirdinverter->Current_Energy);
-
-}
 /*****************************************************************************/
 /* Function Description:                                                     */
 /*****************************************************************************/
@@ -310,7 +316,6 @@ int GetData_ThirdInverter_SG(inverter_third_info *curThirdinverter)
                 curThirdinverter->third_status.inverter_addr_flag = 1;
                 ecu.ThirdIDUpdateFlag = 1;
             }
-            Debug_SG_info(curThirdinverter);
             return 0;
 
         }else

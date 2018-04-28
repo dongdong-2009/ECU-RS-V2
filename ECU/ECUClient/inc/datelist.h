@@ -3,9 +3,9 @@
 
 typedef struct list
 {
-	int date;		//时间点
-	struct list *next;	//下一个结点
-	struct list *prev;
+    int date;		//时间点
+    struct list *next;	//下一个结点
+    struct list *prev;
 }LDateNode,*LinkDateList;
 
 //创建一个链表头

@@ -2,6 +2,7 @@
 #define __SERVERFILE_H__
 #include "variation.h"
 #include <rtthread.h>
+#include "ECUClient.h"
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
@@ -80,7 +81,7 @@ int detection_resendflag2(void);
 int change_resendflag(char *time,char flag);
 int search_readflag(char *data,char * time, int *flag,char sendflag);
 void delete_file_resendflag0(void);
-int clear_send_flag(char *readbuff);
+int clear_send_flag(clientResponse_t clientResponse);
 int update_send_flag(char *send_date_time);
 
 //保存15分钟远程控制数据以及其他远程控制相关操作

@@ -4,7 +4,7 @@
 typedef enum
 { 
     EN_ECUHEART_DISABLE 	= 0,	//接收Socket数据头
-    EN_ECUHEART_ENABLE    = 1,	//接收手机Socket ID	
+    EN_ECUHEART_ENABLE    = 1,	//接收手机Socket ID
 } eEcuHeartStatus;// receive state machin
 
 

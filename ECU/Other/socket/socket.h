@@ -4,10 +4,10 @@
 
 typedef struct socket_config
 {
-	char domain[32];	//域名
-	char ip[16];		//IP
-	int port1;			//端口1
-	int port2;			//端口2
+    char domain[32];	//域名
+    char ip[16];		//IP
+    int port1;			//端口1
+    int port2;			//端口2
 
 }Socket_Cfg;
 

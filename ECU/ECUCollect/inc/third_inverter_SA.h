@@ -1,5 +1,5 @@
 /*****************************************************************************/
-/* File      : third_inverter.h                                              */
+/* File      : third_inverter_SA.h                                           */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
@@ -8,23 +8,19 @@
 /*  2018-04-24 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
-#ifndef __THIRD_INVERTER_H__
-#define __THIRD_INVERTER_H__
+#ifndef __THIRD_INVERTER_SA__
+#define __THIRD_INVERTER_SA__
 /*****************************************************************************/
 /*  Include Files                                                            */
 /*****************************************************************************/
 #include "variation.h"
 
 
+
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-void updateThirdID(void);
-int get_ThirdID_from_file(inverter_third_info *firstThirdinverter);
-void init_Third_Inverter(inverter_third_info *inverter);
+int GetData_ThirdInverter_SA(inverter_third_info *curThirdinverter);
 
-void getAllThirdInverterData(void);
-void Debug_ThirdInverter_info(inverter_third_info *curThirdinverter);
+#endif /*__THIRD_INVERTER_SA__*/
 
-
-#endif /*__THIRD_INVERTER_H__*/

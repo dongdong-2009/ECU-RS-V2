@@ -22,15 +22,23 @@
 //Ñô¹â»úÐÍ
 typedef enum 
 {
-    SG60KTL 	= 0x010f,
-    SG60KU 		= 0x0136,
-    SG30KTL_M 		= 0x0027,
-    SG33KTL_M = 0x0134,
+    SG60KTL 	= 0x010F,
+    SG60KU         = 0x0136,
+    SG30KTL_M  = 0x0027,
+    SG33KTL_M  = 0x0134,
+    SG36KTL_M  = 0x74,
     SG40KTL_M	= 0x0135,
-    SG50KTL_M = 0x011B,
-    SG60KTL_M = 0x0131,
-    SG60KU_M 	= 0x0132,
-    SG49K5J		= 0x0132,
+    SG50KTL_M  = 0x011B,
+    SG60KTL_M  = 0x0131,
+    SG60KU_M    = 0x0132,
+    SG49K5J       = 0x0132,
+    SG8KTL_M    = 0x013F,
+    SG10KTL_M  = 0x013E,
+    SG12KTL_M  = 0x013C,
+    SG80KTL       = 0x0138,
+    SG80KTL_M  = 0x0139,
+    SG80HV         = 0x013A,
+    SG125HV       = 0x013B,
 } eSGDeviceType;
 
 /*****************************************************************************/
