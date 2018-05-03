@@ -793,3 +793,16 @@ void APP_RegisterThirdInverter(int Data_Len,const char *recvbuffer)
 }
 
 
+void APP_GetThirdInverter(int Data_Len,const char *recvbuffer)
+{
+	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 34 ",(char *)recvbuffer);
+	//先对比ECUID是否匹配
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{	//匹配成功进行相应的操作
+		APP_Response_GetThirdInverter(0x00);
+	}	else
+	{	//不匹配
+		APP_Response_GetThirdInverter(0x01);
+	}
+
+}

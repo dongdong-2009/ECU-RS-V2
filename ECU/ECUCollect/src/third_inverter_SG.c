@@ -16,6 +16,7 @@
 #include "modbus.h"
 #include "string.h"
 #include "stdio.h"
+#include "usart485.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
@@ -59,55 +60,55 @@ static int ResolveData_SG_DeviceInfo1(inverter_third_info *curThirdinverter,unsi
     //获取机型
     if(SG60KTL == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG60KTL");
+        strcpy(curThirdinverter->type,"60KTL");
     }else if(SG60KU == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG60KU");
+        strcpy(curThirdinverter->type,"60KU");
     }else if(SG30KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG30KTL-M");
+        strcpy(curThirdinverter->type,"30KTL-M");
     }else if(SG33KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG33KTL-M");
+        strcpy(curThirdinverter->type,"33KTL-M");
     }else if(SG36KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG36KTL-M");
+        strcpy(curThirdinverter->type,"36KTL-M");
     }else if(SG40KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG40KTL-M");
+        strcpy(curThirdinverter->type,"40KTL-M");
     }else if(SG50KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG50KTL-M");
+        strcpy(curThirdinverter->type,"50KTL-M");
     }else if(SG60KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG60KTL-M");
+        strcpy(curThirdinverter->type,"60KTL-M");
     }else if(SG60KU_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG60KU-M");
+        strcpy(curThirdinverter->type,"60KU-M");
     }else if(SG49K5J == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG49K5J");
+        strcpy(curThirdinverter->type,"49K5J");
     }else if(SG8KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG8KTL-M");
+        strcpy(curThirdinverter->type,"8KTL-M");
     }else if(SG10KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG10KTL-M");
+        strcpy(curThirdinverter->type,"10KTL-M");
     }else if(SG12KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG12KTL-M");
+        strcpy(curThirdinverter->type,"12KTL-M");
     }else if(SG80KTL == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG80KTL");
+        strcpy(curThirdinverter->type,"80KTL");
     }else if(SG80KTL_M == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG80KTL-M");
+        strcpy(curThirdinverter->type,"80KTL-M");
     }else if(SG80HV == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG80HV");
+        strcpy(curThirdinverter->type,"80HV");
     }else if(SG125HV == pWords[0])
     {
-        strcpy(curThirdinverter->type,"SG125HV");
+        strcpy(curThirdinverter->type,"125HV");
     }else
     {
         ;
@@ -144,6 +145,11 @@ static int ResolveData_SG_DeviceInfo1(inverter_third_info *curThirdinverter,unsi
         curThirdinverter->PV_Current[2] = 0;
     else
         curThirdinverter->PV_Current[2] = (float)pWords[16] / 10;			//直流电流3
+
+    curThirdinverter->PV_Power[0] = curThirdinverter->PV_Current[0] * curThirdinverter->PV_Voltage[0];
+    curThirdinverter->PV_Power[1] = curThirdinverter->PV_Current[1] * curThirdinverter->PV_Voltage[1];
+    curThirdinverter->PV_Power[2] = curThirdinverter->PV_Current[2] * curThirdinverter->PV_Voltage[2];
+
     //判断是相电压还是线电压
     if(2 == pWords[2])	//线电压
     {
@@ -220,6 +226,8 @@ static int ResolveData_SG_DeviceInfo2(inverter_third_info *curThirdinverter,unsi
         curThirdinverter->PV_Current[3] = 0;			//直流电流4
     else
         curThirdinverter->PV_Current[3] = (float)pWords[16] / 10;			//直流电流4
+
+    curThirdinverter->PV_Power[3] = curThirdinverter->PV_Current[3] * curThirdinverter->PV_Voltage[3];
     return 0;
 }
 
@@ -302,6 +310,7 @@ static int GetData_SG_DeviceInfo_2(inverter_third_info *curThirdinverter)
 int GetData_ThirdInverter_SG(inverter_third_info *curThirdinverter)
 {
     int ret = 0;
+    usart485_init(9600);
     //获取设备属性1
     ret = GetData_SG_DeviceInfo_1(curThirdinverter);
     if(0 == ret)	//设备属性采集成功，继续采集汇流板信息

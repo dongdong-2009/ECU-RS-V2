@@ -45,5 +45,6 @@ void APP_ListECUAPInfo(int Data_Len,const char *recvbuffer); 			//列举ECU 查询到
 void APP_GetFunctionStatusInfo(int Data_Len,const char *recvbuffer);
 void APP_ServerInfo(int Data_Len,const char *recvbuffer) ;
 void APP_RegisterThirdInverter(int Data_Len,const char *recvbuffer);	//注册第三方逆变器接口
+void APP_GetThirdInverter(int Data_Len,const char *recvbuffer);
 #endif	/*__APP_FUNCTION_H__*/
 

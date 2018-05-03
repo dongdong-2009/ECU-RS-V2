@@ -43,7 +43,7 @@
 #define MAX_CHANNEL_NUM 16         //最大通道数
 #define MAX_FACTORY_LEN 10         //最大工厂名称长度
 #define MAX_TYPE_LEN 10            //最大逆变器型号长度
-#define MAX_PV_NUM 	4
+#define MAX_PV_NUM 	6
 #define MAX_AC_NUM	3
 
 #pragma pack(push)  
@@ -169,6 +169,7 @@ typedef struct ecu_info_t{
     unsigned char idUpdateFlag;		//id更新标志
     unsigned char ThirdIDUpdateFlag;		//第三方逆变器id更新标志
     int thirdCommNum;
+    int thirdCount;		//第三方逆变器总台数
 
 }ecu_info;
 
@@ -192,8 +193,9 @@ typedef struct inverter_third_info_t{
     inverter_third_status_t third_status;     //各种状态
 
 
-    float PV_Voltage[MAX_PV_NUM];                       //直流电压		最多4路
-    float PV_Current[MAX_PV_NUM];                       //直流电流		最多4路
+    float PV_Voltage[MAX_PV_NUM];                       //直流电压		最多6路
+    float PV_Current[MAX_PV_NUM];                       //直流电流		最多6路
+    float PV_Power[MAX_PV_NUM];                       //直流功率		最多6路
     float AC_Voltage[MAX_AC_NUM];                       //交流电压		3相电压
     float AC_Current[MAX_AC_NUM];                       //交流电流		3相电压
     float Grid_Frequency[MAX_AC_NUM];                      //电网频率

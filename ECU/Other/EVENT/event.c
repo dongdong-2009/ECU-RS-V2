@@ -84,7 +84,8 @@ void add_APP_functions(void)
 	pfun_Phone[P0022] = APP_ListECUAPInfo;		//功率电流电压曲线
 	pfun_Phone[P0023] = APP_GetFunctionStatusInfo;
 	pfun_Phone[P0024] = APP_ServerInfo;				//查看和设置相关服务器信息
-	pfun_Phone[P0033] = APP_RegisterThirdInverter;	//获取第三方逆变器
+	pfun_Phone[P0033] = APP_RegisterThirdInverter;	//设置和获取第三方逆变器
+	pfun_Phone[P0034] = APP_GetThirdInverter;	//获取第三方逆变器数据
 
 }
 

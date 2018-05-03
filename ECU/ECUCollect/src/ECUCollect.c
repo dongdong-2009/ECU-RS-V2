@@ -612,7 +612,7 @@ void ECUCollect_thread_entry(void* parameter)
         if(compareTime(CollectControlDurabletime ,CollectControlThistime,CollectControlReportinterval))
         {
 
-            if(	ecu.validNum >0	)
+            if(	ecu.validNum >0)
             {
                 ECUCommThreadFlag = EN_ECUHEART_ENABLE;
                 optimizeFileSystem(300);

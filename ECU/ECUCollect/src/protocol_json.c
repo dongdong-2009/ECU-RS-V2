@@ -45,28 +45,36 @@ void protocol_SG(cJSON *ecu_data_root)
                 cJSON_AddStringToObject(channel_data, "PVV", buff);
                 sprintf(buff,"%.1f",curThirdinverter->PV_Current[0]);
                 cJSON_AddStringToObject(channel_data, "PVC", buff);
-
+	       sprintf(buff,"%.2f",curThirdinverter->PV_Power[0]);
+                cJSON_AddStringToObject(channel_data, "PVP", buff);
+				
                 cJSON_AddItemToArray(channel_data_root,channel_data=cJSON_CreateObject());
                 cJSON_AddStringToObject(channel_data, "CH", "2");
                 sprintf(buff,"%.1f",curThirdinverter->PV_Voltage[1]);
                 cJSON_AddStringToObject(channel_data, "PVV", buff);
                 sprintf(buff,"%.1f",curThirdinverter->PV_Current[1]);
                 cJSON_AddStringToObject(channel_data, "PVC", buff);
-
+	       sprintf(buff,"%.2f",curThirdinverter->PV_Power[1]);
+                cJSON_AddStringToObject(channel_data, "PVP", buff);
+				
                 cJSON_AddItemToArray(channel_data_root,channel_data=cJSON_CreateObject());
                 cJSON_AddStringToObject(channel_data, "CH", "3");
                 sprintf(buff,"%.1f",curThirdinverter->PV_Voltage[2]);
                 cJSON_AddStringToObject(channel_data, "PVV", buff);
                 sprintf(buff,"%.1f",curThirdinverter->PV_Current[2]);
                 cJSON_AddStringToObject(channel_data, "PVC", buff);
-
+                sprintf(buff,"%.2f",curThirdinverter->PV_Power[2]);
+                cJSON_AddStringToObject(channel_data, "PVP", buff);
+				
                 cJSON_AddItemToArray(channel_data_root,channel_data=cJSON_CreateObject());
                 cJSON_AddStringToObject(channel_data, "CH", "4");
                 sprintf(buff,"%.1f",curThirdinverter->PV_Voltage[3]);
                 cJSON_AddStringToObject(channel_data, "PVV", buff);
                 sprintf(buff,"%.1f",curThirdinverter->PV_Current[3]);
                 cJSON_AddStringToObject(channel_data, "PVC", buff);
-
+                sprintf(buff,"%.2f",curThirdinverter->PV_Power[3]);
+                cJSON_AddStringToObject(channel_data, "PVP", buff);
+				
                 cJSON_AddItemToObject(inverter_data_root, "A", Alternating_Current_root = cJSON_CreateArray());
                 cJSON_AddItemToArray(Alternating_Current_root,Alternating_Current=cJSON_CreateObject());
                 cJSON_AddStringToObject(Alternating_Current, "CH", "1");

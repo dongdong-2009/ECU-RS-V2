@@ -243,6 +243,10 @@ void init_Third_Inverter(inverter_third_info *thirdInverter)
         {
             curThirdInverter->PV_Current[j] = 0;
         }
+        for(j = 0;j< MAX_PV_NUM;j++)
+        {
+            curThirdInverter->PV_Power[j] = 0;
+        }
         for(j = 0;j < MAX_AC_NUM;j++)
         {
             curThirdInverter->AC_Voltage[j] = 0;
@@ -265,7 +269,7 @@ void init_Third_Inverter(inverter_third_info *thirdInverter)
         curThirdInverter	->GetData_ThirdInverter = NULL;
     }
     //从文件中读取第三方ID信息
-    get_ThirdID_from_file(thirdInverterInfo);
+    ecu.thirdCount = get_ThirdID_from_file(thirdInverterInfo);
     //根据第三方逆变器的型号，选择对应的数据采集函数
     addGetData_ThirdInverter(thirdInverterInfo);
 }
@@ -306,8 +310,9 @@ void Debug_ThirdInverter_info(inverter_third_info *curThirdinverter)
 {
     printf("third ID:%s inverter_addr:%d factory:%s type:%s \n",curThirdinverter->inverterid,curThirdinverter->inverter_addr,curThirdinverter->factory,curThirdinverter->type);
     printf("inverter_addr_flag:%d autoget_addr:%d communication_flag:%d \n",curThirdinverter->third_status.inverter_addr_flag,curThirdinverter->third_status.autoget_addr,curThirdinverter->third_status.communication_flag);
-    printf("PV_Voltage:%f %f %f %f \n",curThirdinverter->PV_Voltage[0],curThirdinverter->PV_Voltage[1],curThirdinverter->PV_Voltage[2],curThirdinverter->PV_Voltage[3]);
-    printf("PV_Current:%f %f %f %f \n",curThirdinverter->PV_Current[0],curThirdinverter->PV_Current[1],curThirdinverter->PV_Current[2],curThirdinverter->PV_Current[3]);
+    printf("PV_Voltage:%f %f %f %f %f %f \n",curThirdinverter->PV_Voltage[0],curThirdinverter->PV_Voltage[1],curThirdinverter->PV_Voltage[2],curThirdinverter->PV_Voltage[3],curThirdinverter->PV_Voltage[4],curThirdinverter->PV_Voltage[5]);
+    printf("PV_Current:%f %f %f %f %f %f \n",curThirdinverter->PV_Current[0],curThirdinverter->PV_Current[1],curThirdinverter->PV_Current[2],curThirdinverter->PV_Current[3],curThirdinverter->PV_Current[4],curThirdinverter->PV_Current[5]);
+    printf("PV_Power:%f %f %f %f %f %f \n",curThirdinverter->PV_Power[0],curThirdinverter->PV_Power[1],curThirdinverter->PV_Power[2],curThirdinverter->PV_Power[3],curThirdinverter->PV_Power[4],curThirdinverter->PV_Power[5]);
     printf("AC_Voltage:%f %f %f \n",curThirdinverter->AC_Voltage[0],curThirdinverter->AC_Voltage[1],curThirdinverter->AC_Voltage[2]);
     printf("AC_Current:%f %f %f \n",curThirdinverter->AC_Current[0],curThirdinverter->AC_Current[1],curThirdinverter->AC_Current[2]);
     printf("Grid_Frequency:%f %f %f\n",curThirdinverter->Grid_Frequency[0],curThirdinverter->Grid_Frequency[1],curThirdinverter->Grid_Frequency[2]);
