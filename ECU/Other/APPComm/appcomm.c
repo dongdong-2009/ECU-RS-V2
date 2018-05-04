@@ -843,3 +843,11 @@ void APP_Response_GetFunctionStatusInfo(char mapping,unsigned char *ID)
 }
 
 
+
+void APP_Response_TransmissionZigBeeInfo(char mapping,unsigned char *ID)
+{
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
+	sprintf(SendData,"APS1100150035%02d\n",mapping);
+	SendToSocketA(SendData ,16,ID);
+}
+

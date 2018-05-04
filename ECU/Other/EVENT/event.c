@@ -80,7 +80,7 @@ void add_APP_functions(void)
 	pfun_Phone[P0017] = APP_GetRSDHistoryInfo; 		//功率电流电压曲线
 	pfun_Phone[P0018] = APP_GetShortAddrInfo;		//功率电流电压曲线
 	pfun_Phone[P0023] = APP_GetFunctionStatusInfo;
-
+	pfun_Phone[P0035] = APP_TransmissionZigBeeInfo;	//透传ZigBee命令
 
 }
 

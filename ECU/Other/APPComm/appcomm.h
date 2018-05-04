@@ -68,4 +68,7 @@ void APP_Response_GetRSDHistoryInfo(char mapping,unsigned char *ID,char *date_ti
 void APP_Response_GetShortAddrInfo(char mapping,unsigned char *ID,inverter_info *inverter);
 //23 命令回应
 void APP_Response_GetFunctionStatusInfo(char mapping,unsigned char *ID);
+//35 命令回应
+void APP_Response_TransmissionZigBeeInfo(char mapping,unsigned char *ID);
+
 #endif /*__APPCOMM_H__*/
