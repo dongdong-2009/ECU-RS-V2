@@ -135,6 +135,13 @@ static rt_uint8_t idwrite_stack[2048];
 static struct rt_thread idwrite_thread;
 #endif
 
+#ifdef THREAD_PRIORITY_TRINASOLAR
+#include "trinasolar.h"
+ALIGN(RT_ALIGN_SIZE)
+static rt_uint8_t trinasolar_stack[2048];
+static struct rt_thread trinasolar_thread;
+#endif
+
 ecu_info ecu;	//ecu相关信息
 inverter_info inverterInfo[MAXINVERTERCOUNT] = {'\0'};	//rsd相关信息
 unsigned char LED_Status = 0;

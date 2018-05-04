@@ -63,6 +63,10 @@ typedef enum THREADTYPE {
 #define UPDATE_SERVER_DOMAIN				"ecu.apsema.com"
 #define UPDATE_SERVER_IP					"60.190.131.190"
 #define UPDATE_SERVER_PORT1				9219
+
+#define TRINASOLAR_SERVER_DOMAIN		"XXX.trinasolar.com"
+#define TRINASOLAR_SERVER_IP			""
+#define TRINASOLAR_SERVER_Port			60000
 #else
 
 #define CLIENT_SERVER_DOMAIN		""
@@ -104,6 +108,7 @@ typedef enum THREADTYPE {
 //Control Client thread priority
 #define THREAD_PRIORITY_CONTROL_CLIENT  				26			//OPT700-RS远程控制
 
+#define THREAD_PRIORITY_TRINASOLAR  				26			//天合客户端程序
 
 //thread start time
 #define START_TIME_EVENT									5
@@ -113,7 +118,7 @@ typedef enum THREADTYPE {
 #define START_TIME_COLLECT								5			
 #define START_TIME_CONTROL_CLIENT					20 	//150
 #define START_TIME_CLIENT									30			//180
-
+#define START_TIME_TRINASOLAR                                              10
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
