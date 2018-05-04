@@ -80,4 +80,7 @@ void APP_Response_ServerInfo(char mapping,ECUServerInfo_t *serverInfo);
 void APP_Response_RegisterThirdInverter(int cmd,unsigned char result);
 //34 命令回应
 void APP_Response_GetThirdInverter(unsigned char result);
+//35 命令回应
+void APP_Response_TransmissionZigBeeInfo(char mapping);
+
 #endif /*__APPCOMM_H__*/

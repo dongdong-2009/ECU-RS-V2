@@ -86,7 +86,7 @@ void add_APP_functions(void)
 	pfun_Phone[P0024] = APP_ServerInfo;				//查看和设置相关服务器信息
 	pfun_Phone[P0033] = APP_RegisterThirdInverter;	//设置和获取第三方逆变器
 	pfun_Phone[P0034] = APP_GetThirdInverter;	//获取第三方逆变器数据
-
+	pfun_Phone[P0035] = APP_TransmissionZigBeeInfo;	//透传ZigBee命令
 }
 
 

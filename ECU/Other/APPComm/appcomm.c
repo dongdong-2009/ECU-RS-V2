@@ -1428,3 +1428,9 @@ void APP_Response_GetThirdInverter(unsigned char result)
 	}
 }
 
+void APP_Response_TransmissionZigBeeInfo(char mapping)
+{
+	memset(SendData,'\0',MAXINVERTERCOUNT*INVERTERLENGTH + 17 + 9);	
+	sprintf(SendData,"APS1100150035%02d\n",mapping);
+	SendToSocketA(SendData ,16);
+}

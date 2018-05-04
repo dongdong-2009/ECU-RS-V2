@@ -27,6 +27,44 @@ extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 extern inverter_third_info thirdInverterInfo[MAX_THIRD_INVERTER_COUNT];
 
+//返回0 表示格式正确，返回1表示发送格式错误
+int strToHex(const char *recvbuff,unsigned char *buff,int length)
+{
+	int i =0;
+	for(i = 0;i<length;i++)
+	{
+		if((recvbuff[i*2] >= 'a') && (recvbuff[i*2] <= 'f'))
+		{
+			buff[i] = (recvbuff[i*2] -'a' + 10)*0x10;
+		}else if((recvbuff[i*2] >= 'A') && (recvbuff[i*2] <= 'F'))
+		{
+			buff[i] = (recvbuff[i*2] -'A' + 10)*0x10;
+		}else if((recvbuff[i*2] >= '0') && (recvbuff[i*2] <= '9'))
+		{
+			buff[i] = (recvbuff[i*2] -'0' )*0x10;
+		}else
+		{
+			return -1;
+		}
+
+		if((recvbuff[i*2+1] >= 'a') && (recvbuff[i*2+1] <= 'f'))
+		{
+			buff[i] += (recvbuff[i*2+1] -'a' + 10);
+		}else if((recvbuff[i*2+1] >= 'A') && (recvbuff[i*2+1] <= 'F'))
+		{
+			buff[i] += (recvbuff[i*2+1] -'A' + 10);
+		}else if((recvbuff[i*2+1] >= '0') && (recvbuff[i*2+1] <= '9'))
+		{
+			buff[i] += (recvbuff[i*2+1] -'0');
+		}else
+		{
+			return -1;
+		}
+		
+	}
+	return 0;
+}
+
 int switchChannel(unsigned char *buff)
 {
 	int ret=0x17;
@@ -806,3 +844,46 @@ void APP_GetThirdInverter(int Data_Len,const char *recvbuffer)
 	}
 
 }
+
+void APP_TransmissionZigBeeInfo(int Data_Len,const char *recvbuffer)
+{
+	char CommFlag = '0';
+	unsigned char buff[256] = {'\0'};//需要发送的报文
+	int length,i;
+	inverter_info *curinverter = inverterInfo;
+	char UID[12] = {'\0'};
+	print2msg(ECU_DBG_EVENT,"WIFI_Recv_Event 35 ",(char *)recvbuffer);
+	if(!memcmp(&recvbuffer[13],ecu.ECUID12,12))
+	{
+		//解析是广播还是单播
+		CommFlag = recvbuffer[28];
+		memcpy(UID,&recvbuffer[29],12);
+		memcpy(buff,&recvbuffer[41],3);
+		buff[3] = '\0';
+		length = atoi((char*)buff);
+		if(-1 == strToHex(&recvbuffer[44],buff,length))
+		{
+			APP_Response_TransmissionZigBeeInfo(0x02);
+			return;
+		}
+		
+		if('0' == CommFlag)	//广播
+		{
+			zb_broadcast_cmd((char *)buff,length);
+		}else			//单播
+		{
+			for(i=0; i<MAXINVERTERCOUNT; i++, curinverter++)
+			{
+				if(!memcmp(curinverter->uid,UID,12))
+				{
+					zb_send_cmd(curinverter,(char *)buff,length);
+				}
+			}
+		}
+		APP_Response_TransmissionZigBeeInfo(0x00);
+	}else
+	{
+		APP_Response_TransmissionZigBeeInfo(0x01);
+	}
+}
+
