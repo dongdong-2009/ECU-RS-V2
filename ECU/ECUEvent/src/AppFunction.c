@@ -22,6 +22,7 @@
 #include "rsdFunction.h"
 #include "debug.h"
 #include "third_inverter.h"
+#include "zigbee.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -169,19 +170,21 @@ int phone_add_thirdinverter(int num,const char *uidstring)
 	unsigned short address = 0;
 	char thirdFactory[16] = {'\0'};
 	char thirdType[16] = {'\0'};
+	char cBaudRate = 0;
 	char *allbuff = NULL;
 	allbuff = malloc(2500);
 	memset(allbuff,'\0',2500);
 	
 	for(i = 0; i < num; i++)
 	{
-		memcpy(thirdID,&uidstring[i*53],32);
-		address = uidstring[i*53 +32];
-		memcpy(thirdFactory,&uidstring[i*53 +33],10);
-		memcpy(thirdType,&uidstring[i*53 +43],10);
-		
+		memcpy(thirdID,&uidstring[i*54],32);
+		address = uidstring[i*54 +32];
+		memcpy(thirdFactory,&uidstring[i*54 +33],10);
+		memcpy(thirdType,&uidstring[i*54 +43],10);
+		cBaudRate = uidstring[i*54 +53];
+
 		memset(buff,'\0',60);
-		sprintf(buff,"%s,%d,,%s,%s,\n",thirdID,address,thirdFactory,thirdType);
+		sprintf(buff,"%s,%d,,%s,%s,,%d\n",thirdID,address,thirdFactory,thirdType, cBaudRate);
 		buff_len = strlen(buff);
 		memcpy(&allbuff[length],buff,buff_len);
 		length +=buff_len;
@@ -797,7 +800,7 @@ void APP_RegisterThirdInverter(int Data_Len,const char *recvbuffer)
 			int AddNum = 0;
 			int i = 0;
 			inverter_third_info *curThirdinverter = thirdInverterInfo;
-			AddNum = (WIFI_Recv_SocketA_LEN - 33)/53;
+			AddNum = (WIFI_Recv_SocketA_LEN - 33)/54;
 			printf("num:%d\n",AddNum);
 			
 			APP_Response_RegisterThirdInverter(cmd,0x00);

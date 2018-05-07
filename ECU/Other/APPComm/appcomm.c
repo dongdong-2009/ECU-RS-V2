@@ -1231,13 +1231,14 @@ void APP_Response_RegisterThirdInverter(int cmd,unsigned char result)
 			packlength = 17;
 			for(index=0; (index<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdInverter->inverterid) > 0); index++, curThirdInverter++)
 			{
-				memset(uid,'\0',54);
+				memset(uid,'\0',55);
 				memcpy(uid,curThirdInverter->inverterid,32);
 				uid[32] = curThirdInverter->inverter_addr;
 				memcpy(&uid[33],curThirdInverter->factory,10);
 				memcpy(&uid[43],curThirdInverter->type,10);
-				memcpy(&SendData[packlength],uid,53);	
-				packlength += 53;
+				uid[53] = curThirdInverter->cBaudrate;
+				memcpy(&SendData[packlength],uid,54);	
+				packlength += 54;
 			}
 			
 			SendData[packlength++] = 'E';

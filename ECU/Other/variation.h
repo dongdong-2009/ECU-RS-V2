@@ -190,6 +190,7 @@ typedef struct inverter_third_info_t{
     unsigned char  inverter_addr;             //逆变器地址       Modbus从机地址
     char factory[MAX_FACTORY_LEN];            //逆变器厂家名称
     char type[MAX_TYPE_LEN];                  //逆变器型号						OK
+    char cBaudrate;                           //波特率       
     inverter_third_status_t third_status;     //各种状态
 
 
@@ -205,8 +206,7 @@ typedef struct inverter_third_info_t{
     float Power_Factor;                        //功率因数
     float Daily_Energy;                        //日发电量
     float Life_Energy;                         //历史发电量
-    float Current_Energy;                      //本轮发电量	//日发电量计算
-
+    float Current_Energy;                      //本轮发电量	//日发电量计算  
     int (*GetData_ThirdInverter)(struct inverter_third_info_t *curThirdinverter);
 }inverter_third_info;
 
