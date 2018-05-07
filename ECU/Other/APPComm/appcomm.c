@@ -1324,28 +1324,29 @@ void APP_Response_GetThirdInverter(unsigned char result)
 				//6路 PV功率
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[0] * 100)/16777216)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[0] * 100)/65535)%256;
-                                   SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[0] * 100)/256)/256;
+				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[0] * 100)/256)%256;
 				SendData[packlength++] = (unsigned int)(curThirdInverter->PV_Power[0] * 100)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[1] * 100)/16777216)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[1] * 100)/65535)%256;
-                                   SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[1] * 100)/256)/256;
+				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[1] * 100)/256)%256;
 				SendData[packlength++] = (unsigned int)(curThirdInverter->PV_Power[1] * 100)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[2] * 100)/16777216)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[2] * 100)/65535)%256;
-                                   SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[2] * 100)/256)/256;
+				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[2] * 100)/256)%256;
 				SendData[packlength++] = (unsigned int)(curThirdInverter->PV_Power[2] * 100)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[3] * 100)/16777216)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[3] * 100)/65535)%256;
-                                   SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[3] * 100)/256)/256;
+				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[3] * 100)/256)%256;
 				SendData[packlength++] = (unsigned int)(curThirdInverter->PV_Power[3] * 100)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[4] * 100)/16777216)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[4] * 100)/65535)%256;
-                                   SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[4] * 100)/256)/256;
+				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[4] * 100)/256)%256;
 				SendData[packlength++] = (unsigned int)(curThirdInverter->PV_Power[4] * 100)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[5] * 100)/16777216)%256;
 				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[5] * 100)/65535)%256;
-                                   SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[5] * 100)/256)/256;
+				SendData[packlength++] = ((unsigned int)(curThirdInverter->PV_Power[5] * 100)/256)%256;
 				SendData[packlength++] = (unsigned int)(curThirdInverter->PV_Power[5] * 100)%256;
+
 				
 				//3路AC电压
 				SendData[packlength++] = (unsigned short)(curThirdInverter->AC_Voltage[0] *10)/256;

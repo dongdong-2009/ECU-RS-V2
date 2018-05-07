@@ -10,6 +10,84 @@ extern inverter_third_info thirdInverterInfo[MAX_THIRD_INVERTER_COUNT];
 extern ecu_info ecu;
 
 
+void protocol_SA(cJSON *ecu_data_root)
+{
+	int i = 0, j = 0;
+	int SAJsonFlag = 0;
+	char cPVch = '0', cACch = '0'; //标志CH的字符
+	char buff[32] = {'\0'};
+    cJSON *inverter_addecuid_root, *inverter_data_roots;
+    inverter_third_info * curThirdinverter = thirdInverterInfo;
+
+	for(i=0; (i<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdinverter->inverterid) > 0);
+	    i++, curThirdinverter++)
+	{
+		if(!memcmp("SA001",curThirdinverter->factory,5) && 
+		   curThirdinverter->third_status.communication_flag == 1) //能通讯上
+		{
+            cJSON *inverter_data_root, *Alternating_Current_root,
+                  *channel_data_root, *channel_data,*Alternating_Current;
+
+		    if(0 == SAJsonFlag)
+	        {
+	            cJSON_AddItemToObject(ecu_data_root, "SA001", inverter_addecuid_root = cJSON_CreateObject());
+	            cJSON_AddStringToObject(inverter_addecuid_root, "EID", ecu.ECUID12);
+	            cJSON_AddItemToObject(inverter_addecuid_root, "D", inverter_data_roots = cJSON_CreateArray());
+
+	            SAJsonFlag = 1;
+	        }	
+
+			cJSON_AddItemToArray(inverter_data_roots,inverter_data_root=cJSON_CreateObject());
+			sprintf(buff,"SG%s",curThirdinverter->inverterid);
+			cJSON_AddStringToObject(inverter_data_root, "SN", buff);
+			cJSON_AddItemToObject(inverter_data_root, "P", channel_data_root = cJSON_CreateArray());
+			for(j = 0; j < MAX_PV_NUM/2; j++)
+			{
+				cPVch++; //从1开始
+				cJSON_AddItemToArray(channel_data_root, channel_data = cJSON_CreateObject());
+				cJSON_AddStringToObject(channel_data, "CH", &cPVch);
+				sprintf(buff,"%.1f",curThirdinverter->PV_Voltage[j]);
+				cJSON_AddStringToObject(channel_data, "PVV", buff);
+				sprintf(buff,"%.1f",curThirdinverter->PV_Current[j]);
+				cJSON_AddStringToObject(channel_data, "PVC", buff);
+				sprintf(buff,"%.2f",curThirdinverter->PV_Power[j]);
+				cJSON_AddStringToObject(channel_data, "PVP", buff);
+			}
+
+			cJSON_AddItemToObject(inverter_data_root, "A", Alternating_Current_root = cJSON_CreateArray());
+			for(j = 0; j < MAX_AC_NUM; j++)
+			{	
+				cACch++;
+				cJSON_AddItemToArray(Alternating_Current_root,Alternating_Current=cJSON_CreateObject());
+				cJSON_AddStringToObject(Alternating_Current, "CH", &cACch);
+                sprintf(buff,"%.1f",curThirdinverter->AC_Voltage[0]);
+                cJSON_AddStringToObject(Alternating_Current, "ACV", buff);
+                sprintf(buff,"%.1f",curThirdinverter->AC_Current[0]);
+                cJSON_AddStringToObject(Alternating_Current, "ACC", buff);
+				sprintf(buff,"%.1f",curThirdinverter->Grid_Frequency[j]);
+				cJSON_AddStringToObject(Alternating_Current, "F", buff);
+			}
+
+			sprintf(buff,"%.1f",curThirdinverter->Temperature);
+			cJSON_AddStringToObject(inverter_data_root, "TE", buff);
+			sprintf(buff,"%d",curThirdinverter->Reactive_Power);
+			cJSON_AddStringToObject(inverter_data_root, "RP", buff);
+			sprintf(buff,"%d",curThirdinverter->Active_Power);
+			cJSON_AddStringToObject(inverter_data_root, "AP", buff);
+			sprintf(buff,"%.3f",curThirdinverter->Power_Factor);
+			cJSON_AddStringToObject(inverter_data_root, "PF", buff);
+			sprintf(buff,"%.1f",curThirdinverter->Daily_Energy);
+			cJSON_AddStringToObject(inverter_data_root, "DE", buff);
+			sprintf(buff,"%.1f",curThirdinverter->Life_Energy);
+			cJSON_AddStringToObject(inverter_data_root, "LE", buff);
+			sprintf(buff,"%.1f",curThirdinverter->Current_Energy);
+			cJSON_AddStringToObject(inverter_data_root, "CE", buff);
+		}
+	}
+
+	return;
+}
+
 void protocol_SG(cJSON *ecu_data_root)
 {
     int i = 0;
@@ -148,8 +226,7 @@ int protocol_JSON(char *sendcommanddatetime,inverter_third_info *firstThirdinver
         cJSON_AddStringToObject(ecu_data_root, "APS", APSString);
     }
     protocol_SG(ecu_data_root);
-
-
+	protocol_SA(ecu_data_root);
 
     out = cJSON_PrintUnformatted(ecu_data_root);
 

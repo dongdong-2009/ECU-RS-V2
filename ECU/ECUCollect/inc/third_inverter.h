@@ -25,6 +25,7 @@ void init_Third_Inverter(inverter_third_info *inverter);
 
 void getAllThirdInverterData(void);
 void Debug_ThirdInverter_info(inverter_third_info *curThirdinverter);
+unsigned int get_ThirdBaudRate(char cBaudrate);
 
 
 #endif /*__THIRD_INVERTER_H__*/

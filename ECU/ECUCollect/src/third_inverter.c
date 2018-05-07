@@ -32,6 +32,65 @@
 inverter_third_info thirdInverterInfo[MAX_THIRD_INVERTER_COUNT];
 extern ecu_info ecu;
 
+
+/*****************************************************************************/
+/* Function Name :  get_ThirdBaudRate                                        */
+/* Function Description: 获取第三方逆变器对应的波特率                                      */
+/* date :2018-05-04                                                          */
+/* Parameters: cBaudrate                                                     */
+/* Return Values: 波特率                                                        */
+/*                                                                           */
+/*                                                                           */
+/*****************************************************************************/
+unsigned int get_ThirdBaudRate(char cBaudrate)
+{
+	unsigned int uiBaudRate = 9600;
+
+	switch(cBaudrate)
+	{
+		case 0x01:
+			uiBaudRate = 1200;
+			break;
+		case 0x02:
+			uiBaudRate = 2400;			
+			break;
+		case 0x03:
+			uiBaudRate = 4800;			
+			break;
+		case 0x04:
+			uiBaudRate = 9600;			
+			break;
+		case 0x05:
+			uiBaudRate = 14400; 		
+			break;
+		case 0x06:
+			uiBaudRate = 19200; 		
+			break;
+		case 0x07:
+			uiBaudRate = 38400; 		
+			break;
+		case 0x08:
+			uiBaudRate = 56000; 		
+			break;
+		case 0x09:
+			uiBaudRate = 57600; 		
+			break;
+		case 0x0a:
+			uiBaudRate = 115200;			
+			break;
+		case 0x0b:
+			uiBaudRate = 128000;			
+			break;
+		case 0x0c:
+			uiBaudRate = 256000;			
+			break;
+		default:
+			break;
+	}
+
+	return uiBaudRate;
+}
+
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
@@ -61,8 +120,9 @@ void updateThirdID(void)	//更新第三方逆变器ID
         curThirdinverter = thirdInverterInfo;
         for(i=0; (i<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdinverter->inverterid) > 0); i++, curThirdinverter++)
         {
-            fprintf(fp,"%s,%d,%d,%s,%s,%d\n",curThirdinverter->inverterid,curThirdinverter->inverter_addr,
-                    curThirdinverter->third_status.inverter_addr_flag,curThirdinverter->factory,curThirdinverter->type,curThirdinverter->third_status.autoget_addr);
+            fprintf(fp,"%s,%d,%d,%s,%s,%d,%d\n",curThirdinverter->inverterid,curThirdinverter->inverter_addr,
+                    curThirdinverter->third_status.inverter_addr_flag,curThirdinverter->factory,curThirdinverter->type,
+                    curThirdinverter->third_status.autoget_addr, curThirdinverter->cBaudrate);
 
         }
         fclose(fp);
@@ -87,7 +147,7 @@ int get_ThirdID_from_file(inverter_third_info *firstThirdinverter)
     int i,j,sameflag;
     inverter_third_info *thirdinverter = firstThirdinverter;
     inverter_third_info *curThirdinverter = firstThirdinverter;
-    char list[6][32];
+    char list[7][32];
     char data[200];
     int num =0;
     FILE *fp;
@@ -99,8 +159,8 @@ int get_ThirdID_from_file(inverter_third_info *firstThirdinverter)
         {
             print2msg(ECU_DBG_COMM,"ID",data);
             memset(list,0,sizeof(list));
-            splitString(data,list);
-            printf("%s,%s,%s,%s,%s,%s\n",list[0],list[1],list[2],list[3],list[4],list[5]);
+            splitString(data,list);//id,modbusaddr,addrflag,factory,type,get-auto-addr,baudrate
+            printf("%s,%s,%s,%s,%s,%s,%s\n",list[0],list[1],list[2],list[3],list[4],list[5],list[6]);
             //判断是否存在该逆变器
             curThirdinverter = firstThirdinverter;
             sameflag=0;
@@ -144,6 +204,7 @@ int get_ThirdID_from_file(inverter_third_info *firstThirdinverter)
             {
                 thirdinverter->third_status.autoget_addr = atoi(list[5]);
             }
+            thirdinverter->cBaudrate = atoi(list[6]);
 
 
             thirdinverter++;
@@ -231,6 +292,7 @@ void init_Third_Inverter(inverter_third_info *thirdInverter)
         curThirdInverter->inverter_addr = 0;
         memset(curThirdInverter->factory,0x00,MAX_FACTORY_LEN);
         memset(curThirdInverter->type,0x00,MAX_TYPE_LEN);
+		curThirdInverter->cBaudrate = 0;
         curThirdInverter->third_status.inverter_addr_flag =0;
         curThirdInverter->third_status.autoget_addr = 0;
         curThirdInverter->third_status.communication_flag = 0 ;
@@ -308,7 +370,7 @@ void getAllThirdInverterData(void)
 
 void Debug_ThirdInverter_info(inverter_third_info *curThirdinverter)
 {
-    printf("third ID:%s inverter_addr:%d factory:%s type:%s \n",curThirdinverter->inverterid,curThirdinverter->inverter_addr,curThirdinverter->factory,curThirdinverter->type);
+    printf("third ID:%s inverter_addr:%d factory:%s type:%s baudrate:%d\n",curThirdinverter->inverterid,curThirdinverter->inverter_addr,curThirdinverter->factory,curThirdinverter->type, curThirdinverter->cBaudrate);
     printf("inverter_addr_flag:%d autoget_addr:%d communication_flag:%d \n",curThirdinverter->third_status.inverter_addr_flag,curThirdinverter->third_status.autoget_addr,curThirdinverter->third_status.communication_flag);
     printf("PV_Voltage:%f %f %f %f %f %f \n",curThirdinverter->PV_Voltage[0],curThirdinverter->PV_Voltage[1],curThirdinverter->PV_Voltage[2],curThirdinverter->PV_Voltage[3],curThirdinverter->PV_Voltage[4],curThirdinverter->PV_Voltage[5]);
     printf("PV_Current:%f %f %f %f %f %f \n",curThirdinverter->PV_Current[0],curThirdinverter->PV_Current[1],curThirdinverter->PV_Current[2],curThirdinverter->PV_Current[3],curThirdinverter->PV_Current[4],curThirdinverter->PV_Current[5]);

@@ -13,6 +13,7 @@
 /*  Include Files                                                            */
 /*****************************************************************************/
 #include "third_inverter_SG.h"
+#include "third_inverter.h"
 #include "modbus.h"
 #include "string.h"
 #include "stdio.h"
@@ -310,7 +311,8 @@ static int GetData_SG_DeviceInfo_2(inverter_third_info *curThirdinverter)
 int GetData_ThirdInverter_SG(inverter_third_info *curThirdinverter)
 {
     int ret = 0;
-    usart485_init(9600);
+
+    usart485_init(get_ThirdBaudRate(curThirdinverter->cBaudrate));
     //获取设备属性1
     ret = GetData_SG_DeviceInfo_1(curThirdinverter);
     if(0 == ret)	//设备属性采集成功，继续采集汇流板信息

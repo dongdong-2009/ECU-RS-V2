@@ -11,9 +11,11 @@
 
 /*  Include Files */
 #include "third_inverter_SA.h"
+#include "third_inverter.h"
 #include "modbus.h"
 #include "string.h"
 #include "stdio.h"
+#include "usart485.h"
 
 /*  Definitions */
 #define SA_DEVICEINFO_ADDRESS	256    //0100H
@@ -44,6 +46,9 @@ static int ResolveData_SA_DeviceInfo(inverter_third_info *curThirdinverter,unsig
     curThirdinverter->PV_Current[1] = (float)pWords[11] / 100;			//直流电流2
     curThirdinverter->PV_Voltage[2] = (float)pWords[13]	/ 10;			//直流电压3
     curThirdinverter->PV_Current[2] = (float)pWords[14] / 100;			//直流电流3
+    curThirdinverter->PV_Power[0]   = curThirdinverter->PV_Current[0] * curThirdinverter->PV_Voltage[0];
+    curThirdinverter->PV_Power[1]   = curThirdinverter->PV_Current[1] * curThirdinverter->PV_Voltage[1];
+    curThirdinverter->PV_Power[2]   = curThirdinverter->PV_Current[2] * curThirdinverter->PV_Voltage[2];
     curThirdinverter->Temperature   = (float)((signed short)pWords[17]) / 10;	//温度
 
     curThirdinverter->Active_Power  = pWords[19];                       //有功功率
@@ -118,6 +123,8 @@ int GetData_ThirdInverter_SA(inverter_third_info *curThirdinverter)
 {
     int ret = 0;
     //获取设备属性1
+    
+    usart485_init(get_ThirdBaudRate(curThirdinverter->cBaudrate));
     ret = GetData_SA_DeviceInfo(curThirdinverter);
     if(0 == ret)
     {
