@@ -945,7 +945,8 @@ int zb_set_heartSwitch_boardcast(unsigned char functionStatus,unsigned char onof
 		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_boardcast","onoff : 1");
 	}
 
-	sendbuff[i++] = RSDTimeout;
+	//sendbuff[i++] = RSDTimeout;
+	sendbuff[i++] = 0x05;
 	
 	//校验值
 	crc16 = GetCrc_16((unsigned char *)&sendbuff[2],9,0,CRC_table_16);
@@ -1000,8 +1001,8 @@ int zb_set_heartSwitch_single(inverter_info *inverter,unsigned char functionStat
 		print2msg(ECU_DBG_COMM,"zb_set_heartSwitch_single","onoff : 1");
 	}
 
-	sendbuff[i++] = RSDTimeout;
-	
+	//sendbuff[i++] = RSDTimeout;
+	sendbuff[i++] = 0x05;
 	
 	//校验值
 	crc16 = GetCrc_16((unsigned char *)&sendbuff[2],9,0,CRC_table_16);
