@@ -288,13 +288,13 @@ int detectionIPD(int size)
 					WIFI_RecvSocketCData[len] = '\0';
 					WIFI_Recv_SocketC_Event = 1;
 					WIFI_Recv_SocketC_LEN =len;
-					printf("C:%s\n",WIFI_RecvSocketCData);
+					//printf("C:%s\n",WIFI_RecvSocketCData);
 				}else if('3' == ConnectID){
 					memcpy(WIFI_RecvSocketBData,&USART_RX_BUF[i+8+j],len );
 					WIFI_RecvSocketBData[len] = '\0';
 					WIFI_Recv_SocketB_Event = 1;
 					WIFI_Recv_SocketB_LEN =len;
-					printf("B:%s\n",WIFI_RecvSocketBData);
+					//printf("B:%s\n",WIFI_RecvSocketBData);
 				}else
 				{
 					TCPServerConnectID = ConnectID;
@@ -302,7 +302,7 @@ int detectionIPD(int size)
 					WIFI_RecvSocketAData[len] = '\0';
 					WIFI_Recv_SocketA_Event = 1;
 					WIFI_Recv_SocketA_LEN =len;
-					printf("A:%s\n",WIFI_RecvSocketAData);
+					//printf("A:%s\n",WIFI_RecvSocketAData);
 				}
 				Cur = 0;
 				return 1;

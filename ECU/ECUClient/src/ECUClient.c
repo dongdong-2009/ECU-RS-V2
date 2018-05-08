@@ -51,7 +51,6 @@ int clientResponseJSON_toStruct(const char *json_str,clientResponse_t *clientRes
     clientResponse->Flag = 0;
     clientResponse->DateTime_Num = 0;
 
-    printf("%s\n",json_str);
     root=cJSON_Parse(json_str);
     if (!root)
     {

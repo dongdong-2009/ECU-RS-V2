@@ -61,7 +61,7 @@ void initSocketArgs(void)
     //初始化远程控制参数
     control_client_arg.port1 = CONTROL_SERVER_PORT1;
     control_client_arg.port2 = CONTROL_SERVER_PORT2;
-    ;	strcpy(control_client_arg.domain, CONTROL_SERVER_DOMAIN);
+    strcpy(control_client_arg.domain, CONTROL_SERVER_DOMAIN);
     strcpy(control_client_arg.ip, CONTROL_SERVER_IP);
     fp = fopen("/config/control.con", "r");
     if(fp)

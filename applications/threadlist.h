@@ -27,7 +27,8 @@ typedef enum THREADTYPE {
 	TYPE_LANRST = 2,
 	TYPE_UPDATE = 3,
 	TYPE_COMM = 4,
-	TYPE_DATACOLLECT = 5
+	TYPE_DATACOLLECT = 5,
+	TYPE_TRINASOLAR = 6
 }threadType;
 
 #define ALARM_RECORD_ON
@@ -65,7 +66,7 @@ typedef enum THREADTYPE {
 #define UPDATE_SERVER_PORT1				9219
 
 #define TRINASOLAR_SERVER_DOMAIN		"XXX.trinasolar.com"
-#define TRINASOLAR_SERVER_IP			""
+#define TRINASOLAR_SERVER_IP			"192.168.1.2"
 #define TRINASOLAR_SERVER_Port			60000
 #else
 

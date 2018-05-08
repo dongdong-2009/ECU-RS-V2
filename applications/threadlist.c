@@ -138,7 +138,7 @@ static struct rt_thread idwrite_thread;
 #ifdef THREAD_PRIORITY_TRINASOLAR
 #include "trinasolar.h"
 ALIGN(RT_ALIGN_SIZE)
-static rt_uint8_t trinasolar_stack[2048];
+static rt_uint8_t trinasolar_stack[1024];
 static struct rt_thread trinasolar_thread;
 #endif
 
@@ -438,6 +438,11 @@ void tasks_new(void)
   if (result == RT_EOK)	rt_thread_startup(&control_thread);
 #endif
 
+#ifdef THREAD_PRIORITY_TRINASOLAR
+  /* init TrinaSolar thread */
+  result = rt_thread_init(&trinasolar_thread,"trina",TrinaSolar_thread_entry,RT_NULL,(rt_uint8_t*)&trinasolar_stack[0],sizeof(trinasolar_stack),THREAD_PRIORITY_TRINASOLAR,5);
+  if (result == RT_EOK)	rt_thread_startup(&trinasolar_thread);
+#endif
 
 }
 
@@ -503,6 +508,15 @@ void restartThread(threadType type)
 			result = rt_thread_init(&collect_thread,"collect",ECUCollect_thread_entry,RT_NULL,(rt_uint8_t*)&collect_stack[0],sizeof(collect_stack),THREAD_PRIORITY_DATACOLLECT,5);
 			if (result == RT_EOK) rt_thread_startup(&collect_thread);
 
+			break;
+#endif
+
+#ifdef THREAD_PRIORITY_TRINASOLAR
+		case TYPE_TRINASOLAR:
+			rt_thread_detach(&trinasolar_thread);
+			/* init TrinaSolar thread */
+                           result = rt_thread_init(&trinasolar_thread,"trina",TrinaSolar_thread_entry,RT_NULL,(rt_uint8_t*)&trinasolar_stack[0],sizeof(trinasolar_stack),THREAD_PRIORITY_TRINASOLAR,5);
+                            if (result == RT_EOK)	rt_thread_startup(&trinasolar_thread);
 			break;
 #endif
 
