@@ -61,6 +61,7 @@ extern int lwip_system_init(void);
 #include "Flash_24L512.h"
 #endif
 #include "ds1302z_rtc.h"
+#include "powerIO.h"
 
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
@@ -225,11 +226,9 @@ void rt_init_thread_entry(void* parameter)
 	/* initialize rtc */
 	rt_hw_rtc_init();		
 	cpu_usage_init();	
-	
-	KEY_Init();										//恢复出厂设置按键初始化
-	rt_hw_ms_delay(200);
+
 	EXTIX_Init();									//恢复出厂设置IO中断初始化
-	
+	APEXTIX_Init();
 	//RFM_init();
 	//RFM_off();
 	rt_hw_led_init();
@@ -242,11 +241,16 @@ void rt_init_thread_entry(void* parameter)
 	uart5_init(115200);					//RAK475相应波特率 串口初始化
 #endif 
 	TIM2_Int_Init(14999, 6399);    //心跳包超时事件定时器初始化
-	WIFI_Reset();
+	//WIFI_Reset();
+	rt_hw_powerIO_init();
+	rt_hw_ETHIO_init();
+	rt_hw_powerIO_on();
+
 	SEGGER_RTT_printf(0, "init OK \n");
 	init_RecordMutex();
 	initSocketArgs();
 	sysDirDetection();
+	
 
 }
 

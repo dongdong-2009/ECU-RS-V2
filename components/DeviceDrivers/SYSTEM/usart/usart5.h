@@ -67,7 +67,7 @@ int InitWorkMode(void);
 int AT_CWJAPStatus(char *info);			//查询ECU连接无线路由器名 返回1表示获取成功连接，返回0表示未连接
 int AT_CWJAP(char *SSID,char *PASSWD);			//配置ECU连接无线路由器名
 int AT_CWLAPList(char *liststr);
-
+int AT_CWMODE3(int mode);
 #endif
 
 

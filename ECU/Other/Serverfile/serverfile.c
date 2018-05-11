@@ -156,6 +156,7 @@ void sysDirDetection(void)
     dirDetection("/home/data");
     dirDetection("/home/record");
     dirDetection("/home/record/data");
+    dirDetection("/home/record/tridata");
     dirDetection("/home/data/proc_res");
     dirDetection("/home/data/IPROCRES");
     dirDetection("/home/record/power");
@@ -399,6 +400,7 @@ int initPath(void)
     mkdir("/home/data/iprocres",0x777);
     echo("/home/data/ltpower","0.000000");
     mkdir("/home/record/data",0x777);
+    mkdir("/home/record/tridata",0x777);
     mkdir("/home/record/power",0x777);
     mkdir("/home/record/energy",0x777);
     echo("/config/ftpadd.con", "Domain=ecu.apsema.com\nIP=60.190.131.190\nPort=9219\nuser=zhyf\npassword=yuneng\n");
@@ -3513,4 +3515,5 @@ void setControl(char *IP,char* port)
 }
 FINSH_FUNCTION_EXPORT(setControl, eg:setControl);
 
+FINSH_FUNCTION_EXPORT(rm_dir, eg:rm_dir);
 #endif

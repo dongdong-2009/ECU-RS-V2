@@ -17,7 +17,9 @@
 #include "remote_update.h"
 #include "third_inverter.h"
 #include "protocol_json.h"
+#include "TrinaSolar.h"
 
+extern unsigned char TrinaSolarFunctionFlag;
 extern unsigned char rateOfProgress;
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -557,6 +559,7 @@ void ECUCollect_thread_entry(void* parameter)
     ECUCommThreadFlag = EN_ECUHEART_DISABLE;
     ecu.curHeartSequence = 0;
     init_all(inverterInfo); //初始化所有逆变器
+    TrinaFunction();
     rt_thread_delay(RT_TICK_PER_SECOND * START_TIME_COLLECT);
 
     while(1)
@@ -577,8 +580,11 @@ void ECUCollect_thread_entry(void* parameter)
                 printmsg(ECU_DBG_COLLECT,"Collect DATA Start");
                 //采集实时数据
                 Collect_Client_Record();
+
                 //更新手机显示
                 displayonPhone();
+                //天合定制数据采集
+                Collect_TrinaSolar_Record();
                 printmsg(ECU_DBG_COLLECT,"Collect DATA End");
                 process_rsd_single();//检测RSD功能是否正确
                 process_IDUpdate();//检测ID表格是否需要更新

@@ -215,6 +215,7 @@ int clearrecord()
 	echo("/home/data/ltpower","0.000000");	
 
 	rm_dir("/home/record/data");
+	rm_dir("/home/record/tridata");
 	rm_dir("/home/record/POWER");
 	rm_dir("/home/record/ENERGY");
 	rm_dir("/home/record/CTLDATA");

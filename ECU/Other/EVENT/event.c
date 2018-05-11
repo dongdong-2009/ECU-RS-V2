@@ -26,6 +26,7 @@
 #include "AppFunction.h"
 #include "serverfile.h"
 #include "zigbee.h"
+#include "rtc.h"
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
@@ -38,8 +39,9 @@
 extern rt_mutex_t wifi_uart_lock;
 int Data_Len = 0,Command_Id = 0;
 int ResolveFlag = 0;
-
-
+unsigned char APSTA_Status = 0;		//当前AP,STA模式   0表示STA模式，1表示STA+AP模式
+static rt_timer_t APSTAtimer;	//线程重启定时器
+unsigned char  switchSTAModeFlag = 0;	//切换为STA模式标志
 //测试枚举
 typedef enum
 { 
@@ -110,45 +112,6 @@ void process_WIFI(void)
 
 }
 
-//硬件测试   返回值是测试的错误码
-int HardwareTest(char testItem)
-{
-	switch(testItem)
-	{
-		case HARDTEST_TEST_ALL:
-			//测试WIFI模块
-			if(0 != WIFI_Test())
-			{
-				printf("WIFI abnormal\n");
-				return 2;
-			}
-			
-			//测试433模块
-
-			
-			break;
-		
-		case HARDTEST_TEST_EEPROM:
-			//测试EEPROM读写
-			break;
-		
-		case HARDTEST_TEST_WIFI:
-			//测试WIFI模块
-			if(0 != WIFI_Test())
-			{
-				return 2;
-			}
-			break;
-		
-		case HARDTEST_TEST_433:
-			//测试433模块
-
-			break;
-				
-	}
-	return 0;
-}
-
 
 void process_WIFIEvent_ESP07S(void)
 {
@@ -170,8 +133,7 @@ void process_WIFIEvent_ESP07S(void)
 void process_KEYEvent(void)
 {
 	int ret =0,i = 0;
-	SEGGER_RTT_printf(0, "KEY_FormatWIFI_Event Start\n");
-
+	
 	for(i = 0;i<3;i++)
 	{
 		
@@ -189,21 +151,71 @@ void process_KEYEvent(void)
 	SEGGER_RTT_printf(0, "KEY_FormatWIFI_Event End\n");
 }
 
-//无线复位处理
+static void APSTATimeout(void* parameter)
+{
+	//切换为AP+STA模式
+	APSTA_Status = 0;
+	switchSTAModeFlag = 1;
+}
+
+void process_switchSTAMode(void)
+{
+	if(switchSTAModeFlag == 1)
+	{
+		printf("STA\n");
+		AT_CWMODE3(1);
+		AT_CIPMUX1();
+		switchSTAModeFlag = 0;
+	}
+}
+//切换为AP+STA模式，1小时后切换为STA模式
+void process_APKEYEvent(void)
+{
+	//切换到AP+STA模式
+	AT_CWMODE3(3);
+	AT_CIPMUX1();
+	AT_CIPSERVER();
+	AT_CIPSTO();
+	printf("AP\n");
+	APSTA_Status = 1;
+
+	 if(APSTAtimer == RT_NULL)
+	 {
+		//定时器1小时后，切换为STA模式
+		APSTAtimer = rt_timer_create("APSTA",
+			APSTATimeout, 
+			RT_NULL, 
+			3600*RT_TICK_PER_SECOND,
+			RT_TIMER_FLAG_ONE_SHOT); 
+	 }
+	
+	if (APSTAtimer != RT_NULL) 
+	{
+		rt_timer_stop(APSTAtimer);
+		rt_timer_start(APSTAtimer);
+	}
+	
+}
+
+//无线复位处理,心跳失败才复位
 int process_WIFI_RST(void)
 {
-	SEGGER_RTT_printf(0, "process_WIFI_RST Start\n");
-
 	if(AT_RST() != 0)
 	{
 		WIFI_Reset();
 	}
 
-	SEGGER_RTT_printf(0, "process_WIFI_RST End\n");
-	rt_hw_s_delay(1);
-	AT_CIPMUX1();
-	AT_CIPSERVER();
-	AT_CIPSTO();
+	if(APSTA_Status == 1)
+	{
+		AT_CWMODE3(3);
+		AT_CIPMUX1();
+		AT_CIPSERVER();
+		AT_CIPSTO();
+	}else
+	{
+		AT_CWMODE3(1);
+		AT_CIPMUX1();
+	}
 	return 0;
 }
 
@@ -229,7 +241,8 @@ int setECUID(char *ECUID)
 	//设置WIFI密码
 	ret = WIFI_Factory(ECUID);
 	//写入WIFI密码
-	Write_WIFI_PW("88888888",8);	//WIFI密码		
+	Write_WIFI_PW("88888888",8);	//WIFI密码	
+	
 	init_ecu();
 	return 0;
 	
@@ -263,20 +276,6 @@ int ReadECUID(void)
 }
 FINSH_FUNCTION_EXPORT(ReadECUID, eg:Read ECU ID);
 
-int Test(void)
-{
-	HardwareTest(0);
-	return 0;
-}
-FINSH_FUNCTION_EXPORT(Test, eg:Test Hardware);
-
-int FactoryStatus(void)
-{
-	//删除所有的UID文件
-	init_inverter(inverterInfo);
-	return 0;
-}
-FINSH_FUNCTION_EXPORT(FactoryStatus, eg:recover Factory Status);
 
 #endif
 

@@ -23,7 +23,7 @@
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 extern unsigned char WIFI_RST_Event;
-
+extern unsigned char APKEY_EVENT;
 typedef struct IPConfig
 {
 	IP_t IPAddr;
@@ -103,7 +103,8 @@ void ECUEvent_thread_entry(void* parameter)
 		getAddr(array, 5,&IPconfig);
 		StaticIP(IPconfig.IPAddr,IPconfig.MSKAddr,IPconfig.GWAddr,IPconfig.DNS1Addr,IPconfig.DNS2Addr);
 	}
-	
+	AT_CWMODE3(1);
+	AT_CIPMUX1();
 	while(1)
 	{	
 		//检测WIFI事件
@@ -111,10 +112,14 @@ void ECUEvent_thread_entry(void* parameter)
 		//检测按键事件
 		if(KEY_FormatWIFI_Event == 1)
 		{
-			SEGGER_RTT_printf(0,"KEY_FormatWIFI_Event start\n");
 			process_KEYEvent();
 			KEY_FormatWIFI_Event = 0;
-			SEGGER_RTT_printf(0,"KEY_FormatWIFI_Event end\n");
+		}
+
+		if(APKEY_EVENT == 1)
+		{
+			process_APKEYEvent();	//切换到AP+STA模式，定时1小时切换回STA模式
+			APKEY_EVENT = 0;
 		}
 		
 		//WIFI复位事件
@@ -124,7 +129,7 @@ void ECUEvent_thread_entry(void* parameter)
 			if(ret == 0)
 				WIFI_RST_Event = 0;
 		}
-		
+		process_switchSTAMode();
 		rt_thread_delay(RT_TICK_PER_SECOND/100);
 	}	
 }

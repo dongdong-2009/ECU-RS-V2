@@ -65,8 +65,8 @@ typedef enum THREADTYPE {
 #define UPDATE_SERVER_IP					"60.190.131.190"
 #define UPDATE_SERVER_PORT1				9219
 
-#define TRINASOLAR_SERVER_DOMAIN		"XXX.trinasolar.com"
-#define TRINASOLAR_SERVER_IP			"192.168.1.2"
+#define TRINASOLAR_SERVER_DOMAIN		"192.168.1.2"
+#define TRINASOLAR_SERVER_IP			"192.168.1.1"
 #define TRINASOLAR_SERVER_Port			60000
 #else
 
@@ -110,6 +110,9 @@ typedef enum THREADTYPE {
 #define THREAD_PRIORITY_CONTROL_CLIENT  				26			//OPT700-RS远程控制
 
 #define THREAD_PRIORITY_TRINASOLAR  				26			//天合客户端程序
+#define THREAD_PRIORITY_TRINASOLAR_RECV  				17			//天合客户端接受程序
+#define THREAD_PRIORITY_TRINASOLAR_HEARTBATE         	17			//天合客户端心跳程序
+
 
 //thread start time
 #define START_TIME_EVENT									5

@@ -23,6 +23,7 @@
 #include "debug.h"
 #include "third_inverter.h"
 #include "zigbee.h"
+#include "socket.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -769,6 +770,7 @@ void APP_ServerInfo(int Data_Len,const char *recvbuffer)
 		if(ret == 0)
 		{	
 			APP_Response_ServerInfo(0x00,&serverInfo);
+			initSocketArgs();
 		}else
 		{
 			return;

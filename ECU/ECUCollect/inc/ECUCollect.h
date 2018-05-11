@@ -9,4 +9,5 @@ typedef enum
 
 
 void ECUCollect_thread_entry(void* parameter);
+void Collect_TrinaSolar_Record(void);
 #endif /*__ECU_COLLECT_H__*/

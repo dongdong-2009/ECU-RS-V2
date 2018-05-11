@@ -17,6 +17,7 @@
 #include <rthw.h>
 #include "stm32_eth.h"
 #include "stdio.h"
+#include "powerIO.h"
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
@@ -50,12 +51,15 @@ void rt_hw_lan8720_rst(void)
 
 int rt_hw_GetWiredNetConnect(void)
 {
+	/*	REV1.0.6¸ü¸ÄÎªIOÅÐ¶Ï 20180510
 	int value = 0,ret = 0;
 	value = ETH_ReadPHYRegister(0x00, 1);
 	rt_hw_ms_delay(5);
 	value = ETH_ReadPHYRegister(0x00, 1);
 	ret = (value & (1 << 2)) >> 2;
 	return ret;
+	*/
+	return rt_hw_ETHIO_status();
 }
 
 #if 0

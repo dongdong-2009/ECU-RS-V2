@@ -506,7 +506,7 @@ int serverCommunication_Client(char *sendbuff,int sendLength,char *recvbuff,int 
                 recvlen += readbytes;
                 if(recvlen >= 3)
                 {
-                    print2msg(ECU_DBG_CLIENT,"recvbuff:",recvbuff);
+                    //print2msg(ECU_DBG_CLIENT,"recvbuff:",recvbuff);
                     *recvLength = recvlen;
                     if('{' == recvbuff[0])
                     {

@@ -15,6 +15,7 @@
 /*  Definitions                                                              */
 /*****************************************************************************/
 #define KEY_Reset  GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_9)
+#define APKEY_Status  GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_8)
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
@@ -25,5 +26,6 @@ void KEY_Init(void);//IO初始化
 
 void EXTIX_Init(void);//外部中断初始化
 
-
+void APKEY_Init(void) ;
+void APEXTIX_Init(void);
 #endif

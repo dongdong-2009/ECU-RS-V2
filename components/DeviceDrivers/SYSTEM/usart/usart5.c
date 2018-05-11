@@ -35,7 +35,7 @@
 #define WIFI_GPIO                   GPIOC
 #define WIFI_PIN                    (GPIO_Pin_6)
 
-
+extern unsigned char APSTA_Status;
 rt_mutex_t wifi_uart_lock = RT_NULL;
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -234,9 +234,18 @@ int detectionResetStatus(int size)		//检测到Ai-Thinker Technology Co. Ltd.  返回
 	{
 		if(!memcmp(&USART_RX_BUF[i],"Ai-Thinker Technology Co. Ltd.",30))
 		{
-			AT_CIPMUX1();
-			AT_CIPSERVER();
-			AT_CIPSTO();
+			if(APSTA_Status == 1)
+			{
+				AT_CWMODE3(3);
+				AT_CIPMUX1();
+				AT_CIPSERVER();
+				AT_CIPSTO();
+			}else
+			{
+				AT_CWMODE3(1);
+				AT_CIPMUX1();
+			}
+			
 			return 1;			
 		}
 	}
@@ -326,10 +335,6 @@ int WIFI_Reset(void)
 	GPIO_ResetBits(WIFI_GPIO, WIFI_PIN);
 	rt_hw_ms_delay(1000);
 	GPIO_SetBits(WIFI_GPIO, WIFI_PIN);
-	rt_hw_ms_delay(3000);
-	AT_CIPMUX1();
-	AT_CIPSERVER();
-	AT_CIPSTO();
 	return 0;
 }
 
@@ -414,16 +419,27 @@ int SendToSocketC(char *IP ,int port,char *data ,int length)
 }
 
 //----ESP01流程-------------------------------
-int AT_CWMODE3(void)			//配置WIFI模块为AP+STA模式
+int AT_CWMODE3(int mode)			//配置WIFI模块为AP+STA模式1.STA模式 3.AP+STA模式
 {
 	int i = 0;
 	clear_WIFI();
-	WIFI_SendData("AT+CWMODE_DEF=3\r\n", 17);
+	if(mode == 1)
+	{
+		WIFI_SendData("AT+CWMODE_DEF=1\r\n", 17);
+	}else if(mode == 3)
+	{
+		WIFI_SendData("AT+CWMODE_DEF=3\r\n", 17);
+	}else
+	{
+		return -1;
+	}
+	
+		
+	
 	for(i = 0;i< 100;i++)
 	{
 		if(1 == detectionOK(Cur))
 		{
-			printf("AT+CWMODE3 :+ok\n");
 			clear_WIFI();
 			return 0;
 		}
@@ -433,7 +449,6 @@ int AT_CWMODE3(void)			//配置WIFI模块为AP+STA模式
 	return -1;
 		
 }
-
 int AT_RST(void)			//复位WIFI模块
 {
 	int i = 0;
@@ -501,8 +516,15 @@ int AT_CWSAP(char *ECUID,char *PASSWD)			//配置ECU热点名字
 int WIFI_Factory_Passwd(void)
 {
 	char ECUID[13] = {'\0'};
+	int res = 0;
+	AT_CWMODE3(3);
+
+	
 	Read_ECUID(ECUID);
-	if(!AT_CWSAP(ECUID,"88888888"))
+	res = AT_CWSAP(ECUID,"88888888");
+	AT_CWMODE3(1);
+	AT_CIPMUX1();
+	if(!res)
 		return 0;
 	else
 		return -1;
@@ -791,17 +813,49 @@ int AT_CIPSTO(void)			//配置WIFI模块作为TCP服务器时的超时时间
 int WIFI_Factory(char *ECUID12)
 {
 
+	int i = 0,res = 0;
+
+	//选择 WMODE
+	for(i = 0;i<3;i++)
+	{
+		if(0 == AT_CWMODE3(3))
+		{
+			res = 0;
+			break;
+		}else
+			res = -1;
+	}
+	if(res == -1) return -1;	
+
+
 	if(!AT_CWSAP(ECUID12,"88888888"))
 	{
 
+		//选择 WMODE
+		for(i = 0;i<3;i++)
+		{
+			if(0 == AT_CWMODE3(1))
+			{
+				res = 0;
+				break;
+			}else
+				res = -1;
+		}
+		if(res == -1) return -1;	
+		AT_CIPMUX1();
+		/*
 		if(0 != AT_RST())
 		{
 			WIFI_Reset();
 		}
+		
 		rt_hw_s_delay(1);
 		AT_CIPMUX1();
 		AT_CIPSERVER();
 		AT_CIPSTO();
+		*/
+
+		
 		return 0;
 	}
 	else
@@ -826,7 +880,7 @@ int InitWorkMode(void)
 	//选择 WMODE
 	for(i = 0;i<3;i++)
 	{
-		if(0 == AT_CWMODE3())
+		if(0 == AT_CWMODE3(3))
 		{
 			res = 0;
 			break;
@@ -834,6 +888,7 @@ int InitWorkMode(void)
 			res = -1;
 	}
 	if(res == -1) return -1;	
+
 
 	//配置默认IP
 	for(i = 0;i<3;i++)
@@ -866,8 +921,9 @@ void Send(char *data, int num)
 int AT_JAPST(void)
 {
 	char info[100] = {'\0'};
-
-	return AT_CWJAPStatus(info);
+	int ret = AT_CWJAPStatus(info);
+	printf("%s\n",info);
+	return ret;
 }
 
 void AT_LAPList(void)
