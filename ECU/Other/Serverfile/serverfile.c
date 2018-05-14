@@ -581,6 +581,7 @@ static int checkOldFile(char *dir,char *oldFile)
                 sprintf(fullpath,"%s/%s",dir,path);
                 strcpy(oldFile,fullpath);
                 closedir(dirp);
+	       rt_mutex_release(record_data_lock);
                 return 1;
             }
             /* 关闭目录 */
@@ -591,6 +592,77 @@ static int checkOldFile(char *dir,char *oldFile)
     return 0;
 }
 
+
+static int checkTrinaSolarOldFile(char *dir,char *oldFile)
+{
+    DIR *dirp;
+    struct dirent *d;
+    char path[100] , fullpath[100] = {'\0'};
+    int fileDate = 0,temp = 0;
+    int fileTime = 0,tempT = 0;
+    char tempDate[9] = {'\0'};
+    char tempTime[4] = {'\0'};
+    rt_err_t result = rt_mutex_take(record_data_lock, RT_WAITING_FOREVER);
+    if(result == RT_EOK)
+    {
+        /* 打开dir目录*/
+        dirp = opendir(dir);
+
+        if(dirp == RT_NULL)
+        {
+            printmsg(ECU_DBG_OTHER,"check Old File open directory error");
+            mkdir(dir,0);
+        }
+        else
+        {
+            /* 读取dir目录*/
+            while ((d = readdir(dirp)) != RT_NULL)
+            {
+                memcpy(tempDate,d->d_name,8);
+                tempDate[8] = '\0';
+                memcpy(tempTime,&d->d_name[9],3);
+                tempTime[3] = '\0';
+                temp = atoi(tempDate);
+                tempT = atoi(tempTime);
+	       
+                if((temp <= fileDate) || (fileDate == 0))
+                {
+                	  if(tempT < fileTime)
+                	  {
+                        fileDate = temp;
+                        fileTime = 	tempT;	
+			                  memset(path,0,100);
+			                  strcpy(path,d->d_name);
+                	  }else
+                	  {
+                	  	if(fileDate == 0)
+                	  	{
+	                	  	fileDate = temp;
+                        fileTime = 	tempT;	
+	                    	memset(path,0,100);
+	                    	strcpy(path,d->d_name);
+                	  	}
+                	  	
+                	  }
+                    
+                }
+
+            }
+            if(fileDate != 0)
+            {
+                sprintf(fullpath,"%s/%s",dir,path);
+                strcpy(oldFile,fullpath);
+                closedir(dirp);
+	       rt_mutex_release(record_data_lock);
+                return 1;
+            }
+            /* 关闭目录 */
+            closedir(dirp);
+        }
+    }
+    rt_mutex_release(record_data_lock);
+    return 0;
+}
 
 //检索整个文件系统，判断剩余空间存储量，如果剩余可存储空间过小，则检索相应的目录，并进行相应的删除操作
 int optimizeFileSystem(int capsize)
@@ -645,6 +717,13 @@ int optimizeFileSystem(int capsize)
         {
             unlink(oldFile);
         }
+				
+        memset(oldFile,0x00,100);
+        if(1 == checkTrinaSolarOldFile("/home/record/tridata",oldFile))
+        {
+            unlink(oldFile);
+        }
+				
 
     }
 
@@ -3516,4 +3595,11 @@ void setControl(char *IP,char* port)
 FINSH_FUNCTION_EXPORT(setControl, eg:setControl);
 
 FINSH_FUNCTION_EXPORT(rm_dir, eg:rm_dir);
+void testTri(void)
+{
+	char path[100] = { '\0' };
+	int ret = checkTrinaSolarOldFile("/home/record/tridata",path);
+	printf("ret:%d %s\n",ret,path);
+}
+FINSH_FUNCTION_EXPORT(testTri, eg:testTri);
 #endif

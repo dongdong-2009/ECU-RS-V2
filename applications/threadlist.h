@@ -105,13 +105,13 @@ typedef enum THREADTYPE {
 //Data Collection thread priority
 #define THREAD_PRIORITY_DATACOLLECT       				25			//OPT700-RS相关数据采集
 //Client thread priority
-#define THREAD_PRIORITY_CLIENT       					26			//OPT700-RS数据上报
+#define THREAD_PRIORITY_CLIENT       					27			//OPT700-RS数据上报
 //Control Client thread priority
-#define THREAD_PRIORITY_CONTROL_CLIENT  				26			//OPT700-RS远程控制
+#define THREAD_PRIORITY_CONTROL_CLIENT  				27			//OPT700-RS远程控制
 
 #define THREAD_PRIORITY_TRINASOLAR  				26			//天合客户端程序
-#define THREAD_PRIORITY_TRINASOLAR_RECV  				17			//天合客户端接受程序
-#define THREAD_PRIORITY_TRINASOLAR_HEARTBATE         	17			//天合客户端心跳程序
+#define THREAD_PRIORITY_TRINASOLAR_RECV  				21			//天合客户端接受程序
+#define THREAD_PRIORITY_TRINASOLAR_HEARTBATE         	21			//天合客户端心跳程序
 
 
 //thread start time
