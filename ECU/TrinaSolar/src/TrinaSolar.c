@@ -11,6 +11,8 @@
 #include "rtc.h"
 #include "version.h"
 #include "Serverfile.h"
+#include "remoteUpdate.h"
+#include "rsdFunction.h"
 
 #define TRINA_MAJOR_VERSION 0x01
 #define TRINA_MINOR_VERSION 0x00
@@ -33,7 +35,7 @@ int TrinaRecvSize = 0;
 
 #ifdef THREAD_PRIORITY_TRINASOLAR_RECV
 ALIGN(RT_ALIGN_SIZE)
-static rt_uint8_t recv_stack[1024];
+static rt_uint8_t recv_stack[2048];
 static struct rt_thread recv_thread;
 #endif
 
@@ -42,6 +44,64 @@ ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t heartbeat_stack[1024];
 static struct rt_thread heartbeat_thread;
 #endif
+
+void insertTrinaSetRSDInfo(unsigned short num,int RSDFunctionStatus,char *IDStr)
+{
+    int i;
+    char inverter_id[16] = {'\0'};
+    int fd;
+    char buff[50];
+    fd = open("/tmp/setrsd", O_WRONLY | O_APPEND | O_CREAT,0);
+    if (fd >= 0)
+    {
+        for(i=0; i<num; i++)
+        {
+            memcpy(inverter_id,&IDStr[i*15],15);
+
+            if(RSDFunctionStatus == 0)//关闭RSD功能
+            {
+                sprintf(buff,"%s,2,0,000\n",inverter_id);
+            }else//开启RSD功能
+            {
+                sprintf(buff,"%s,1,1,000\n",inverter_id);
+            }
+
+            write(fd,buff,strlen(buff));
+        }
+
+        close(fd);
+    }
+
+}
+
+void insertTrinaRSDCon(unsigned short num,int RSDFunctionStatus,char *IDStr)
+{
+    int i;
+    char inverter_id[16] = {'\0'};
+    int fd;
+    char buff[50];
+    fd = open("/tmp/rsdcon.con", O_WRONLY  | O_APPEND | O_CREAT,0);
+    if (fd >= 0)
+    {
+        for(i=0; i<num; i++)
+        {
+            memcpy(inverter_id,&IDStr[i*15],15);
+
+            if(RSDFunctionStatus == 0)//关闭RSD功能
+            {
+                sprintf(buff,"%s,0\n",inverter_id);
+            }else//开启RSD功能
+            {
+                sprintf(buff,"%s,1\n",inverter_id);
+            }
+
+            write(fd,buff,strlen(buff));
+        }
+
+        close(fd);
+    }
+
+}
 
 
 void init_TrinaSendLock(void)      //初始化TrinaSolar发送锁
@@ -54,13 +114,12 @@ void init_TrinaSendLock(void)      //初始化TrinaSolar发送锁
     TrinaSend_lock = rt_mutex_create("Trina_lock", RT_IPC_FLAG_FIFO);
     if (TrinaSend_lock != RT_NULL)
     {
-
         printf("Initialize Trina_lock successful!\n");
     }
     
 }
 
-
+//初始化通讯参数
 void initTrinaSolarSocketArgs(void)
 {
     FILE *fp;
@@ -113,6 +172,7 @@ void initTrinaSolarSocketArgs(void)
     printf("TrinaSolar_arg.port2:%d\n",TrinaSolar_arg.port2);
 }
 
+//存储天合数据格式
 void save_TrinaSolar_Record(char *Time,char *buff,int length)
 {
     char dir[50] = "/home/record/tridata/";
@@ -138,6 +198,8 @@ void save_TrinaSolar_Record(char *Time,char *buff,int length)
     }
     rt_mutex_release(record_data_lock);
 }
+
+//采集天合数据
 void Collect_TrinaSolar_Record(void)
 {
     char *Trina_Data = NULL;
@@ -227,12 +289,6 @@ void Collect_TrinaSolar_Record(void)
 
         if(ecu.count > 0)
         {
-            printf("%d\n",packlength);
-            for( i =0;i<packlength;i++)
-            {
-                printf("%02x ",Trina_Data[i]);
-            }
-            printf("\n");
             save_TrinaSolar_Record(ecu.curTime,Trina_Data,packlength);
         }
 
@@ -241,6 +297,7 @@ void Collect_TrinaSolar_Record(void)
     }
 }
 
+//查看天合服务器功能
 int TrinaFunction(void)	//查看天合服务器功能是否打开
 {
     int fd;
@@ -262,6 +319,7 @@ int TrinaFunction(void)	//查看天合服务器功能是否打开
     return -1;
 }
 
+//获取天合最新的数据
 int GetTrinaSolarNewRecord(char *newFile,int *flag)
 {
     DIR *dirp;
@@ -437,7 +495,10 @@ int Trina_RecvData(int sockfd, char *recvbuffer, int *size, int timeout_s)
             recvbuffer[recv_count] = '\0';
             *size = recv_count;
             //printf("Trina_RecvData:%d  %s\n", *size,recvbuffer);
-
+            if(recv_count <= 0)	//接收到的字符小于等于0
+            {
+                TrinaSolarConnectFlag = 0;
+            }
             return recv_count;
         }
     }
@@ -526,10 +587,11 @@ int Trina_Login(void)   //登录
     }
 }
 
+//天合接受时间
 int TrinaRecvEvent(void)
 {
     unsigned short CRC_calc = 0,CRC_read = 0,CRClen = 0;
-    if(Trina_RecvData(TrinaSolarSocketFD, (char*)TrinaRecvBuff, &TrinaRecvSize, 2) > 0)
+    if(Trina_RecvData(TrinaSolarSocketFD, (char*)TrinaRecvBuff, &TrinaRecvSize, 5) > 0)
     {
         CRClen = TrinaRecvSize-2;
         CRC_calc = computeCRC(TrinaRecvBuff, CRClen);
@@ -593,63 +655,205 @@ int TrinaSolar_Response(unsigned short CMD,int length,char *buff)
 
     sendbuff[58+length] = (CRC >> 8);
     sendbuff[59+length] = (CRC & 0xFF);
-    if(Trina_SendData(TrinaSolarSocketFD, sendbuff, 60) < 0)
+    if(Trina_SendData(TrinaSolarSocketFD, sendbuff, (60+length)) < 0)
     {
         //发送失败，需要重启线程
         TrinaSolarConnectFlag = 0;
-        restartThread(TYPE_TRINASOLAR);
         return -1;
     }
 
     return 1;
 }
 
+int TrinaSolar_Response_relation_ECU_Module(void)
+{
+    char *sendbuff = NULL;
+    unsigned short CRC = 0;
+    char curTime[15];
+    inverter_info *curinverter = inverterInfo;
+    int i = 0,packlen = 0;
+    sendbuff = malloc(4096);
+    memset(sendbuff,0x00,4096);
+
+    sendbuff[0] = 'T';
+    sendbuff[1] = 'S';
+    memcpy(&sendbuff[2],ecu.ECUID12,12);
+    memcpy(&sendbuff[27],ecu.ECUID12,12);
+    sendbuff[52] = 0x0a;
+    sendbuff[53] = 0x05;
+    sendbuff[54] = TRINA_MAJOR_VERSION;
+    sendbuff[55] = TRINA_MINOR_VERSION;
+    sendbuff[56] = 0;
+    sendbuff[57] = 0;
+
+    apstime(curTime);
+    curTime[14] = '\0';
+    sendbuff[58] = ecu.validNum;
+    sendbuff[59] = ecu.count;
+
+    sendbuff[60] = (curTime[0] - '0')*16+(curTime[1] - '0');
+    sendbuff[61] = (curTime[2] - '0')*16+(curTime[3] - '0');
+    sendbuff[62] = (curTime[4] - '0')*16+(curTime[5] - '0');
+    sendbuff[63] = (curTime[6] - '0')*16+(curTime[7] - '0');
+    sendbuff[64] = (curTime[8] - '0')*16+(curTime[9] - '0');
+    sendbuff[65] = (curTime[10] - '0')*16+(curTime[11] - '0');
+    sendbuff[66] = (curTime[12] - '0')*16+(curTime[13] - '0');
+    sendbuff[67] = 1;
+    packlen = 68;
+    for(i=0; (i<MAXINVERTERCOUNT)&&(i < ecu.validNum); i++)
+    {
+        //判断是否通讯上，且机型为jbox
+        if((1 == curinverter->status.comm_failed3_status))
+        {
+            memcpy(&sendbuff[packlen],curinverter->uid,12);
+            packlen += 15;
+            memcpy(&sendbuff[packlen],(char *)curinverter->version,2);
+            packlen += 2;
+        }
+
+    }
+    sendbuff[56] = (packlen-58)/256;
+    sendbuff[57] = (packlen-58)%256;
+
+
+    CRC = computeCRC((unsigned char*)sendbuff, packlen);
+
+    sendbuff[packlen] = (CRC >> 8);
+    sendbuff[packlen+1] = (CRC & 0xFF);
+    if(Trina_SendData(TrinaSolarSocketFD, sendbuff, (packlen+2)) < 0)
+    {
+        //发送失败，需要重启线程
+        TrinaSolarConnectFlag = 0;
+        free(sendbuff);
+        sendbuff = NULL;
+        return -1;
+    }
+    free(sendbuff);
+    sendbuff = NULL;
+    return 1;
+
+}
+//处理天合事件
 void process_TrinaEvent(int Data_Len,const unsigned char *recvbuffer)
 {
     unsigned short TrinaCMD = 0;
-
+    char str[200] = {'\0'};
     TrinaCMD = recvbuffer[52] * 256 + recvbuffer[53];
     printf("TrinaCMD:%x\n",TrinaCMD);
+
     if(TrinaCMD == 0x0801)
     {
 
     }else if(TrinaCMD == 0x0802)
     {
         TrinaSolarHeartbeatFlag = 1;
+
     }else if(TrinaCMD == 0x0A01)
     {
         TrinaSolarDataFlag = 1;
+
     }else if(TrinaCMD == 0x0004)	//设置服务器
     {
         char IP[50] = {'\0'};
         int port = 0;
-        char str[200] = {'\0'};
+
         memcpy(IP,&recvbuffer[58],50);
         port = recvbuffer[108] * 0x100+recvbuffer[109];
         sprintf(str,"Domain=%s\nIP=%s\nPort1=%d\nPort2=%d\n",IP,TrinaSolar_arg.ip,port,port);
         echo("/config/trina.con",str);
 
+        TrinaSolar_Response(0x0804,0,str);
+        TrinaSolarConnectFlag = 0;
+
     }else if(TrinaCMD == 0x0005)	//下发升级通知
-    {
+    {	//只识别升级ECU的
+        char URI[100] = {'\0'};
+        char user[10] = {'\0'};
+        char password[10] = {'\0'};
+        if(recvbuffer[58] == 0x01)	//FTP升级
+        {
+            if(recvbuffer[59] == 0x02)	//ECU升级
+            {
+                memcpy(URI,&recvbuffer[60],100);
+                memcpy(user,&recvbuffer[160],6);
+                memcpy(password,&recvbuffer[166],6);
+                TrinaSolar_Response(0x0805,0,str);
+                optimizeFileSystem(300);
+                updateECUByTrinaSolar(TrinaSolar_arg.domain,TrinaSolar_arg.ip, 21, user, password,URI);
+            }
+        }
 
-    }else if(TrinaCMD == 0x0009)	//重启ECU
+    }else if(TrinaCMD == 0x0008)	//重启ECU
     {
+        TrinaSolar_Response(0x0808,0,str);
+        reboot();
 
-    }else if(TrinaCMD == 0x000A)	//获取设备信息
+    }else if(TrinaCMD == 0x0009)	//获取设备信息
     {
+        char curTime[15] = {'\0'};
+        apstime(curTime);
+        curTime[14] = '\0';
+
+        memset(str,0x00,200);
+        //厂家        2字节 58
+        str[0] = COMPANY_CODE[0];
+        str[1] = COMPANY_CODE[1];
+        //型号       13字节    60
+        memcpy(&str[2],ECU_VERSION,strlen(ECU_VERSION));
+
+        //CCID       20字节   73
+
+        //设备时间    7字节    93
+        str[35] = (curTime[0] - '0')*16+(curTime[1] - '0');
+        str[36] = (curTime[2] - '0')*16+(curTime[3] - '0');
+        str[37] = (curTime[4] - '0')*16+(curTime[5] - '0');
+        str[38] = (curTime[6] - '0')*16+(curTime[7] - '0');
+        str[39] = (curTime[8] - '0')*16+(curTime[9] - '0');
+        str[40] = (curTime[10] - '0')*16+(curTime[11] - '0');
+        str[41] = (curTime[12] - '0')*16+(curTime[13] - '0');
+
+        //固件版本    10字节    100
+        sprintf(&str[42],"%s.%s",MAJORVERSION,MINORVERSION);
+        //国家标准    1字节   110
+        str[52] =0x01;
+        TrinaSolar_Response(0x0809,53,str);
 
     }else if(TrinaCMD == 0x0202)	//设置RSD功能
     {
+        if(recvbuffer[58] == 0x00)	//全部设置
+        {
+            if(recvbuffer[59] == 0x01)	//使能
+            {
+                save_rsdFunction_change_flag();
+                saveChangeFunctionStatus(1,2,0);//打开心跳功能
+                unlink("/tmp/setrsd");
+                unlink("/tmp/rsdcon.con");
+                //重启采集线程
+                restartThread(TYPE_DATACOLLECT);
+            }else	//禁能
+            {
+                save_rsdFunction_change_flag();
+                saveChangeFunctionStatus(2,0,0);//关闭心跳功能
+                unlink("/tmp/setrsd");
+                unlink("/tmp/rsdcon.con");
+                //重启采集线程
+                restartThread(TYPE_DATACOLLECT);
+            }
+        }else		//部分设置
+        {
+            unsigned short num = recvbuffer[58];
+            int RSDFunctionStatus = recvbuffer[59];
+            insertTrinaSetRSDInfo(num ,RSDFunctionStatus,(char *)&recvbuffer[60]);
+            insertTrinaRSDCon(num ,RSDFunctionStatus,(char *)&recvbuffer[60]);
+            //重启main线程
+            restartThread(TYPE_DATACOLLECT);
+        }
 
-    }else if(TrinaCMD == 0x0203)	//重启组件
-    {
-
-    }else if(TrinaCMD == 0x0204)	//固件升级
-    {
-
+        str[0] = 0x01;
+        TrinaSolar_Response(0x0a02,1,str);
     }else if(TrinaCMD == 0x0205)	//获取ECU采集器组件对应的关系
     {
-
+        TrinaSolar_Response_relation_ECU_Module();
     }
 
 }
@@ -769,7 +973,6 @@ int Trina_Heartbeat(void)
     {
         //发送失败，需要重启线程
         TrinaSolarConnectFlag = 0;
-        restartThread(TYPE_TRINASOLAR);
         return -1;
     }
 }
@@ -809,7 +1012,7 @@ void TrinaSolar_thread_entry(void* parameter)	//天合线程
 
             result = rt_thread_init(&recv_thread,"Trirecv",TrinaSolar_recv_thread_entry,RT_NULL,(rt_uint8_t*)&recv_stack[0],sizeof(recv_stack),THREAD_PRIORITY_TRINASOLAR_RECV,5);
             if (result == RT_EOK)	rt_thread_startup(&recv_thread);
-            
+
             //创建心跳线程
             /* init TrinaSolar thread */
             rt_thread_detach(&heartbeat_thread);
@@ -848,13 +1051,17 @@ void TrinaSolar_recv_thread_entry(void* parameter)	//天合接受线程
             //判断是什么事件，做什么事情
             process_TrinaEvent(TrinaRecvSize,TrinaRecvBuff);
         }
-        if(TrinaSolarConnectFlag == 0)
+
+        if(TrinaSolarConnectFlag == 0)	//判断是否断开连接
         {
             printf("TrinaSolar_recv_thread_entry over\n");
             if(TrinaSolarSocketFD>=0)
             {
                 closesocket(TrinaSolarSocketFD);
                 TrinaSolarSocketFD = -1;
+                //关闭心跳线程，重启主线程
+                rt_thread_detach(&heartbeat_thread);
+                restartThread(TYPE_TRINASOLAR);
             }
 
             return;
@@ -864,27 +1071,12 @@ void TrinaSolar_recv_thread_entry(void* parameter)	//天合接受线程
 
 void TrinaSolar_heartbeat_thread_entry(void* parameter)	//天合心跳线程
 {
-    int index =0;
     rt_thread_delay(RT_TICK_PER_SECOND*20);
     while(1)
     {
         Trina_Heartbeat();
-        for(index = 0;index <60;index++)
-        {
-            if(TrinaSolarConnectFlag == 0)
-            {
-                printf("TrinaSolar_heartbeat_thread_entry over\n");
-                if(TrinaSolarSocketFD>=0)
-                {
-                    closesocket(TrinaSolarSocketFD);
-                    TrinaSolarSocketFD = -1;
-                }
+        rt_thread_delay(RT_TICK_PER_SECOND*60);
 
-                return;
-            }
-            rt_thread_delay(RT_TICK_PER_SECOND);
-        }
-        
     }
 }
 

@@ -39,6 +39,13 @@
 #define SERVERPORT 4540
 #define BACKLOG 2
 
+typedef enum 
+{
+	UPDATE_VER = 1,
+	UPDATE_ID = 2
+} eLocalUpdateType;
+
+
 /*****************************************************************************/
 /*  Variable Declarations                                                    */
 /*****************************************************************************/
@@ -134,6 +141,49 @@ int recv_cmd(int fd_sock, char *readbuff)
 
 		}
 	}
+}
+
+
+//解析本地FTP升级方案
+void ResolveLocarInfo(char *str,eLocalUpdateType* type,char *ip,int *port,char *user,char *password)
+{
+	int i = 0,j=0,start = 0,end= 0;
+	char Type[4] = {'\0'};
+	char PortStr[6] = {'\0'};
+	for(i = 0;i<=strlen(str);++i)
+	{
+		if((str[i] == ' ') || (str[i] == '\0') || (str[i] == '\n'))
+		{
+			end = i;
+			if(j == 1)
+			{
+				memcpy(Type,&str[start],end-start);
+			}else if(j == 2)
+			{
+				memcpy(ip,&str[start],end-start);
+			}else if(j == 3)
+			{
+				memcpy(PortStr,&str[start],end-start);
+			}else if(j == 4)
+			{
+				memcpy(user,&str[start],end-start);
+			}else if(j == 5)
+			{
+				memcpy(password,&str[start],end-start);
+			}
+			start = i+1;
+			j++;
+		}
+	}
+
+	if(!memcmp(Type,"VER",3))
+	{
+		*type = UPDATE_VER;
+	}else{
+		*type = UPDATE_ID;
+	}
+	
+	*port =atoi(PortStr);
 }
 
 
@@ -401,8 +451,61 @@ void idwrite_thread_entry(void* parameter)
 			apstime(gettime);
 			printdecmsg(ECU_DBG_OTHER,"Send",send(clientfd, gettime, 14, 0));
 		}
+		//重启程序
+		if(!strncmp(recvbuff, "reboot", 6)){
+			send(clientfd, "reboot ok", 9, 0);
+			closesocket(clientfd);
+			reboot();
+		}
 
+		//本地升级需要搭建本地FTP
+		if(!strncmp(recvbuff, "update", 6)){
+			eLocalUpdateType type;
+			char ip[25] = {'\0'};
+			int port = 0;
+			char user[20] = {'\0'};
+			char password[20] = {'\0'};
 
+			ResolveLocarInfo(recvbuff,&type,ip,&port,user,password);
+			
+			if(UPDATE_VER == type)
+			{
+				ret =updateECUByVersion_Local("",ip,port,user,password);
+
+			}else
+			{
+				ret =updateECUByID_Local("",ip,port,user,password);
+			}
+
+			if(ret == 0)
+			{
+				send(clientfd, "update ok", 9, 0);
+				closesocket(clientfd);
+				reboot();
+			}	
+			else if(ret == 550)
+				send(clientfd, "update file not exist", 21, 0);
+			else
+				send(clientfd, "update failed", 13, 0);
+			
+		}
+
+		//获取Flash空间
+		if(!strncmp(recvbuff, "get_flash", 9)){
+			char flash[10] ={'\0'};
+			long long cap;
+			struct statfs buffer;
+			dfs_statfs("/", &buffer);
+			cap = buffer.f_bsize * buffer.f_bfree / 1024;
+			sprintf(flash,"%d",(unsigned int)cap);
+			send(clientfd, flash, strlen(flash), 0);
+		}
+		//获取内部版本号
+		if(!strncmp(recvbuff, "Internal_version", 16)){
+			char version[10] ={'\0'};
+			sprintf(version,"%d",(unsigned int)INTERNAL_TEST_VERSION);
+			send(clientfd, version, strlen(version), 0);
+		}
 
 		//测试LED灯
 		if(!strncmp(recvbuff, "test_led", 8)){
