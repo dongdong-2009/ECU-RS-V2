@@ -1186,6 +1186,16 @@
               <FileType>1</FileType>
               <FilePath>..\ECU\ECUCollect\src\third_inverter_SA.c</FilePath>
             </File>
+            <File>
+              <FileName>third_inverter_SF.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUCollect\src\third_inverter_SF.c</FilePath>
+            </File>
+            <File>
+              <FileName>third_inverter_HW.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ECU\ECUCollect\src\third_inverter_HW.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

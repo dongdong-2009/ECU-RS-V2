@@ -20,6 +20,8 @@
 #include "Serverfile.h"
 #include "third_inverter_SG.h"
 #include "third_inverter_SA.h"
+#include "third_inverter_HW.h"
+#include "third_inverter_SF.h"
 #include "rtthread.h"
 
 /*****************************************************************************/
@@ -252,12 +254,20 @@ void addGetData_ThirdInverter(inverter_third_info *firstThirdinverter)
     for(i=0; ((i<MAX_THIRD_INVERTER_COUNT)&&((int)strlen(curThirdInverter->inverterid) > 0)); i++,curThirdInverter++)
     {
         if(!memcmp(curThirdInverter->factory,"SG",2))
-        {
+        {  
             curThirdInverter->GetData_ThirdInverter = GetData_ThirdInverter_SG;
 		}
 		else if(!memcmp(curThirdInverter->factory,"SA",2))
 		{
 			curThirdInverter->GetData_ThirdInverter = GetData_ThirdInverter_SA;
+		}
+		else if(!memcmp(curThirdInverter->factory,"HW",2))
+		{
+			curThirdInverter->GetData_ThirdInverter = GetData_ThirdInverter_HW;
+		}
+		else if(!memcmp(curThirdInverter->factory,"SF",2))
+		{
+			curThirdInverter->GetData_ThirdInverter = GetData_ThirdInverter_SF;
 		}
 		else
 		{

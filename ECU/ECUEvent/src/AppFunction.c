@@ -95,19 +95,31 @@ int ResolveServerInfo(const char *string,ECUServerInfo_t *serverInfo)
 	
 	memcpy(cmd,&string[25],2);
 	cmdNO = atoi(cmd);
-	if((cmdNO<=0) ||(cmdNO>=7))
+	if((cmdNO<=0) ||(cmdNO>=9))
 		return -1;
 	serverInfo->serverCmdType = (eServerCmdType)atoi(cmd);
-	if((serverInfo->serverCmdType == SERVER_UPDATE_GET)||(serverInfo->serverCmdType == SERVER_CLIENT_GET)||(serverInfo->serverCmdType == SERVER_CONTROL_GET))
+	if((serverInfo->serverCmdType == SERVER_UPDATE_GET)||(serverInfo->serverCmdType == SERVER_CLIENT_GET)
+		||(serverInfo->serverCmdType == SERVER_CONTROL_GET)||(serverInfo->serverCmdType == SERVER_TRINASOLAR_GET))
 		return 0;
 	memcpy(domainLenStr,&string[30],3);
 	domainLen = atoi(domainLenStr);
 	memcpy(serverInfo->domain,&string[33],domainLen);
-
+	serverInfo->domain[domainLen] = '\0';
 	memcpy(serverInfo->IP,&string[33+domainLen],4);
 
 	serverInfo->Port1 = string[37+domainLen]*256 + string[38+domainLen];
 	serverInfo->Port2 = string[39+domainLen]*256 + string[40+domainLen];
+
+	if(serverInfo->serverCmdType == SERVER_TRINASOLAR_SET)
+	{
+		if(string[43+domainLen] == '1')
+		{
+			serverInfo->flag = 1;
+		}else
+		{
+			serverInfo->flag = 0;
+		}
+	}
 	return 0;
 	
 }
@@ -134,6 +146,18 @@ int Save_Server(ECUServerInfo_t *serverInfo)
 	{
 		sprintf(buff,"Timeout=10\nReport_Interval=15\nDomain=%s\nIP=%d.%d.%d.%d\nPort1=%d\nPort2=%d\n",serverInfo->domain,serverInfo->IP[0],serverInfo->IP[1],serverInfo->IP[2],serverInfo->IP[3],serverInfo->Port1,serverInfo->Port2);
 		echo("/config/control.con",buff);
+	}else if(serverInfo->serverCmdType == SERVER_TRINASOLAR_SET)
+	{
+		if(serverInfo->flag == 1)
+		{
+			echo("/CONFIG/TRINAFLG.CON","1");
+		}else
+		{
+			unlink("/CONFIG/TRINAFLG.CON");
+		}
+		sprintf(buff,"Domain=%s\nIP=%d.%d.%d.%d\nPort1=%d\nPort2=%d\n",serverInfo->domain,serverInfo->IP[0],serverInfo->IP[1],serverInfo->IP[2],serverInfo->IP[3],serverInfo->Port1,serverInfo->Port2);
+ 		echo("/config/trina.con",buff);
+		restartThread(TYPE_TRINASOLAR);
 	}
 	free(buff);
 	buff = NULL;
@@ -865,7 +889,7 @@ void APP_TransmissionZigBeeInfo(int Data_Len,const char *recvbuffer)
 		memcpy(UID,&recvbuffer[29],12);
 		memcpy(buff,&recvbuffer[41],3);
 		buff[3] = '\0';
-		length = atoi((char*)buff);
+		length = atoi((char*)buff)/2;	//发送字节长度
 		if(-1 == strToHex(&recvbuffer[44],buff,length))
 		{
 			APP_Response_TransmissionZigBeeInfo(0x02);
@@ -875,7 +899,7 @@ void APP_TransmissionZigBeeInfo(int Data_Len,const char *recvbuffer)
 		if('0' == CommFlag)	//广播
 		{
 			zb_broadcast_cmd((char *)buff,length);
-		}else			//单播
+		}else if('1' == CommFlag)			//单播
 		{
 			for(i=0; i<MAXINVERTERCOUNT; i++, curinverter++)
 			{
@@ -884,6 +908,9 @@ void APP_TransmissionZigBeeInfo(int Data_Len,const char *recvbuffer)
 					zb_send_cmd(curinverter,(char *)buff,length);
 				}
 			}
+		}else
+		{
+			zb_transmission((char *)buff,length);
 		}
 		APP_Response_TransmissionZigBeeInfo(0x00);
 	}else

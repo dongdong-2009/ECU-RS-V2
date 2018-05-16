@@ -39,7 +39,7 @@ int zb_get_reply_restore(char *data,inverter_info *inverter);			//读取逆变器远程
 int zb_broadcast_cmd(char *buff, int length);		//zigbee广播包头
 int zb_send_cmd(inverter_info *inverter, char *buff, int length)	;	//zigbee包头
 int zb_get_reply(char *data,inverter_info *inverter);			//读取逆变器的返回帧
-
+int zb_transmission( char *buff, int length);
 
 #endif /*__ZIGBEE_H__*/
 

@@ -607,6 +607,14 @@ int zigbeeRecvMsg(char *data, int timeout_sec)
 	}
 }
 
+int zb_transmission( char *buff, int length)
+{
+	
+	ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL,0, buff, length);
+	printhexmsg(ECU_DBG_COMM,"Send", (char *)buff, length);
+	return 0;
+}
+
 int zb_send_cmd(inverter_info *inverter, char *buff, int length)		//zigbee°üÍ·
 {
 	unsigned char sendbuff[512] = {'\0'};

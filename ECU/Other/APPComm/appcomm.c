@@ -58,6 +58,7 @@ int Resolve_Server(ECUServerInfo_t *serverInfo)
 	//如果serverCmdType 为获取指令，解析对应文件到结构体中
 	char IP_Str[20] = {'\0'};
 	char temp[4] = {'\0'};
+	char flagstr = '0';
 	unsigned char IP_Str_site = 0;
 	unsigned char site = 0;
 	int i = 0;
@@ -245,6 +246,83 @@ int Resolve_Server(ECUServerInfo_t *serverInfo)
 			serverInfo->Port1 = CONTROL_SERVER_PORT1;
 			serverInfo->Port2 = CONTROL_SERVER_PORT2;			
 		}
+	}else if(serverInfo->serverCmdType == SERVER_TRINASOLAR_GET)
+	{
+		//初始化电量上传参数
+		fp = fopen("/config/trina.con", "r");
+		if(fp)
+		{
+			while(1)
+			{
+				memset(buff, '\0', 512);
+				fgets(buff, 512, fp);
+				if(!strlen(buff))
+					break;
+				if(!strncmp(buff, "Domain", 6))
+				{
+					memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
+					strcpy(serverInfo->domain, &buff[7]);
+					if('\n' == serverInfo->domain[strlen(serverInfo->domain)-1])
+					{
+						serverInfo->domain[strlen(serverInfo->domain)-1] = '\0';
+					}
+						
+				}
+				if(!strncmp(buff, "IP", 2))
+				{
+					strcpy(IP_Str, &buff[3]);
+					if('\n' == IP_Str[strlen(IP_Str)-1])
+						IP_Str[strlen(IP_Str)-1] = '\0';
+					//解析到serverInfo中去
+					for(i = 0;i<(strlen(IP_Str)+1);i++)
+					{
+						if((IP_Str[i] =='.') ||(IP_Str[i] =='\0'))
+						{
+							memset(temp,'\0',4);
+							memcpy(temp,&IP_Str[IP_Str_site],i-IP_Str_site);
+							serverInfo->IP[site] = atoi(temp);
+							IP_Str_site = i+1;
+							site++;
+						}
+					}
+					
+				}
+				if(!strncmp(buff, "Port1", 5))
+					serverInfo->Port1=atoi(&buff[6]);
+				if(!strncmp(buff, "Port2", 5))
+					serverInfo->Port2=atoi(&buff[6]);
+
+			}
+			fclose(fp);
+		}
+		else
+		{
+			memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
+			memcpy(serverInfo->domain,TRINASOLAR_SERVER_DOMAIN,strlen(TRINASOLAR_SERVER_DOMAIN));
+			serverInfo->IP[0] = 192;
+			serverInfo->IP[1] = 168;
+			serverInfo->IP[2] = 1;
+			serverInfo->IP[3] = 2;
+			serverInfo->Port1 = TRINASOLAR_SERVER_Port;
+			serverInfo->Port2 = TRINASOLAR_SERVER_Port;			
+		}
+		fp = fopen("/CONFIG/TRINAFLG.CON", "r");
+		if(fp)
+		{
+			flagstr = fgetc(fp);
+			if(flagstr == '1')
+			{
+				serverInfo->flag = 1;
+			}else
+			{
+				serverInfo->flag = 0;
+			}
+			fclose(fp);
+		}else
+		{
+			serverInfo->flag = 0;
+		}
+		
 	}
 
 	free(buff);
@@ -1189,7 +1267,35 @@ void APP_Response_ServerInfo(char mapping,ECUServerInfo_t *serverInfo)
 			sprintf(SendData,"APS1100150024%02d00",SERVER_CONTROL_SET);
 			Save_Server(serverInfo);
 			packlength = 17;
-		}else
+		}else if(serverInfo->serverCmdType == SERVER_TRINASOLAR_GET)
+		{
+			sprintf(SendData,"APS1100150024%02d00%03d",SERVER_TRINASOLAR_GET,domain_len);
+			packlength = 20;
+			memcpy(&SendData[packlength],serverInfo->domain,domain_len);
+			packlength += domain_len;
+			//IP
+			SendData[packlength++] = serverInfo->IP[0];
+			SendData[packlength++] = serverInfo->IP[1];
+			SendData[packlength++] = serverInfo->IP[2];
+			SendData[packlength++] = serverInfo->IP[3];
+			//Port1
+			SendData[packlength++] = serverInfo->Port1/256;
+			SendData[packlength++] = serverInfo->Port1%256;
+			//Port2
+			SendData[packlength++] = serverInfo->Port2/256;
+			SendData[packlength++] = serverInfo->Port2%256;
+			//Port3
+			SendData[packlength++] = 0;
+			SendData[packlength++] = 0;
+
+			SendData[packlength++] = serverInfo->flag + '0';
+		}else if(serverInfo->serverCmdType == SERVER_TRINASOLAR_SET)
+		{
+			sprintf(SendData,"APS1100150024%02d00",SERVER_TRINASOLAR_SET);
+			Save_Server(serverInfo);
+			packlength = 17;
+		}
+		else
 		{
 			return;
 		}

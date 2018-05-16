@@ -7,7 +7,9 @@ typedef enum  {
   SERVER_CONTROL_GET = 3,
   SERVER_UPDATE_SET = 4,
   SERVER_CLIENT_SET = 5,
-  SERVER_CONTROL_SET = 6
+  SERVER_CONTROL_SET = 6,
+  SERVER_TRINASOLAR_GET = 7,
+  SERVER_TRINASOLAR_SET = 8,
 }eServerCmdType;
 typedef struct ECUServerInfo {
 	eServerCmdType serverCmdType;
@@ -15,6 +17,7 @@ typedef struct ECUServerInfo {
 	unsigned char IP[4];
 	unsigned short Port1;
 	unsigned short Port2;
+	unsigned char flag;
 		  
 } ECUServerInfo_t;
 

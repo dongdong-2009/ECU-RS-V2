@@ -33,7 +33,7 @@ extern ecu_info ecu;
 /*                                                                           */
 /*                                                                           */
 /*****************************************************************************/
-static int ResolveData_SA_DeviceInfo(inverter_third_info *curThirdinverter,unsigned short *pWords)
+static void ResolveData_SA_DeviceInfo(inverter_third_info *curThirdinverter,unsigned short *pWords)
 {
     float Daily_Energy_last = curThirdinverter->Daily_Energy;
 
@@ -42,13 +42,13 @@ static int ResolveData_SA_DeviceInfo(inverter_third_info *curThirdinverter,unsig
 
     curThirdinverter->PV_Voltage[0] = (float)pWords[7]	/ 10;			//直流电压1
     curThirdinverter->PV_Current[0] = (float)pWords[8]  / 100;			//直流电流1
+    curThirdinverter->PV_Power[0]   = (float)pWords[9];                 //直流功率1
     curThirdinverter->PV_Voltage[1] = (float)pWords[10]	/ 10;			//直流电压2
     curThirdinverter->PV_Current[1] = (float)pWords[11] / 100;			//直流电流2
+    curThirdinverter->PV_Power[1]   = (float)pWords[12];                //直流功率2
     curThirdinverter->PV_Voltage[2] = (float)pWords[13]	/ 10;			//直流电压3
     curThirdinverter->PV_Current[2] = (float)pWords[14] / 100;			//直流电流3
-    curThirdinverter->PV_Power[0]   = curThirdinverter->PV_Current[0] * curThirdinverter->PV_Voltage[0];
-    curThirdinverter->PV_Power[1]   = curThirdinverter->PV_Current[1] * curThirdinverter->PV_Voltage[1];
-    curThirdinverter->PV_Power[2]   = curThirdinverter->PV_Current[2] * curThirdinverter->PV_Voltage[2];
+    curThirdinverter->PV_Power[2]   = (float)pWords[15];                //直流功率3
     curThirdinverter->Temperature   = (float)((signed short)pWords[17]) / 10;	//温度
 
     curThirdinverter->Active_Power  = pWords[19];                       //有功功率
@@ -78,7 +78,7 @@ static int ResolveData_SA_DeviceInfo(inverter_third_info *curThirdinverter,unsig
         curThirdinverter->Current_Energy = curThirdinverter->Daily_Energy;
     }
 
-    return 0;
+    return;
 }
 
 
