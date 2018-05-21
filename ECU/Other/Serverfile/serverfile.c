@@ -578,6 +578,7 @@ static int checkOldFile(char *dir,char *oldFile)
 				sprintf(fullpath,"%s/%s",dir,path);
 				strcpy(oldFile,fullpath);
 				closedir(dirp);
+				rt_mutex_release(record_data_lock);
 				return 1;
 			}
 			/* ¹Ø±ÕÄ¿Â¼ */
