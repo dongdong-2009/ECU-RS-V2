@@ -234,7 +234,7 @@ int splitString(char *data,char splitdata[][32])
 void splitSpace(char *data,char *sourcePath,char *destPath)
 {
     int i,j = 0,k = 0;
-    char splitdata[3][50];
+    char splitdata[3][50] = {0x00};
     for(i=0;i<strlen(data);++i){
         if(data[i] == ' ') {
             splitdata[j][k] = 0;
@@ -250,7 +250,7 @@ void splitSpace(char *data,char *sourcePath,char *destPath)
     memcpy(sourcePath,splitdata[1],strlen(splitdata[1]));
     sourcePath[strlen(splitdata[1])] = '\0';
     memcpy(destPath,splitdata[2],strlen(splitdata[2]));
-    destPath[strlen(splitdata[2])-1] = '\0';
+    destPath[strlen(splitdata[2])] = '\0';
 }
 
 //³õÊ¼»¯
@@ -3602,4 +3602,14 @@ void testTri(void)
 	printf("ret:%d %s\n",ret,path);
 }
 FINSH_FUNCTION_EXPORT(testTri, eg:testTri);
+
+void test108(char * data)
+{
+	char sourcePath[60] = {0x00};
+	char destPath[60] = {0x00};
+	splitSpace(data,sourcePath,destPath);
+	printf("cmd:%s\n",data);
+	printf("%s,%s,%s\n","ftpput",sourcePath,destPath);
+}
+FINSH_FUNCTION_EXPORT(test108, eg:test108);
 #endif

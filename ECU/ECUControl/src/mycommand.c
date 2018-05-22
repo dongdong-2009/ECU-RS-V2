@@ -149,7 +149,7 @@ int mysystem(const char *command)
 	}else if(!memcmp(command,"ftpput",6))	//上传数据
 	{
 		rt_thread_t tid;
-		char sourcePath[50],destPath[50];
+		char sourcePath[50]={'/0'},destPath[50]={'/0'};
 		//分割字符串为  命令 [本地源路径] [远程目标路径]
 		splitSpace((char *)command,sourcePath,destPath);
 		printf("cmd:%s\n",command);
@@ -164,7 +164,7 @@ int mysystem(const char *command)
 	}else if(!memcmp(command,"ftpget",6))	//下载数据
 	{
 		rt_thread_t tid;
-		char sourcePath[50],destPath[50];
+		char sourcePath[50]={'/0'},destPath[50]={'/0'};
 		//分割字符串为  命令 [本地源路径] [远程目标路径]
 		printf("cmd:%s\n",command);
 		splitSpace((char *)command,sourcePath,destPath);
@@ -177,7 +177,7 @@ int mysystem(const char *command)
 		if (tid != RT_NULL) rt_thread_startup(tid);
 	}else if(!memcmp(command,"rm",2))
 	{
-		char path[50];
+		char path[50]={'/0'};
 		memcpy(path,&command[3],(strlen(command)-3));
 		path[strlen(command)-3] = '\0';
 		printf("cmd:%s %s\n","rm",path);
