@@ -62,7 +62,7 @@ int rt_hw_GetWiredNetConnect(void)
 	return rt_hw_ETHIO_status();
 }
 
-#if 0
+#if 1
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 void lanrst()

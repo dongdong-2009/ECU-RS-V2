@@ -287,10 +287,9 @@ int Resolve_Server(ECUServerInfo_t *serverInfo)
 					}
 					
 				}
-				if(!strncmp(buff, "Port1", 5))
-					serverInfo->Port1=atoi(&buff[6]);
-				if(!strncmp(buff, "Port2", 5))
-					serverInfo->Port2=atoi(&buff[6]);
+				if(!strncmp(buff, "Port", 4))
+					serverInfo->Port1=atoi(&buff[5]);
+
 
 			}
 			fclose(fp);
@@ -299,12 +298,11 @@ int Resolve_Server(ECUServerInfo_t *serverInfo)
 		{
 			memset(serverInfo->domain,'\0',sizeof(serverInfo->domain)/sizeof(serverInfo->domain[0]));
 			memcpy(serverInfo->domain,TRINASOLAR_SERVER_DOMAIN,strlen(TRINASOLAR_SERVER_DOMAIN));
-			serverInfo->IP[0] = 192;
-			serverInfo->IP[1] = 168;
-			serverInfo->IP[2] = 1;
-			serverInfo->IP[3] = 2;
-			serverInfo->Port1 = TRINASOLAR_SERVER_Port;
-			serverInfo->Port2 = TRINASOLAR_SERVER_Port;			
+			serverInfo->IP[0] = 58;
+			serverInfo->IP[1] = 216;
+			serverInfo->IP[2] = 51;
+			serverInfo->IP[3] = 81;
+			serverInfo->Port1 = TRINASOLAR_SERVER_Port;		
 		}
 		fp = fopen("/CONFIG/TRINAFLG.CON", "r");
 		if(fp)
@@ -1282,8 +1280,8 @@ void APP_Response_ServerInfo(char mapping,ECUServerInfo_t *serverInfo)
 			SendData[packlength++] = serverInfo->Port1/256;
 			SendData[packlength++] = serverInfo->Port1%256;
 			//Port2
-			SendData[packlength++] = serverInfo->Port2/256;
-			SendData[packlength++] = serverInfo->Port2%256;
+			SendData[packlength++] = 0;
+			SendData[packlength++] = 0;
 			//Port3
 			SendData[packlength++] = 0;
 			SendData[packlength++] = 0;

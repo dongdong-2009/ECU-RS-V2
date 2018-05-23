@@ -155,7 +155,7 @@ int Save_Server(ECUServerInfo_t *serverInfo)
 		{
 			unlink("/CONFIG/TRINAFLG.CON");
 		}
-		sprintf(buff,"Domain=%s\nIP=%d.%d.%d.%d\nPort1=%d\nPort2=%d\n",serverInfo->domain,serverInfo->IP[0],serverInfo->IP[1],serverInfo->IP[2],serverInfo->IP[3],serverInfo->Port1,serverInfo->Port2);
+		sprintf(buff,"Domain=%s\nIP=%d.%d.%d.%d\nPort=%d\n",serverInfo->domain,serverInfo->IP[0],serverInfo->IP[1],serverInfo->IP[2],serverInfo->IP[3],serverInfo->Port1);
  		echo("/config/trina.con",buff);
 		restartThread(TYPE_TRINASOLAR);
 	}

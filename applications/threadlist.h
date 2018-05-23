@@ -65,9 +65,9 @@ typedef enum THREADTYPE {
 #define UPDATE_SERVER_IP					"60.190.131.190"
 #define UPDATE_SERVER_PORT1				9219
 
-#define TRINASOLAR_SERVER_DOMAIN		"192.168.1.2"
-#define TRINASOLAR_SERVER_IP			"192.168.1.1"
-#define TRINASOLAR_SERVER_Port			60000
+#define TRINASOLAR_SERVER_DOMAIN		"psinf-test.trinasolar.com"
+#define TRINASOLAR_SERVER_IP			"58.216.51.81"
+#define TRINASOLAR_SERVER_Port			3002
 #else
 
 #define CLIENT_SERVER_DOMAIN		""
@@ -122,7 +122,7 @@ typedef enum THREADTYPE {
 #define START_TIME_COLLECT								5			
 #define START_TIME_CONTROL_CLIENT					20 	//150
 #define START_TIME_CLIENT									30			//180
-#define START_TIME_TRINASOLAR                                              10
+#define START_TIME_TRINASOLAR                                              5
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
