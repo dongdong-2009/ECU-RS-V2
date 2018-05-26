@@ -1,20 +1,23 @@
-#ifndef __MYCOMMAND_H__
-#define __MYCOMMAND_H__
+#ifndef __ZIGBEE_CHANNEL_H__
+#define __ZIGBEE_CHANNEL_H__
 /*****************************************************************************/
-/*  File      : mycommand.h                                                  */
+/* File      : ZigBeeChannel.h                                               */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-04-13 * Shengfeng Dong  * Creation of the file                      */
+/*  2018-05-25 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-char mysystem(const char *command);
-void reboot_timer(int timeout);
+int set_ZigBeeChannel(const char *recvbuffer, char *sendbuffer);
+int response_ZigBeeChannel_Result(const char *recvbuffer, char *sendbuffer);
 
-#endif	/*__MYCOMMAND_H__*/
+void ResponseZigbeeChannel(char *UID,char channel,unsigned short panid,unsigned short shortadd);
+void ResponseECUZigbeeChannel(char channel,unsigned short panid,unsigned short shortadd);
+
+#endif	/*__ZIGBEE_CHANNEL_H__*/

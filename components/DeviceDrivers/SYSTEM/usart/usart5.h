@@ -54,7 +54,7 @@ int WIFI_ChangePasswd(char *NewPasswd);
 
 int SendToSocketA(char *data ,int length);
 int SendToSocketB(char *IP ,int port,char *data ,int length);
-int SendToSocketC(char *IP ,int port,char *data ,int length);
+int SendToSocketC(char *IP ,int port,char *sendbuffer ,int size);
 int InitWorkMode(void);
 int AT_CIPSEND(char ConnectID,int size);
 int AT_CIPSTART(char ConnectID,char *connectType,char *IP,int port);

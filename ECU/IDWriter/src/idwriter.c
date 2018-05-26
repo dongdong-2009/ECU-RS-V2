@@ -33,6 +33,7 @@
 #include "event.h"
 #include "inverter_id.h"
 #include "remoteUpdate.h"
+#include "InternalFlash.h"
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
@@ -372,6 +373,7 @@ void idwrite_thread_entry(void* parameter)
 			fp=fopen("/config/ecumac.con","w");
 			fputs(mac,fp);
 			fclose(fp);
+			WritePage(INTERNAL_FALSH_MAC,mac,17);
 			memset(mac,'\0',sizeof(mac));
 			
 			fp=fopen("/config/ecumac.con","r");

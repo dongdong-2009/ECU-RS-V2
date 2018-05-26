@@ -19,6 +19,8 @@
 #include "custom_command.h"
 #include <dfs_posix.h> 
 #include "datelist.h"
+#include "ZigBeeTransmission.h"
+#include "ZigBeeChannel.h"
 
 extern rt_mutex_t record_data_lock;
 extern ecu_info ecu;
@@ -32,6 +34,7 @@ enum CommandID{
 	A140, A141, A142, A143, A144, A145, A146, A147, A148, A149,
 	A150, A151, A152, A153, A154, A155, A156, A157, A158, A159,
 	A160, A161, A162, A163, A164, A165, A166, A167, A168, A169,
+	A170, A171, A172, A173, A174, A175, A176, A177, A178, A179,
 };
 int (*pfun[200])(const char *recvbuffer, char *sendbuffer);
 
@@ -39,10 +42,12 @@ void add_functions()
 {
 	pfun[A102] = response_inverter_id; 			//上报逆变器ID  										OK
 	pfun[A103] = set_inverter_id; 				//设置逆变器ID												OK
-	pfun[A108] = custom_command;				//向ECU发送自定义命令
+	pfun[A108] = custom_command;			//向ECU发送自定义命令
 	pfun[A136] = set_inverter_update;			//设置逆变器的升级标志		
-	pfun[A160] = set_rsd_function_switch; 			//RSD功能开关									OK
-
+	pfun[A160] = set_rsd_function_switch;		//RSD功能开关									OK
+	pfun[A171] = set_ZigBeeChannel;			//设置信道
+	pfun[A172] = response_ZigBeeChannel_Result;	//上报信道设置结果
+	pfun[A173] = transmission_ZigBeeInfo;		//ZigBee报文透传
 }
 
 /* 与EMA进行通讯 */
@@ -78,7 +83,6 @@ int communication_with_EMA(int next_cmd_id)
 					{
 						rt_free(recv_buffer);
 						rt_free(send_buffer);
-						AT_CIPCLOSE('4');
 						return -1;
 					}
 					memset(send_buffer, '\0', sizeof(send_buffer));
@@ -96,7 +100,6 @@ int communication_with_EMA(int next_cmd_id)
 					{
 						rt_free(recv_buffer);
 						rt_free(send_buffer);
-						AT_CIPCLOSE('4');
 						return -1;
 					}
 
@@ -106,7 +109,6 @@ int communication_with_EMA(int next_cmd_id)
 					print2msg(ECU_DBG_CONTROL_CLIENT,"communication_with_EMA recv",recv_buffer);
 					//校验命令
 					if(msg_format_check(recv_buffer) < 0){
-						AT_CIPCLOSE('4');
 						continue;
 					}
 					//解析命令号
@@ -128,7 +130,6 @@ int communication_with_EMA(int next_cmd_id)
 				}
 				//EMA命令发送完毕
 				else if(cmd_id == 100){
-					AT_CIPCLOSE('4');
 					break;
 				}
 				else{
@@ -138,9 +139,9 @@ int communication_with_EMA(int next_cmd_id)
 							ecu.ECUID12, cmd_id);
 				}
 				//将消息发送给EMA(自动计算长度,补上回车)
+				printf("%s\n",send_buffer);
 				SendToSocketC(control_client_arg.ip,randport(control_client_arg),send_buffer, strlen(send_buffer));
 				printmsg(ECU_DBG_CONTROL_CLIENT,">>End");
-				AT_CIPCLOSE('4');
 				//如果功能函数返回值小于0,则返回-1,程序会自动退出
 				if(next_cmd_id < 0){
 					rt_free(recv_buffer);
@@ -1080,14 +1081,12 @@ int response_process_result()
 				{
 					//发送一条记录
 					if(SendToSocketC(control_client_arg.ip,randport(control_client_arg),data, strlen(data)) < 0){
-						AT_CIPCLOSE('4');
 						break;
 					}
 					//发送成功则将标志位置0
 					change_pro_result_flag(item,'0');
 					//WIFI_Close(SOCKET_C);
 					printmsg(ECU_DBG_CONTROL_CLIENT,">>End");
-					AT_CIPCLOSE('4');
 				}
 #endif		
 
@@ -1138,11 +1137,9 @@ int response_process_result()
 				//有线连接失败，使用wifi传输 
 				{
 					if(SendToSocketC(control_client_arg.ip,randport(control_client_arg),sendbuffer, strlen(sendbuffer)) < 0){
-						AT_CIPCLOSE('4');
 						break;
 					}
 					change_inv_pro_result_flag(item,'0');
-					AT_CIPCLOSE('4');				
 				}
 #endif	
 
@@ -1204,7 +1201,7 @@ void ECUControl_thread_entry(void* parameter)
 				resend_control_record();
 				delete_control_file_resendflag0();		//清空数据resend标志全部为0的目录
 			}
-
+			memset(data,0x00,CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 			while(search_control_readflag(data,time,&flag,'1'))		//	获取一条resendflag为1的数据
 			{
 				if(compareTime(ControlDurabletime ,ControlThistime,ControlReportinterval))
@@ -1261,6 +1258,7 @@ void ECUControl_thread_entry(void* parameter)
 				delete_alarm_file_resendflag0();		//清空数据resend标志全部为0的目录
 			}
 			response_process_result();
+			memset(data,0x00,CONTROL_RECORD_HEAD + CONTROL_RECORD_ECU_HEAD + CONTROL_RECORD_INVERTER_LENGTH * MAXINVERTERCOUNT + CONTROL_RECORD_OTHER);
 			while(search_alarm_readflag(data,time,&flag,'1'))		//	获取一条resendflag为1的数据
 			{
 				

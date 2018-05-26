@@ -41,6 +41,7 @@ void init_RecordMutex(void);
 void echo(const char* filename,const char* string);
 void get_mac(rt_uint8_t  dev_addr[6]);
 int initPath(void);
+int strtohex(char str[2]);
 int initsystem(char *mac);
 int get_DHCP_Status(void);
 int file_get_array(MyArray *array, int num, const char *filename);

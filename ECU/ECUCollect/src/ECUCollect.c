@@ -18,8 +18,9 @@
 #include "third_inverter.h"
 #include "protocol_json.h"
 #include "TrinaSolar.h"
+#include "ZigBeeChannel.h"
+#include "ZigBeeTransmission.h"
 
-extern unsigned char TrinaSolarFunctionFlag;
 extern unsigned char rateOfProgress;
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -59,6 +60,7 @@ int init_all(inverter_info *inverter)
     init_Third_Inverter(thirdInverterInfo);
     init_tmpdb(inverter);
     init_rsdStatus(inverter);
+    ResponseECUZigbeeChannel(ecu.channel,ecu.panid,0);
     return 0;
 }
 
@@ -561,7 +563,7 @@ void ECUCollect_thread_entry(void* parameter)
     init_all(inverterInfo); //初始化所有逆变器
     TrinaFunction();
     rt_thread_delay(RT_TICK_PER_SECOND * START_TIME_COLLECT);
-
+    
     while(1)
     {
         if(compareTime(CollectClientDurabletime ,CollectClientThistime,CollectClientReportinterval))
@@ -605,7 +607,7 @@ void ECUCollect_thread_entry(void* parameter)
                 ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 
             }
-
+             process_ZigBeeTransimission();
         }
         if((CollectClientDurabletime-CollectClientThistime)<=305)
             CollectClientReportinterval = 300;

@@ -1,20 +1,20 @@
-#ifndef __MYCOMMAND_H__
-#define __MYCOMMAND_H__
+#ifndef __ZIGBEE_TRANSMISSION_H__
+#define __ZIGBEE_TRANSMISSION_H__
 /*****************************************************************************/
-/*  File      : mycommand.h                                                  */
+/* File      : ZigBeeTransmission.h                                          */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-04-13 * Shengfeng Dong  * Creation of the file                      */
+/*  2018-05-25 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-char mysystem(const char *command);
-void reboot_timer(int timeout);
+void process_ZigBeeTransimission(void);
 
-#endif	/*__MYCOMMAND_H__*/
+int transmission_ZigBeeInfo(const char *recvbuffer, char *sendbuffer);
+#endif	/*__ZIGBEE_TRANSMISSION_H__*/

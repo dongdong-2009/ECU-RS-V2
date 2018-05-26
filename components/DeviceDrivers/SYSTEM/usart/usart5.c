@@ -345,7 +345,7 @@ int ESP07S_sendData(char *data ,int length)
 	int i = 0;
 	clear_WIFI();
 	WIFI_SendData(data,length);
-	for(i = 0;i< 100;i++)
+	for(i = 0;i< 200;i++)
 	{
 		if(1 == detectionSENDOK(Cur))
 		{
@@ -397,6 +397,7 @@ int SendToSocketA(char *data ,int length)
 //SOCKET B 发送数据
 int SendToSocketB(char *IP ,int port,char *data ,int length)
 {
+	AT_CIPCLOSE('3');
 	WIFI_Recv_SocketB_Event = 0;
 	if(!AT_CIPSTART('3',"TCP",IP ,port))
 	{
@@ -407,13 +408,25 @@ int SendToSocketB(char *IP ,int port,char *data ,int length)
 }
 
 //SOCKET C 发送数据
-int SendToSocketC(char *IP ,int port,char *data ,int length)
+int SendToSocketC(char *IP ,int port,char *sendbuffer ,int size)
 {
+	char msg_length[6] = {'\0'};
+
+	if(sendbuffer[strlen(sendbuffer)-1] == '\n'){
+		sprintf(msg_length, "%05d", strlen(sendbuffer)-1);
+	}
+	else{
+		sprintf(msg_length, "%05d", strlen(sendbuffer));
+		strcat(sendbuffer, "\n");
+		size++;
+	}
+	strncpy(&sendbuffer[5], msg_length, 5);
+	AT_CIPCLOSE('4');
 	WIFI_Recv_SocketC_Event = 0;
 	if(!AT_CIPSTART('4',"TCP",IP ,port))
 	{
 		//printf("SendToSocketC: ino AT_CIPSTART\n");
-		return SendToSocket('4',data,length);
+		return SendToSocket('4',sendbuffer,size);
 	}
 	return -1;
 }

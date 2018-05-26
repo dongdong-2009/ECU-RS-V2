@@ -211,6 +211,10 @@ void Collect_TrinaSolar_Record(void)
     unsigned short CRC = 0;
     inverter_info *curinverter = inverterInfo;
     int i = 0;
+
+    if(TrinaSolarFunctionFlag != 1)
+        return;
+	
     if(ecu.validNum > 0)
     {
         Trina_Data = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
@@ -252,7 +256,7 @@ void Collect_TrinaSolar_Record(void)
         {
             //判断是否通讯上，且机型为jbox
 
-            if((1 == curinverter->status.comm_failed3_status)&& (1 == curinverter->model))
+            if((1 == curinverter->status.comm_failed3_status)/*&& (1 == curinverter->model)*/)
             {
                 //组件编号
                 memcpy(&Trina_Data[packlength],curinverter->uid,12);
@@ -717,7 +721,7 @@ int TrinaSolar_Response_relation_ECU_Module(void)
             sendbuff[packlen++] = curinverter->version%256;
             printf("version:%d\n",curinverter->version);
         }
-
+	curinverter++;
     }
     sendbuff[56] = (packlen-58)/256;
     sendbuff[57] = (packlen-58)%256;

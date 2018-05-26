@@ -13,7 +13,7 @@
 #include "rtc.h"
 #include "threadlist.h"
 #include "datelist.h"
-
+#include "InternalFlash.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -59,11 +59,13 @@ int Write_ECUID(char *ECUID)		//ECU ID  12字节
     ecuid[12] = '\0';
     fputs(ecuid,fp);
     fclose(fp);
+    WritePage(INTERNAL_FALSH_ID,ecuid,12);
     return 0;
 }
 int Read_ECUID(char *ECUID)		//读取ECUID  12字节
 {
     int fd;
+    char internalECUID[13] = {'\0'};
     fd = open("/config/ecuid.con", O_RDONLY, 0);
     if (fd >= 0)
     {
@@ -71,6 +73,15 @@ int Read_ECUID(char *ECUID)		//读取ECUID  12字节
         if('\n' == ECUID[strlen(ECUID)-1])
             ECUID[strlen(ECUID)-1] = '\0';
         close(fd);
+    }
+    //如果读取到第0个字节不为2，读取内部的
+    if(ECUID[0] != '2')
+    {
+    	ReadPage(INTERNAL_FALSH_ID,internalECUID,12);
+	if(internalECUID[0] == '2')
+	{
+		memcpy(ECUID,internalECUID,12);
+	}
     }
     return 0;
 }
@@ -420,7 +431,7 @@ int initsystem(char *mac)
     initPath();
     rt_hw_ms_delay(20);
     echo("/config/ecumac.con",mac);
-
+    WritePage(INTERNAL_FALSH_MAC,mac,17);
     return 0;
 }
 
@@ -438,6 +449,7 @@ void get_mac(rt_uint8_t  dev_addr[6])
 {
     FILE *fp;
     char macstr[18] = {'\0'};
+    char InternalMac[18] = {'\0'};
     fp = fopen("/config/ecumac.con","r");
     if(fp)
     {
@@ -450,10 +462,25 @@ void get_mac(rt_uint8_t  dev_addr[6])
             dev_addr[3]=strtohex(&macstr[9]);
             dev_addr[4]=strtohex(&macstr[12]);
             dev_addr[5]=strtohex(&macstr[15]);
-            fclose(fp);
-            return;
         }
         fclose(fp);
+    }
+    //查看前3个字节是否是80971B
+    if((dev_addr[0] == 0x80) &&(dev_addr[1] == 0x97) &&(dev_addr[2] == 0x1B))
+	return;
+    else
+    {
+    	ReadPage(INTERNAL_FALSH_MAC,InternalMac,17);
+	if(!memcmp(InternalMac,"80:97:1B",8))
+	{
+            dev_addr[0]=strtohex(&InternalMac[0]);
+            dev_addr[1]=strtohex(&InternalMac[3]);
+            dev_addr[2]=strtohex(&InternalMac[6]);
+            dev_addr[3]=strtohex(&InternalMac[9]);
+            dev_addr[4]=strtohex(&InternalMac[12]);
+            dev_addr[5]=strtohex(&InternalMac[15]);
+	   return;
+	}
     }
     dev_addr[0]=0x00;;
     dev_addr[1]=0x80;;

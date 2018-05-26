@@ -615,6 +615,23 @@ int zb_transmission( char *buff, int length)
 	return 0;
 }
 
+int zb_transmission_reply(char *buff)
+{
+	int temp_size = 0;
+	if(selectZigbee(400) <= 0)
+	{
+		printmsg(ECU_DBG_COMM,"Get reply time out");
+		return -1;
+	}
+	else
+	{
+		temp_size = ZIGBEE_SERIAL.read(&ZIGBEE_SERIAL,0, buff, 255);
+		printhexmsg(ECU_DBG_COMM,"Reply", buff, temp_size);
+		return temp_size;
+
+	}
+}
+
 int zb_send_cmd(inverter_info *inverter, char *buff, int length)		//zigbee°üÍ·
 {
 	unsigned char sendbuff[512] = {'\0'};

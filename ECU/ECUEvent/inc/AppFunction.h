@@ -21,6 +21,7 @@ typedef struct ECUServerInfo {
 		  
 } ECUServerInfo_t;
 
+int strToHex(const char *recvbuff,unsigned char *buff,int length);
 int Save_Server(ECUServerInfo_t *serverInfo);
 void App_GetBaseInfo(int Data_Len,const char *recvbuffer);
 void App_GetSystemInfo(int Data_Len,const char *recvbuffer);

@@ -83,6 +83,21 @@ int msg_ACK(char *sendbuffer,
 	return 0;
 }
 
+int msg_ACK_Char(char *sendbuffer,
+		const char *cmd_id, const char *timestamp, char ack_char_flag)
+{
+	char msg_body[35] = {'\0'};
+	char msg_length[6] = {'\0'};
+
+	msg_Header(sendbuffer, "A100");
+	sprintf(msg_body, "%.12s%.4s%.14s%cEND\n", ecu.ECUID12, cmd_id, timestamp, ack_char_flag);
+	strcat(sendbuffer, msg_body);
+	sprintf(msg_length, "%05d", strlen(sendbuffer)-1);
+	strncpy(&sendbuffer[5], msg_length, 5);
+	
+	return 0;
+}
+
 /*
  *  从协议中解析出整型变量(兼容以‘A’填充的整数)
  *

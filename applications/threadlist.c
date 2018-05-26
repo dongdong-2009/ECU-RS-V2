@@ -204,8 +204,8 @@ void rt_init_thread_entry(void* parameter)
 
 	
 #ifdef RT_USING_LWIP
-  /* initialize eth interface */
-  rt_hw_stm32_eth_init();
+         /* initialize eth interface */
+         rt_hw_stm32_eth_init();
 
 	/* initialize lwip stack */
 	/* register ethernetif device */
