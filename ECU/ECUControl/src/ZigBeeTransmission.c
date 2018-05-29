@@ -13,9 +13,15 @@ extern inverter_info inverterInfo[MAXINVERTERCOUNT];
 
 int formatTransmission(const char *recvbuffer)	//接受格式判断
 {
+	int i=0;
 	unsigned short packLen = 0,uidNum = 0,len=0;
 	char temp[6] = {'\0'};
 	memcpy(temp,&recvbuffer[5],5);
+	for(i=0;i<5;i++)
+	{
+		if(temp[i] == 'A')
+			temp[i] = '0';
+	}
 	temp[5] = '\0';
 	len = atoi(temp);
 	memcpy(temp,&recvbuffer[52],3);
@@ -87,6 +93,7 @@ void ZigBeeTransimission(int flag,unsigned short sendNum,unsigned short TimeInte
 			for(i = 0;i<uidNum;i++)
 			{
 				memcpy(UID,&Uidlist[0+12*i],12);
+				curinverter = inverterInfo;
 				for(j=0; j<MAXINVERTERCOUNT; j++, curinverter++)
 				{
 					if(!memcmp(curinverter->uid,UID,12))

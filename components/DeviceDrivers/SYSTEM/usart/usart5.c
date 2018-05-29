@@ -27,16 +27,13 @@
 #include "zigbee.h"
 #include "Serverfile.h"
 #include "mcp1316.h"
+#include "powerIO.h"
 
 /*****************************************************************************/
 /*  Definitions                                                              */
 /*****************************************************************************/
-#define WIFI_RCC                    RCC_APB2Periph_GPIOC
-#define WIFI_GPIO                   GPIOC
-#define WIFI_PIN                    (GPIO_Pin_6)
-
-extern unsigned char APSTA_Status;
 rt_mutex_t wifi_uart_lock = RT_NULL;
+extern unsigned char APSTA_Status;
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
@@ -140,16 +137,6 @@ void uart5_init(u32 bound){
     USART_ITConfig(UART5, USART_IT_RXNE, ENABLE);//开启中断
     USART_Cmd(UART5, ENABLE);                    //使能串口 
 
-
-    RCC_APB2PeriphClockCmd(WIFI_RCC,ENABLE);
-
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-
-    GPIO_InitStructure.GPIO_Pin   = WIFI_PIN;
-    GPIO_Init(WIFI_GPIO, &GPIO_InitStructure);
-	GPIO_SetBits(WIFI_GPIO, WIFI_PIN);
-	
 	wifi_uart_lock = rt_mutex_create("wifi_uart_lock", RT_IPC_FLAG_FIFO);
 }
 
@@ -229,27 +216,29 @@ int detectionUNLINK(int size)		//检测到OK  返回1   未检出到返回0
 //判断字符中是否有Ai-Thinker Technology Co. Ltd.  字符
 int detectionResetStatus(int size)		//检测到Ai-Thinker Technology Co. Ltd.  返回1   未检出到返回0
 {
-	int i=0;
-	for(i = 0;i<(size-30);i++)
-	{
-		if(!memcmp(&USART_RX_BUF[i],"Ai-Thinker Technology Co. Ltd.",30))
-		{
-			if(APSTA_Status == 1)
-			{
-				AT_CWMODE3(3);
-				AT_CIPMUX1();
-				AT_CIPSERVER();
-				AT_CIPSTO();
-			}else
-			{
-				AT_CWMODE3(1);
-				AT_CIPMUX1();
-			}
-			
-			return 1;			
-		}
-	}
-	return 0;
+    int i=0;
+    for(i = 0;i<(size-30);i++)
+    {
+        if(!memcmp(&USART_RX_BUF[i],"Ai-Thinker Technology Co. Ltd.",30))
+        {
+            if(APSTA_Status == 1)
+            {
+                AT_CWMODE3(3);
+	       printf("AP\n");
+                AT_CIPMUX1();
+                AT_CIPSERVER();
+                AT_CIPSTO();
+            }else
+            {
+                printf("STA\n");
+                AT_CWMODE3(1);
+                AT_CIPMUX1();
+            }
+
+            return 1;
+        }
+    }
+    return 0;
 }
 
 //判断字符中是否有OK  字符
@@ -332,30 +321,30 @@ void WIFI_GetEvent_ESP07S(void)
 
 int WIFI_Reset(void)
 {
-	GPIO_ResetBits(WIFI_GPIO, WIFI_PIN);
-	rt_hw_ms_delay(1000);
-	GPIO_SetBits(WIFI_GPIO, WIFI_PIN);
-	return 0;
+    rt_hw_powerIO_off();
+    rt_hw_ms_delay(1000);
+    rt_hw_powerIO_on();
+    return 0;
 }
 
 char sendbuff[4096] = {'\0'};
 
 int ESP07S_sendData(char *data ,int length)
 {
-	int i = 0;
-	clear_WIFI();
-	WIFI_SendData(data,length);
-	for(i = 0;i< 200;i++)
-	{
-		if(1 == detectionSENDOK(Cur))
-		{
-			return 0;
-		}
-		rt_thread_delay(1);
-	}
-	clear_WIFI();
-	return -1;
-	
+    int i = 0;
+    clear_WIFI();
+    WIFI_SendData(data,length);
+    for(i = 0;i< 100;i++)
+    {
+        if(1 == detectionSENDOK(Cur))
+        {
+            return 0;
+        }
+        rt_thread_delay(1);
+    }
+    clear_WIFI();
+    return -1;
+
 }
 
 int SendToSocket(char connectID,char *data ,int length)
@@ -397,38 +386,40 @@ int SendToSocketA(char *data ,int length)
 //SOCKET B 发送数据
 int SendToSocketB(char *IP ,int port,char *data ,int length)
 {
-	AT_CIPCLOSE('3');
-	WIFI_Recv_SocketB_Event = 0;
-	if(!AT_CIPSTART('3',"TCP",IP ,port))
-	{
-		//printf("SendToSocketB: ino AT_CIPSTART\n");
-		return SendToSocket('3',data,length);
-	}
-	return -1;
+    AT_CIPCLOSE('3');
+    WIFI_Recv_SocketB_Event = 0;
+    if(!AT_CIPSTART('3',"TCP",IP ,port))
+    {
+        //printf("SendToSocketB: ino AT_CIPSTART\n");
+        return SendToSocket('3',data,length);
+    }
+    return -1;
 }
 
 //SOCKET C 发送数据
-int SendToSocketC(char *IP ,int port,char *sendbuffer ,int size)
+int SendToSocketC(char *IP ,int port,char *data ,int length)
 {
-	char msg_length[6] = {'\0'};
+    char msg_length[6] = {'\0'};
 
-	if(sendbuffer[strlen(sendbuffer)-1] == '\n'){
-		sprintf(msg_length, "%05d", strlen(sendbuffer)-1);
-	}
-	else{
-		sprintf(msg_length, "%05d", strlen(sendbuffer));
-		strcat(sendbuffer, "\n");
-		size++;
-	}
-	strncpy(&sendbuffer[5], msg_length, 5);
-	AT_CIPCLOSE('4');
-	WIFI_Recv_SocketC_Event = 0;
-	if(!AT_CIPSTART('4',"TCP",IP ,port))
-	{
-		//printf("SendToSocketC: ino AT_CIPSTART\n");
-		return SendToSocket('4',sendbuffer,size);
-	}
-	return -1;
+    if(data[strlen(data)-1] == '\n'){
+        sprintf(msg_length, "%05d", strlen(data)-1);
+    }
+    else{
+        sprintf(msg_length, "%05d", strlen(data));
+        strcat(data, "\n");
+        length++;
+    }
+    strncpy(&data[5], msg_length, 5);
+    AT_CIPCLOSE('4');
+	
+    WIFI_Recv_SocketC_Event = 0;
+    print2msg(ECU_DBG_CONTROL_CLIENT,"Sent", data);
+    if(!AT_CIPSTART('4',"TCP",IP ,port))
+    {
+        //printf("SendToSocketC: ino AT_CIPSTART\n");
+        return SendToSocket('4',data,length);
+    }
+    return -1;
 }
 
 //----ESP01流程-------------------------------
