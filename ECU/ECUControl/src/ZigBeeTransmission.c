@@ -122,6 +122,7 @@ void ZigBeeTransimission(int flag,unsigned short sendNum,unsigned short TimeInte
 			for(i = 0;i<uidNum;i++)
 			{
 				memcpy(UID,&Uidlist[0+12*i],12);
+				curinverter = inverterInfo;
 				for(j=0; j<MAXINVERTERCOUNT; j++, curinverter++)
 				{
 					if(!memcmp(curinverter->uid,UID,12))
