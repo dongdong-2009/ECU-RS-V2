@@ -48,27 +48,38 @@ static rt_uint8_t heartbeat_stack[1024];
 static struct rt_thread heartbeat_thread;
 #endif
 
-void insertTrinaSetRSDInfo(unsigned short num,int RSDFunctionStatus,char *IDStr)
+void insertTrinaSetRSDInfo(unsigned short num,int RSDStatus,char *IDStr)
 {
     int i;
     char inverter_id[16] = {'\0'};
     int fd;
     char buff[50];
+    unsigned char turnonoffstatus = 0;	//开关机状态
+    unsigned char functionstatus = 0;	//RSD功能状态
+
+    //判断组件开启状态
+    if((RSDStatus/0x10) == 1)	//开机
+    {
+        turnonoffstatus = 0;
+    }else					//关机
+    {
+        turnonoffstatus = 1;
+    }
+    //判断RSD功能状态
+    if((RSDStatus%0x10) == 1)	//使能开启
+    {
+        functionstatus = 1;
+    }else					//使能关闭
+    {
+        functionstatus = 2;
+    }
     fd = open("/tmp/setrsd", O_WRONLY | O_APPEND | O_CREAT,0);
     if (fd >= 0)
     {
         for(i=0; i<num; i++)
         {
             memcpy(inverter_id,&IDStr[i*15],15);
-
-            if(RSDFunctionStatus == 0)//关闭RSD功能
-            {
-                sprintf(buff,"%s,2,0,000\n",inverter_id);
-            }else//开启RSD功能
-            {
-                sprintf(buff,"%s,1,1,000\n",inverter_id);
-            }
-
+            sprintf(buff,"%s,%d,%d,000\n",inverter_id,functionstatus,turnonoffstatus);
             write(fd,buff,strlen(buff));
         }
 
@@ -77,12 +88,20 @@ void insertTrinaSetRSDInfo(unsigned short num,int RSDFunctionStatus,char *IDStr)
 
 }
 
-void insertTrinaRSDCon(unsigned short num,int RSDFunctionStatus,char *IDStr)
+void insertTrinaRSDCon(unsigned short num,int RSDStatus,char *IDStr)
 {
     int i;
     char inverter_id[16] = {'\0'};
     int fd;
     char buff[50];
+    unsigned char functionstatus = 0;
+    if((RSDStatus == 0x00) || (RSDStatus == 0x10))
+    {
+    	functionstatus = 0;
+    }else if((RSDStatus == 0x01) || (RSDStatus == 0x11))
+    {
+    	functionstatus = 1;
+    }
     fd = open("/tmp/rsdcon.con", O_WRONLY  | O_APPEND | O_CREAT,0);
     if (fd >= 0)
     {
@@ -90,12 +109,12 @@ void insertTrinaRSDCon(unsigned short num,int RSDFunctionStatus,char *IDStr)
         {
             memcpy(inverter_id,&IDStr[i*15],15);
 
-            if(RSDFunctionStatus == 0)//关闭RSD功能
+            if(functionstatus == 0)//关闭RSD功能
             {
-                sprintf(buff,"%s,0\n",inverter_id);
+                sprintf(buff,"%s,%d\n",inverter_id,functionstatus);
             }else//开启RSD功能
             {
-                sprintf(buff,"%s,1\n",inverter_id);
+                sprintf(buff,"%s,%d\n",inverter_id,functionstatus);
             }
 
             write(fd,buff,strlen(buff));
@@ -280,7 +299,7 @@ void Collect_TrinaSolar_Record(void)
                 Trina_Data[packlength++] = (energy/256)%256;
                 Trina_Data[packlength++] = energy%256;
                 //RSD使能状态
-                Trina_Data[packlength++] = curinverter->status.function_status;
+                Trina_Data[packlength++] = curinverter->status.turn_on_off_flag * 0x10+ curinverter->status.function_status;
             }
             curinverter++;
 
@@ -576,6 +595,31 @@ int Trina_Login(void)   //登录
                 {
                     TrinaSolarConnectFlag = 1;
                     printf("Trina_Login successful\n");
+                    //获取登录的返回时间和系统事件对比
+                    TrinaSolarSetTime[0] = TrinaRecvBuff[58]/16 + '0';
+                    TrinaSolarSetTime[1] = TrinaRecvBuff[58]%16 + '0';
+                    TrinaSolarSetTime[2] = TrinaRecvBuff[59]/16 + '0';
+                    TrinaSolarSetTime[3] = TrinaRecvBuff[59]%16 + '0';
+                    TrinaSolarSetTime[4] = TrinaRecvBuff[60]/16 + '0';
+                    TrinaSolarSetTime[5] = TrinaRecvBuff[60]%16 + '0';
+                    TrinaSolarSetTime[6] = TrinaRecvBuff[61]/16 + '0';
+                    TrinaSolarSetTime[7] = TrinaRecvBuff[61]%16 + '0';
+                    TrinaSolarSetTime[8] = TrinaRecvBuff[62]/16 + '0';
+                    TrinaSolarSetTime[9] = TrinaRecvBuff[62]%16 + '0';
+                    TrinaSolarSetTime[10] = TrinaRecvBuff[63]/16 + '0';
+                    TrinaSolarSetTime[11] = TrinaRecvBuff[63]%16 + '0';
+                    TrinaSolarSetTime[12] = TrinaRecvBuff[64]/16 + '0';
+                    TrinaSolarSetTime[13] = TrinaRecvBuff[64]%16 + '0';
+                    TrinaSolarSetTime[14] = '\0';
+                    apstime(curTime);
+                    if(memcmp(TrinaSolarSetTime,curTime,12))
+                    {
+                         printf("TrinaSolarSetTime : %s\n",TrinaSolarSetTime);
+                         set_time(TrinaSolarSetTime);
+                        //重启采集线程
+                        restartThread(TYPE_DATACOLLECT);
+                    }
+					
                     return 0;
                 }else
                 {
@@ -719,6 +763,7 @@ int TrinaSolar_Response_relation_ECU_Module(void)
             packlen += 15;
             sendbuff[packlen++] = curinverter->version/256;
             sendbuff[packlen++] = curinverter->version%256;
+	   sendbuff[packlen++] = curinverter->model;
             printf("version:%d\n",curinverter->version);
         }
 	curinverter++;
@@ -812,6 +857,10 @@ void process_TrinaEvent(int Data_Len,const unsigned char *recvbuffer)
     {
         TrinaSolarDataFlag = 1;
 
+    }else if(TrinaCMD == 0x0A06)
+    {
+        TrinaSolarDataFlag = 1;
+
     }else if(TrinaCMD == 0x0004)	//设置服务器
     {
         char IP[50] = {'\0'};
@@ -888,28 +937,48 @@ void process_TrinaEvent(int Data_Len,const unsigned char *recvbuffer)
     {
         if(recvbuffer[58] == 0x00)	//全部设置
         {
-            if(recvbuffer[59] == 0x01)	//使能
+            if(recvbuffer[59] == 0x01)	//组件关闭  RSD功能使能
             {
                 save_rsdFunction_change_flag();
-                saveChangeFunctionStatus(1,2,0);//打开心跳功能
+                saveChangeFunctionStatus(1,2,0);
                 unlink("/tmp/setrsd");
                 unlink("/tmp/rsdcon.con");
                 //重启采集线程
                 restartThread(TYPE_DATACOLLECT);
-            }else	//禁能
+            }else if(recvbuffer[59] == 0x10)	//组件开启 RSD功能禁能
             {
                 save_rsdFunction_change_flag();
-                saveChangeFunctionStatus(2,0,0);//关闭心跳功能
+                saveChangeFunctionStatus(2,0,0);
                 unlink("/tmp/setrsd");
                 unlink("/tmp/rsdcon.con");
                 //重启采集线程
                 restartThread(TYPE_DATACOLLECT);
+            }else if(recvbuffer[59] == 0x11)	//组件开启  RSD功能使能
+            {
+                save_rsdFunction_change_flag();
+                saveChangeFunctionStatus(1,0,0);
+                unlink("/tmp/setrsd");
+                unlink("/tmp/rsdcon.con");
+                //重启采集线程
+                restartThread(TYPE_DATACOLLECT);
+            }else if(recvbuffer[59] == 0x00)	//组件关闭 RSD功能禁用
+            {
+                save_rsdFunction_change_flag();
+                saveChangeFunctionStatus(2,1,0);
+                unlink("/tmp/setrsd");
+                unlink("/tmp/rsdcon.con");
+                //重启采集线程
+                restartThread(TYPE_DATACOLLECT);
+            }else
+            {
+            	;
             }
+            		
         }else		//部分设置
         {
             unsigned short num = recvbuffer[58];
             int RSDFunctionStatus = recvbuffer[59];
-            insertTrinaSetRSDInfo(num ,RSDFunctionStatus,(char *)&recvbuffer[60]);
+            insertTrinaSetRSDInfo(num ,RSDFunctionStatus,(char *)&recvbuffer[60]);   
             insertTrinaRSDCon(num ,RSDFunctionStatus,(char *)&recvbuffer[60]);
             //重启main线程
             restartThread(TYPE_DATACOLLECT);
@@ -927,7 +996,7 @@ void process_TrinaEvent(int Data_Len,const unsigned char *recvbuffer)
 int checkTrinaSolarDataFormat(char *data,int length)
 {
     unsigned short CRC_calc = 0,CRC_read = 0,CRClen = 0;
-    if((data[52] == 0x02) &&(data[53] == 0x01))
+    if(((data[52] == 0x02) &&(data[53] == 0x01)) ||(((data[52] == 0x02) &&(data[53] == 0x06)) ))
     {
         CRClen = length-2;
         CRC_calc = computeCRC((unsigned char *)data, CRClen);
@@ -947,7 +1016,17 @@ int checkTrinaSolarDataFormat(char *data,int length)
     }
 }
 
-void process_TrinaData(void)
+void transformHistoryData(char *data,int length)
+{
+    unsigned short CRC = 0;
+    data[52] = 0x02;
+    data[53] = 0x06;
+    CRC = computeCRC((unsigned char*)data, (length - 2));
+    data[length-2] = (CRC & 0xFF);
+    data[length-1] = (CRC >> 8);
+}
+
+void process_TrinaData(int uploadflag)	//flag: 1:表示变更为历史数据上传，0表示，保持原有数据上传
 {
     char recordpath[100] = { '\0' };
     int fd = 0,flag = 0;
@@ -959,6 +1038,7 @@ void process_TrinaData(void)
     while(1)
     {
         ret = GetTrinaSolarNewRecord(recordpath,&flag);
+
         if(ret == 1)	//存在数据
         {
             fd = open(recordpath, O_RDONLY, 0);
@@ -967,6 +1047,12 @@ void process_TrinaData(void)
                 memset(trina_data, '\0', CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
                 length = read(fd, trina_data, CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
                 close(fd);
+                if(uploadflag == 1)
+                {
+                    //转换为历史数据格式0206
+                    transformHistoryData(trina_data,length);
+                }
+				
                 //判断读到的格式是否正确，不正确直接删除文件
                 if(1 == checkTrinaSolarDataFormat(trina_data,length))
                 {
@@ -1143,14 +1229,14 @@ void TrinaSolar_thread_entry(void* parameter)	//天合线程
             rt_thread_detach(&heartbeat_thread);
             result = rt_thread_init(&heartbeat_thread,"Triheart",TrinaSolar_heartbeat_thread_entry,RT_NULL,(rt_uint8_t*)&heartbeat_stack[0],sizeof(heartbeat_stack),THREAD_PRIORITY_TRINASOLAR_HEARTBATE,5);
             if (result == RT_EOK)	rt_thread_startup(&heartbeat_thread);
-            //校时命令
-            Trina_Timing();
+
+            process_TrinaData(1);
             //正常发送数据
             while(1)
             {
-                process_TrinaData();
-                //发送正常发电数据
                 rt_thread_delay(RT_TICK_PER_SECOND*60);
+                //发送正常发电数据
+                process_TrinaData(0);
             }
 
         }else
@@ -1245,9 +1331,9 @@ void getTri(void)
     printf("ret:%d %s %d\n",ret,path,flag);
 }
 
-void proTri(void)
+void proTri(int i)
 {
-    process_TrinaData();
+    process_TrinaData(i);
 }
 void proTiming()
 {

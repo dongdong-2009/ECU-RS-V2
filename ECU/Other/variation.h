@@ -59,8 +59,8 @@ typedef struct
     unsigned short comm_status:1;					//1表示读到当前数据；0表示读取数据失败
     unsigned short bindflag:1;					//逆变器绑定短地址标志，1表示绑定，0表示未绑定
     unsigned short flag:1;					//id中的flag标志
-    unsigned short mos_status:1;			//MOS管状态
-    unsigned short last_mos_status:1;		//最后一次MOS管状态
+    unsigned char turn_on_off_flag:1;				//当前读取到的开关机状态  0:关机 1:开机
+    unsigned char last_turn_on_off_flag:1;			//上一轮的开关机状态	0:关机 1:开机
     unsigned short last_function_status:1;	//功能开关状态: 1 开    0 关
     unsigned short last_pv1_low_voltage_pritection:1;	// PV1欠压保护
     unsigned short last_pv2_low_voltage_pritection:1;	// PV2欠压保护
@@ -71,7 +71,7 @@ typedef struct
 typedef struct
 {
     unsigned char rsd_config_status:1;			//RSD配置状态: 1 RSD功能使能   0 RSD功能禁能
-    unsigned char Reserve1:7;				//保留
+    unsigned char Reserve1:7;					//保留
 }config_status_t;
 
 typedef struct

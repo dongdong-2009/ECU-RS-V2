@@ -79,8 +79,8 @@ int init_inverter(inverter_info *inverter)
 		curinverter->status.comm_status = 0;
 		curinverter->status.bindflag = 0;
 		curinverter->status.flag = 0;
-		curinverter->status.mos_status = 1;
-		curinverter->status.last_mos_status= 1;
+		curinverter->status.turn_on_off_flag = 0;
+		curinverter->status.last_turn_on_off_flag = 0;
 		curinverter->status.last_function_status = 1;
 		curinverter->status.last_pv1_low_voltage_pritection = 0;
 		curinverter->status.last_pv2_low_voltage_pritection = 0;
@@ -121,6 +121,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->no_getdata_num = 0;
 		//初始化配置状态为RSD系统状态
 		curinverter->config_status.rsd_config_status = RSDStatus;
+
 	}
 	
 	while(1) {
@@ -182,8 +183,8 @@ int init_inverter_A103(inverter_info *inverter)
 		curinverter->status.comm_status = 0;
 		curinverter->status.bindflag = 0;
 		curinverter->status.flag = 0;
-		curinverter->status.mos_status = 1;
-		curinverter->status.last_mos_status= 1;
+		curinverter->status.turn_on_off_flag = 0;
+		curinverter->status.last_turn_on_off_flag = 0;
 		curinverter->status.last_function_status = 1;
 		curinverter->status.last_pv1_low_voltage_pritection = 0;
 		curinverter->status.last_pv2_low_voltage_pritection = 0;

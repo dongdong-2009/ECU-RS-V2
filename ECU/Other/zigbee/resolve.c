@@ -36,7 +36,7 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	unsigned short pre_version = inverter->version;
 
 	//保存上一轮报警状态数据
-	inverter->status.last_mos_status = inverter->status.mos_status;
+	inverter->status.last_turn_on_off_flag = inverter->status.turn_on_off_flag;
 	inverter->status.last_function_status = inverter->status.function_status;
 	inverter->status.last_pv1_low_voltage_pritection = inverter->status.pv1_low_voltage_pritection;
 	inverter->status.last_pv2_low_voltage_pritection = inverter->status.pv2_low_voltage_pritection;
@@ -101,15 +101,19 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	inverter->heart_rate = inverter_data[42]*256 + inverter_data[43];
 	inverter->off_times = inverter_data[44]*256 + inverter_data[45];
 	inverter->Mos_CloseNum = inverter_data[46];
+	if((inverter_data[49] == 0x00) ||(inverter_data[49] == 0xff))
+	{
+		inverter->status.turn_on_off_flag = 1;
+	}else
+	{
+		inverter->status.turn_on_off_flag = 0;
+	}
 	//解析超时时间
 	inverter->RSDTimeout = inverter_data[50];
 	//解析PV1 PV2超时次数
 	inverter->PV1_low_voltageNUM = inverter_data[51]*256+inverter_data[52];
 	inverter->PV2_low_voltageNUM = inverter_data[53]*256+inverter_data[54];
-	if(inverter->PV_Output > 0) 
-		inverter->status.mos_status = 1;
-	else
-		inverter->status.mos_status = 0;
+
 
 	memcpy(&inverter->parameter_status,&inverter_data[56],2);
 	//通讯组BUG解决代码

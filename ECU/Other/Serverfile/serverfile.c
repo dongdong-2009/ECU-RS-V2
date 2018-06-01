@@ -3044,7 +3044,7 @@ void create_alarm_record(inverter_info *inverter)
     {
         if(curinverter->status.comm_status == 1)
         {
-            if((curinverter->status.last_mos_status != curinverter->status.mos_status) || (curinverter->status.last_function_status != curinverter->status.function_status) || (curinverter->status.last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((curinverter->status.last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection))|| ((curinverter->RSDTimeout != curinverter->last_RSDTimeout)))
+            if((curinverter->status.last_turn_on_off_flag != curinverter->status.turn_on_off_flag) || (curinverter->status.last_function_status != curinverter->status.function_status) || (curinverter->status.last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((curinverter->status.last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection))|| ((curinverter->RSDTimeout != curinverter->last_RSDTimeout)))
             {
                 //存在与最后一轮不同的状态，需要生成状态告警信息
                 create_flag = 1;
@@ -3072,11 +3072,11 @@ void create_alarm_record(inverter_info *inverter)
         {
             if(curinverter->status.comm_status == 1)
             {
-                if((curinverter->status.last_mos_status != curinverter->status.mos_status) || (curinverter->status.last_function_status != curinverter->status.function_status) || (curinverter->status.last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((curinverter->status.last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection)))
+                if((curinverter->status.last_turn_on_off_flag != curinverter->status.turn_on_off_flag) || (curinverter->status.last_function_status != curinverter->status.function_status) || (curinverter->status.last_pv1_low_voltage_pritection != curinverter->status.pv1_low_voltage_pritection) || ((curinverter->status.last_pv2_low_voltage_pritection != curinverter->status.pv2_low_voltage_pritection)))
                 {
                     memcpy(&alarm_data[length],curinverter->uid,12);
                     length += 12;
-                    alarm_data[length++] = curinverter->status.mos_status + '0';
+                    alarm_data[length++] = curinverter->status.turn_on_off_flag + '0';
                     alarm_data[length++] = curinverter->status.function_status + '0';
                     alarm_data[length++] = curinverter->status.pv1_low_voltage_pritection+ '0';
                     alarm_data[length++] = curinverter->status.pv2_low_voltage_pritection+ '0';
