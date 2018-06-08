@@ -552,6 +552,82 @@ int process_IDUpdate(void)
     return 0;
 }
 
+int OPT700RSreboot(void)
+{
+    int i = 0;
+    for(i = 0;i < 3; i++)
+    {
+        zb_set_heartSwitch_boardcast(2,1,0);	//禁能关机
+        rt_thread_delay(RT_TICK_PER_SECOND);
+    }
+
+    for(i = 0;i < 3; i++)
+    {
+        zb_set_heartSwitch_boardcast(1,1,0);	//禁能关机
+        rt_thread_delay(RT_TICK_PER_SECOND);
+    }
+    return 0;
+}
+
+//连续2轮超过20%的700RS(或优化器)功率小于1W
+//(早上轮训的前20分钟与组网后的前20分钟不考虑)
+//则在随后的2小时内没30分钟进行一次开关操作
+int process_OPT700RSBUG(void)	//处理优化器BUG
+{
+    int i = 0;
+    int flag = 0;
+    ecu.abnormalNum = 0;
+    //查询异常的台数
+    for(i = 0;i < ecu.validNum;i++)
+    {
+        if(inverterInfo[i].status.collect_ret == 1)
+        {
+            flag = 1;
+            //功率小于1W
+            if((inverterInfo[i].AveragePower1 < 10) ||(inverterInfo[i].AveragePower2 < 10))
+            {
+                ecu.abnormalNum++;
+            }
+        }
+    }
+
+    //获取有数据的次数
+    if(ecu.haveDataTimes == 0)
+    {
+        if(flag == 1)
+            ecu.haveDataTimes++;
+    }else
+    {
+        ecu.haveDataTimes++;
+    }
+
+    
+    if((ecu.haveDataTimes > 4)&&(ecu.haveDataTimes > ecu.nextdetectionTimes)&&((ecu.overdetectionTimes ==0)|| (ecu.haveDataTimes < ecu.overdetectionTimes)))	//第五轮开始
+    {
+        if((ecu.abnormalNum*10/ecu.count) > 2)	//大于百分之20
+        {
+            ecu.faulttimes++;	//连续失败次数加1
+        }else
+        {
+            ecu.faulttimes = 0;
+        }
+
+        if(ecu.faulttimes == 2)	//连续失败两次，重启逆变器
+        {
+        	   printf("ecu.haveDataTimes:%d\n",ecu.haveDataTimes);
+            ecu.nextdetectionTimes = ecu.haveDataTimes + 6;
+            if(ecu.overdetectionTimes == 0)
+                ecu.overdetectionTimes = ecu.haveDataTimes + 24;
+
+            //重启优化器或者关断器
+            OPT700RSreboot();
+            ecu.faulttimes = 0;
+
+        }
+    }
+    return 0;
+}
+
 //该线程主要用于相关数据的采集工作
 void ECUCollect_thread_entry(void* parameter)
 {
@@ -607,7 +683,8 @@ void ECUCollect_thread_entry(void* parameter)
                 ECUCommThreadFlag = EN_ECUHEART_DISABLE;
 
             }
-             process_ZigBeeTransimission();
+            process_ZigBeeTransimission();
+            process_OPT700RSBUG();
         }
         if((CollectClientDurabletime-CollectClientThistime)<=305)
             CollectClientReportinterval = 300;

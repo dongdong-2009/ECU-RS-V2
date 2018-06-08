@@ -49,23 +49,30 @@
 #pragma pack(push)  
 #pragma pack(1) 
 
+typedef enum
+{ 
+    DEVICE_UNKNOWN    	= 0,		//未知设备
+    DEVICE_OPT700 		= 1,		//优化器
+    DEVICE_OPT700_RS  	= 2,		//关断器
+    DEVICE_JBOX 		= 3		//Jbox
+} eDeviceType;
+
 typedef struct
 {
     unsigned short comm_failed3_status:1;			//通讯状态 :  1 正常通讯   0 连续三次通讯不上
-    unsigned short function_status:1;	//功能开关状态: 1 开    0 关
-    unsigned short pv1_low_voltage_pritection:1;	// PV1欠压保护
-    unsigned short pv2_low_voltage_pritection:1;	// PV2欠压保护
-    unsigned short device_Type:2;					//设备类型  0:开关设备 1；监控设备
-    unsigned short comm_status:1;					//1表示读到当前数据；0表示读取数据失败
+    unsigned short function_status:1;				//RSD功能开关状态: 1 RSD功能开    0 RSD功能 关
+    unsigned short pv1_low_voltage_pritection:1;	// PV1欠压保护(由优化器自动上报)
+    unsigned short pv2_low_voltage_pritection:1;	// PV2欠压保护(由优化器自动上报)
+    unsigned short device_Type:2;				//设备类型  0:开关设备 1；监控设备
+    unsigned short comm_status:1;				//1表示读到当前数据；0表示读取数据失败
     unsigned short bindflag:1;					//逆变器绑定短地址标志，1表示绑定，0表示未绑定
-    unsigned short flag:1;					//id中的flag标志
+    unsigned short flag:1;						//id中的flag标志
     unsigned char turn_on_off_flag:1;				//当前读取到的开关机状态  0:关机 1:开机
-    unsigned char last_turn_on_off_flag:1;			//上一轮的开关机状态	0:关机 1:开机
-    unsigned short last_function_status:1;	//功能开关状态: 1 开    0 关
-    unsigned short last_pv1_low_voltage_pritection:1;	// PV1欠压保护
-    unsigned short last_pv2_low_voltage_pritection:1;	// PV2欠压保护
+    unsigned short alarm_flag:1;					//是否需要上报告警标志位
     unsigned short collect_ret:1;
-    unsigned short turn_on_collect_data:1;	//开机时，文件中是否有对应RSD数据(数据为上一轮关机前存储数据)
+    unsigned short turn_on_collect_data:1;			//开机时，文件中是否有对应RSD数据(数据为上一轮关机前存储数据)
+    unsigned char pv2_alarm_status:2	;			//ECU检测到OPT告警状态0: 无报警 1:PV2输入电压大于100V   2:PV2输入电压为0V
+    unsigned char Reserve1:1; 
 }status_t;
 
 typedef struct
@@ -96,7 +103,10 @@ typedef struct
 typedef struct inverter_info_t{
     char uid[13];				//逆变器ID（在通讯的时候转换为BCD编码）
     unsigned short shortaddr;		//Zigbee的短地址
-    unsigned char model;			//机型：00未知 01优化器 02 关断器 03JBOX
+    unsigned char model;			//机型：00未知 
+    							//                01优化器 
+    							//                02 关断器 
+    							//                03JBOX
     int zigbee_version;			//zigbee版本号ZK
 
     unsigned short version;		//软件版本号
@@ -124,7 +134,6 @@ typedef struct inverter_info_t{
     unsigned int PV2_Energy;		//当前一轮PV2发电量	精度 1焦耳
     unsigned int PV_Output_Energy;//当前一轮PV2发电量	精度 1焦耳
     unsigned char Mos_CloseNum;	//设备上电后MOS管关断次数
-    unsigned char last_RSDTimeout;		//上一轮RSD超时时间
     unsigned char RSDTimeout;			//RSD超时时间
     unsigned short PV1_low_voltageNUM;	//PV1欠压次数
     unsigned short PV2_low_voltageNUM;	//PV2欠压次数
@@ -170,7 +179,12 @@ typedef struct ecu_info_t{
     unsigned char ThirdIDUpdateFlag;		//第三方逆变器id更新标志
     int thirdCommNum;
     int thirdCount;		//第三方逆变器总台数
-
+    
+    unsigned short abnormalNum;			//出现异常的台数
+    unsigned int haveDataTimes;			//有数据的轮数
+    unsigned char faulttimes;			//故障次数
+    unsigned int nextdetectionTimes;		//下一次检测次数
+    unsigned int overdetectionTimes;		//最后一次检测次数
 }ecu_info;
 
 typedef struct

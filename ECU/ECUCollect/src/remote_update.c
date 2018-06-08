@@ -89,7 +89,7 @@ int Sendupdatepackage_start(inverter_info *inverter)	//发送单点开始数据包
     int fd = -1;
     FILE *fp = NULL;
 
-    if(0x01 ==  inverter->model)
+    if(DEVICE_OPT700 ==  inverter->model)
     {
         fd=open("/FTP/UPOPT700.BIN",O_RDONLY, 0);
     }else
@@ -200,7 +200,7 @@ int Sendupdatepackage_single(inverter_info *inverter)	//发送单点数据包
     sendbuff[74]=0xfe;
     sendbuff[75]=0xfe;
 
-    if(0x01 ==  inverter->model)
+    if(DEVICE_OPT700 ==  inverter->model)
     {
         fd=open("/FTP/UPOPT700.BIN", O_RDONLY,0);
     }else
@@ -481,7 +481,7 @@ int crc_bin_file(inverter_info *inverter)
     unsigned char data[100]={'\0'};
     int crc,i = 0;
     int ret;
-    if(0x01 ==  inverter->model)
+    if(DEVICE_OPT700 ==  inverter->model)
     {
         crc=crc_file("/FTP/UPOPT700.BIN");
     }else

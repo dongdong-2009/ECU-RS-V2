@@ -50,6 +50,11 @@ int init_ecu(void)
 	ecu.idUpdateFlag = 0;
 	ecu.ThirdIDUpdateFlag = 0;
 	ecu.thirdCommNum = 0;
+	ecu.abnormalNum = 0;
+	ecu.haveDataTimes = 0;
+	ecu.faulttimes = 0;
+	ecu.nextdetectionTimes = 0;
+	ecu.overdetectionTimes = 0;
 	return 0;
 }
 
@@ -80,10 +85,8 @@ int init_inverter(inverter_info *inverter)
 		curinverter->status.bindflag = 0;
 		curinverter->status.flag = 0;
 		curinverter->status.turn_on_off_flag = 0;
-		curinverter->status.last_turn_on_off_flag = 0;
-		curinverter->status.last_function_status = 1;
-		curinverter->status.last_pv1_low_voltage_pritection = 0;
-		curinverter->status.last_pv2_low_voltage_pritection = 0;
+		curinverter->status.alarm_flag = 0;
+		curinverter->status.pv2_alarm_status = 0;
 		curinverter->status.turn_on_collect_data = 0;
 		curinverter->temperature = 100;
 		memset(&curinverter->parameter_status,0x00,2);
@@ -184,11 +187,8 @@ int init_inverter_A103(inverter_info *inverter)
 		curinverter->status.bindflag = 0;
 		curinverter->status.flag = 0;
 		curinverter->status.turn_on_off_flag = 0;
-		curinverter->status.last_turn_on_off_flag = 0;
-		curinverter->status.last_function_status = 1;
-		curinverter->status.last_pv1_low_voltage_pritection = 0;
-		curinverter->status.last_pv2_low_voltage_pritection = 0;
-		
+		curinverter->status.alarm_flag = 0;
+		curinverter->status.pv2_alarm_status = 0;
 		curinverter->restartNum = 0;
 		curinverter->PV1 = 0;
 		curinverter->PV2 = 0;

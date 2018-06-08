@@ -43,7 +43,7 @@ void add_functions()
 	pfun[A102] = response_inverter_id; 			//上报逆变器ID  										OK
 	pfun[A103] = set_inverter_id; 				//设置逆变器ID												OK
 	pfun[A108] = custom_command;			//向ECU发送自定义命令
-	pfun[A136] = set_inverter_update;			//设置逆变器的升级标志		
+	pfun[A136] = set_inverter_update;			//设置逆变器的升级标志	
 	pfun[A160] = set_rsd_function_switch;		//RSD功能开关									OK
 	pfun[A171] = set_ZigBeeChannel;			//设置信道
 	pfun[A172] = response_ZigBeeChannel_Result;	//上报信道设置结果

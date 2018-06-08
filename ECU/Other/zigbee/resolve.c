@@ -32,15 +32,23 @@ extern ecu_info ecu;
 int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 {
 	char status = 0;
+	unsigned char last_turn_on_off_flag = 0;
+	unsigned char last_function_status = 0;
+	unsigned char last_pv1_low_voltage_pritection = 0;
+	unsigned char last_pv2_low_voltage_pritection = 0;
+	unsigned char last_RSDTimeout = 0;
+	unsigned char last_pv2_alarm_status = 0;		//最后一次PV的告警状态
 	unsigned char pre_model = inverter->model;  //现将原来的model保存   如果和获取到的不同 更新model表
 	unsigned short pre_version = inverter->version;
+	inverter->status.alarm_flag = 0;
 
 	//保存上一轮报警状态数据
-	inverter->status.last_turn_on_off_flag = inverter->status.turn_on_off_flag;
-	inverter->status.last_function_status = inverter->status.function_status;
-	inverter->status.last_pv1_low_voltage_pritection = inverter->status.pv1_low_voltage_pritection;
-	inverter->status.last_pv2_low_voltage_pritection = inverter->status.pv2_low_voltage_pritection;
-	inverter->last_RSDTimeout = inverter->RSDTimeout;
+	last_turn_on_off_flag = inverter->status.turn_on_off_flag;
+	last_function_status = inverter->status.function_status;
+	last_pv1_low_voltage_pritection = inverter->status.pv1_low_voltage_pritection;
+	last_pv2_low_voltage_pritection = inverter->status.pv2_low_voltage_pritection;
+	last_pv2_alarm_status = inverter->status.pv2_alarm_status;
+	last_RSDTimeout = inverter->RSDTimeout;
 
 	inverter->PV_Output = inverter_data[4]*256 + inverter_data[5];
 	inverter->PV1 = inverter_data[6]*256 + inverter_data[7];
@@ -68,10 +76,10 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	{
 		if(!memcmp(inverter->uid,"601",3))
 		{
-			inverter->model  = 0x01;
+			inverter->model  = DEVICE_OPT700;
 		}else if (!memcmp(inverter->uid,"611",3))	//RSD机型码位传的为0xff
 		{
-			inverter->model  = 0x02;
+			inverter->model  = DEVICE_OPT700_RS;
 		}
 	}
 	
@@ -127,5 +135,35 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 	{
 		ecu.idUpdateFlag = 1;
 	}
+
+	//判断是否需要上报告警状态
+	if((last_turn_on_off_flag != inverter->status.turn_on_off_flag) || (last_function_status != inverter->status.function_status) || (last_pv1_low_voltage_pritection != inverter->status.pv1_low_voltage_pritection) || ((last_pv2_low_voltage_pritection != inverter->status.pv2_low_voltage_pritection))|| ((inverter->RSDTimeout != last_RSDTimeout)))
+	{
+		inverter->status.alarm_flag = 1;
+	}
+
+	//关断器和优化器存在多个报警位
+	if(inverter->model == DEVICE_OPT700_RS ||inverter->model == DEVICE_OPT700)
+	{
+		if(inverter->PV2  >= 1000)	//PV2电压大于100V，报警1
+		{
+			inverter->PV2 = inverter->PV1;
+			inverter->status.pv2_alarm_status = 1;
+		}else if(inverter->PV2 == 0)
+		{
+			inverter->status.pv2_alarm_status = 2;
+		}else
+		{
+			;
+		}
+		
+		if(last_pv2_alarm_status != inverter->status.pv2_alarm_status)
+		{
+			inverter->status.alarm_flag = 1;
+		}
+		
+	}
+
+	
 	return 0;
 }
