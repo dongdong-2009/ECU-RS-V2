@@ -282,7 +282,21 @@ void Collect_Client_Record(void)
                         curinverter->status.turn_on_collect_data = 1;
                     }else
                     {
-                        curinverter->EnergyPV2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy);
+                        if(curinverter->model == 2)
+                        {
+                            if(curinverter->PV2_low_differenceNUM == 0)
+                            {	//关段次数为0
+                                curinverter->EnergyPV2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy);
+                            }else
+                            {
+                                curinverter->EnergyPV2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)*((Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) - curinverter->PV2_low_differenceNUM)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime));
+                            }
+                        }else
+                        {
+                            curinverter->EnergyPV2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy);
+                        }
+
+                        
                     }
 
                     //pv2输入电量(两轮计算差值)
