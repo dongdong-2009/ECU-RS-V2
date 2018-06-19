@@ -5,10 +5,10 @@
 #include <unistd.h>
 #include "rtthread.h"
 
-//≤¡≥˝√¸¡Ó
+//????
 int ErasePage(eInternalFlashType type)
 {
-	if((type != INTERNAL_FALSH_Update) && (type != INTERNAL_FALSH_ID) && (type != INTERNAL_FALSH_MAC))
+	if((type != INTERNAL_FALSH_Update) && (type != INTERNAL_FALSH_ID) && (type != INTERNAL_FALSH_MAC) && (type != INTERNAL_FALSH_AREA))
 		return -1;
 	FLASH_Unlock();
 	if(type == INTERNAL_FALSH_Update)
@@ -25,6 +25,11 @@ int ErasePage(eInternalFlashType type)
 	{
 		while(FLASH_COMPLETE != FLASH_ErasePage(0x08005000))
 		{}
+	}else if(type == INTERNAL_FALSH_AREA)
+	{
+		while(FLASH_COMPLETE != FLASH_ErasePage(0x08005800))
+		{}
+		
 	}else
 	{
 		;
@@ -33,7 +38,7 @@ int ErasePage(eInternalFlashType type)
 	return 0;
 }
 
-//–¥»Î√¸¡Ó
+//????
 int WritePage(eInternalFlashType type,char *Data,int Length)
 {
 	unsigned int addr = 0;
@@ -50,6 +55,9 @@ int WritePage(eInternalFlashType type,char *Data,int Length)
 		}else if(type == INTERNAL_FALSH_MAC)
 		{
 			addr = 0x08005000;	
+		}else if(type == INTERNAL_FALSH_AREA)
+		{
+			addr = 0x08005800;	
 		}else
 		{
 			return -4;
@@ -81,7 +89,7 @@ int WritePage(eInternalFlashType type,char *Data,int Length)
 	}
 	
 }
-//∂¡»°√¸¡Ó
+//????
 int ReadPage(eInternalFlashType type,char *Data,int Length)
 {
     unsigned int addr = 0;
@@ -96,6 +104,9 @@ int ReadPage(eInternalFlashType type,char *Data,int Length)
 	}else if(type == INTERNAL_FALSH_MAC)
 	{
 		addr = 0x08005000;	
+	}else if(type == INTERNAL_FALSH_AREA)
+	{
+		addr = 0x08005800;	
 	}else
 	{
 		return -1;
@@ -110,6 +121,29 @@ int ReadPage(eInternalFlashType type,char *Data,int Length)
 	}
 	return 0;
 }
+
+void detectionInternalFlash(char *ID,unsigned char *Mac)
+{
+	char temp[18] = {0x00};
+	ReadPage(INTERNAL_FALSH_ID,temp,12);	//??ID,?????FF,??ID
+	temp[12] = '\0';
+	if((temp[0] == 0xFF)&&(temp[1] == 0xFF)&&(temp[2] == 0xFF)&&(temp[3] == 0xFF)&&(temp[4] == 0xFF)&&(temp[5] == 0xFF)&&
+		(temp[6] == 0xFF)&&(temp[7] == 0xFF)&&(temp[8] == 0xFF)&&(temp[9] == 0xFF)&&(temp[10] == 0xFF)&&(temp[11] == 0xFF))
+	{
+		WritePage(INTERNAL_FALSH_ID,ID,12);
+	}
+
+	ReadPage(INTERNAL_FALSH_MAC,temp,17);	//??ID,?????FF,??ID
+	temp[17] = '\0';
+	if((temp[0] == 0xFF)&&(temp[1] == 0xFF)&&(temp[2] == 0xFF)&&(temp[3] == 0xFF)&&(temp[4] == 0xFF)&&(temp[5] == 0xFF)&&
+		(temp[6] == 0xFF)&&(temp[7] == 0xFF)&&(temp[8] == 0xFF)&&(temp[9] == 0xFF)&&(temp[10] == 0xFF)&&(temp[11] == 0xFF)&&
+		(temp[12] == 0xFF)&&(temp[13] == 0xFF)&&(temp[14] == 0xFF)&&(temp[15] == 0xFF)&&(temp[16] == 0xFF))
+	{
+		sprintf(temp,"%02X:%02X:%02X:%02X:%02X:%02X",Mac[0],Mac[1],Mac[2],Mac[3],Mac[4],Mac[5]);
+		WritePage(INTERNAL_FALSH_MAC,temp,17);
+	}
+}
+
 
 
 #ifdef RT_USING_FINSH

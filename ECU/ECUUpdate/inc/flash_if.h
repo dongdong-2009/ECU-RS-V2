@@ -24,5 +24,6 @@
 uint32_t FLASH_If_Erase_APP2(void);
 //将文件拷贝到APP2区域
 uint32_t FLASH_IF_FILE_COPY_TO_APP2(char * updateFileName);
-
+int FLASH_If_WriteData(uint32_t Address,char *Data,int length);
+void UpdateFlag(void);
 #endif /*__FLASH_IF_H__*/

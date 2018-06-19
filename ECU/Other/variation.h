@@ -137,6 +137,7 @@ typedef struct inverter_info_t{
     unsigned char RSDTimeout;			//RSD超时时间
     unsigned short PV1_low_voltageNUM;	//PV1欠压次数
     unsigned short PV2_low_voltageNUM;	//PV2欠压次数
+    unsigned short PV2_low_differenceNUM;//PV2两轮欠压差值
     char LastCommTime[15];			//RSD最后一次通讯上的时间
 
     //上一轮相关的数据，这里的上一轮指的是5分钟一轮

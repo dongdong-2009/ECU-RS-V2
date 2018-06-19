@@ -40,6 +40,7 @@ int putfile(char *remoteFile, char *localFile);
 int getfile(char *remoteFile, char *localFile);
 //É¾³ýÎÄ¼þ
 int deletefile(char *remoteFile);
+int ftpgetfile_InternalFlash(char *domain,char *host, int port, char *user, char *pwd,char *remotefile,char *localfile);
 
 
 #endif /*__THFTPAPI_H__*/

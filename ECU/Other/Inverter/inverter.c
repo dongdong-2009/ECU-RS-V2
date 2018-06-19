@@ -107,7 +107,10 @@ int init_inverter(inverter_info *inverter)
 		curinverter->PV2_Energy = 0;
 		curinverter->PV_Output_Energy = 0;
 		curinverter->Mos_CloseNum = 0;
-		
+		curinverter->RSDTimeout = 0;			
+    		curinverter->PV1_low_voltageNUM = 0;	
+    		curinverter->PV2_low_voltageNUM = 0;	
+    		curinverter->PV2_low_differenceNUM = 0;
 		curinverter->Last_PV1_Energy = 0;
 		curinverter->Last_PV2_Energy = 0;
 		curinverter->Last_PV_Output_Energy = 0;

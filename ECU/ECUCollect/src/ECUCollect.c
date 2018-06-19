@@ -76,8 +76,25 @@ void Collect_Client_Record(void)
     char curTime[15] = {'\0'};
     unsigned int CurEnergy = 0;
     unsigned int SysPower = 0;
+    unsigned int AverageCurrent = 0;
+    unsigned char AverageNum = 0;
     memcpy(curTime,ecu.curTime,14);
     curTime[14] = '\0';
+    //计算有效平均电流PV1
+    if(ecu.validNum > 0)
+    {
+        for(i = 0;i< ecu.validNum; i++)
+        {
+            if((inverterInfo[ecu.curSequence].status.collect_ret == 1) && (inverterInfo[ecu.curSequence].PI != 0))
+            {
+                AverageCurrent += inverterInfo[ecu.curSequence].PI;
+                AverageNum++;
+            }
+        }
+
+        AverageCurrent = AverageCurrent/AverageNum;
+    }
+
     if(ecu.validNum > 0)
     {
         client_Data = malloc(CLIENT_RECORD_HEAD+CLIENT_RECORD_ECU_HEAD+CLIENT_RECORD_INVERTER_LENGTH*MAXINVERTERCOUNT+CLIENT_RECORD_OTHER);
@@ -231,8 +248,29 @@ void Collect_Client_Record(void)
                         curinverter->AveragePower2 = curinverter->Power2;
                     }else
                     {
-                        Power2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
-                        curinverter->AveragePower2 = Power2;
+                        if(curinverter->model == 2)	//关断器
+                        {
+                            if(curinverter->PV2_low_differenceNUM == 0)
+                            {//关段差值为0
+                                if(curinverter->PV2_Energy > curinverter->Last_PV2_Energy)
+                                {	//电量大于0
+                                    Power2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
+                                    curinverter->AveragePower2 = Power2;
+                                }else
+                                {	//电量=0
+                                    curinverter->AveragePower2 = curinverter->PV2 *AverageCurrent /10;
+                                }
+                            }else
+                            {
+                                curinverter->AveragePower2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)*((Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) - curinverter->PV2_low_differenceNUM)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime) /Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime)*9/10);
+                            }
+                        }else
+                        {
+                            Power2 = (curinverter->PV2_Energy - curinverter->Last_PV2_Energy)/Time_difference(curinverter->LastCommTime,curinverter->LastCollectTime);
+                            curinverter->AveragePower2 = Power2;
+                        }
+
+                        
                     }
 
                     //pv2输入功率(计算得到平均功率)
@@ -614,7 +652,7 @@ int process_OPT700RSBUG(void)	//处理优化器BUG
 
         if(ecu.faulttimes == 2)	//连续失败两次，重启逆变器
         {
-        	   printf("ecu.haveDataTimes:%d\n",ecu.haveDataTimes);
+            printf("ecu.haveDataTimes:%d\n",ecu.haveDataTimes);
             ecu.nextdetectionTimes = ecu.haveDataTimes + 6;
             if(ecu.overdetectionTimes == 0)
                 ecu.overdetectionTimes = ecu.haveDataTimes + 24;

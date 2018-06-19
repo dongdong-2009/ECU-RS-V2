@@ -29,9 +29,10 @@ extern ecu_info ecu;
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
-int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
+int resolvedata(char *inverter_data, struct inverter_info_t *inverter)
 {
 	char status = 0;
+	unsigned short last_PV2_low_voltageNUM = inverter->PV2_low_voltageNUM;
 	unsigned char last_turn_on_off_flag = 0;
 	unsigned char last_function_status = 0;
 	unsigned char last_pv1_low_voltage_pritection = 0;
@@ -163,7 +164,8 @@ int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter)
 		}
 		
 	}
-
+	//计算MOS管关段次数PV2
+	inverter->PV2_low_differenceNUM = inverter->PV2_low_voltageNUM - last_PV2_low_voltageNUM;
 	
 	return 0;
 }

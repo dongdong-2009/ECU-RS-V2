@@ -869,7 +869,7 @@ int zb_query_heart_data(inverter_info *inverter)		//请求逆变器实时数据
 		//printf("%02x %02x\n",crc16/256,crc16%256);
 		if((data[70] == crc16/256)&&(data[71] == crc16%256))
 		{
-			if(resolvedata_OPT700_RS(&data[4], inverter) == -1)
+			if(resolvedata(&data[4], inverter) == -1)
 				return -1;
 			else
 				return 1;

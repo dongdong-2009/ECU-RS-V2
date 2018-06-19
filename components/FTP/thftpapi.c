@@ -8,8 +8,8 @@
 /*  2017-04-20 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
- 
- /*****************************************************************************/
+
+/*****************************************************************************/
 /*  Include Files                                                            */
 /*****************************************************************************/
 #include "thftpapi.h"
@@ -30,6 +30,7 @@
 #include "datetime.h"
 #include "debug.h"
 #include "lan8720rst.h"
+#include "flash_if.h"
 
 /*****************************************************************************/
 /*  Function Implementations                                                 */
@@ -85,57 +86,57 @@ void getFTPConf(char *domain,char *FTPIP,int *port,char* user,char *password)
 	
 }
 
- 
+
 //创建一个socket并返回
 int socket_connect(char *domain,char *host,int port)
 {
-	char ip[20] = {'\0'};	
+    char ip[20] = {'\0'};
     struct sockaddr_in address;
     int s, opvalue;
     socklen_t slen;
     //设置接收和发送超时
-    struct timeval timeo = {15, 0}; 
-		struct hostent* server;
+    struct timeval timeo = {15, 0};
+    struct hostent* server;
     opvalue = 8;
     slen = sizeof(opvalue);
     memset(&address, 0, sizeof(address));
-     
+
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0 ||
-        setsockopt(s, IPPROTO_IP, IP_TOS, &opvalue, slen) < 0)
+            setsockopt(s, IPPROTO_IP, IP_TOS, &opvalue, slen) < 0)
         return -1;
-     
+
     setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &timeo, sizeof(timeo));
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo));
-     
+
     address.sin_family = AF_INET;
     address.sin_port = htons((unsigned short)port);
-     
+
     server = gethostbyname(domain);
     if (!server)
     {
-			memcpy(ip,host,strlen(host));
-    	printmsg(ECU_DBG_UPDATE,"Resolve domain failure");
+        memcpy(ip,host,strlen(host));
+        printmsg(ECU_DBG_UPDATE,"Resolve domain failure");
     }else
     {
-    	memset(ip, '\0', sizeof(ip));
-			sprintf(ip,"%s",ip_ntoa((ip_addr_t*)*server->h_addr_list));
+        memset(ip, '\0', sizeof(ip));
+        sprintf(ip,"%s",ip_ntoa((ip_addr_t*)*server->h_addr_list));
     }
 
-	memset(&address,0,sizeof(struct sockaddr_in));
-	address.sin_family=AF_INET;
-	address.sin_port=htons(port);
-	address.sin_addr.s_addr=inet_addr(ip);
-	memset(&(address.sin_zero),0,8);
+    memset(&address,0,sizeof(struct sockaddr_in));
+    address.sin_family=AF_INET;
+    address.sin_port=htons(port);
+    address.sin_addr.s_addr=inet_addr(ip);
+    memset(&(address.sin_zero),0,8);
 
     if (connect(s, (struct sockaddr*) &address, sizeof(address)) == -1)
     {
-    	closesocket(s);
-    	return -1;
-    }  
-     
+        closesocket(s);
+        return -1;
+    }
+
     return s;
 }
- 
+
 //连接到一个ftp的服务器，返回socket
 int connect_server(char *domain, char *host, int port )
 {   
@@ -144,78 +145,78 @@ int connect_server(char *domain, char *host, int port )
     int       result;
     ssize_t   len;
     fd_set rd;
-	struct timeval timeout;
-	buf = malloc(512);
+    struct timeval timeout;
+    buf = malloc(512);
     ctrl_sock = socket_connect(domain,host, port);
     if (ctrl_sock == -1) {
-		free(buf);
+        free(buf);
         return -1;
     }
-		FD_ZERO(&rd);
-		FD_SET(ctrl_sock, &rd);
-		timeout.tv_sec = 10;
-		timeout.tv_usec = 0;
-		len = select(ctrl_sock+1, &rd, NULL, NULL, &timeout);
-		if(len <= 0){
-			closesocket( ctrl_sock );
-			free(buf);
-			return -1;
-		}else
-		{
-			memset(buf,0x00,512);
-			len = recv( ctrl_sock, buf, 512, 0 );
-			buf[len] = 0;
-			sscanf( buf, "%d", &result );
-			if ( result != 220 ) {
-					closesocket( ctrl_sock );
-					free(buf);
-					return -1;
-			}
-			free(buf);
-			return ctrl_sock;
-		}
+    FD_ZERO(&rd);
+    FD_SET(ctrl_sock, &rd);
+    timeout.tv_sec = 10;
+    timeout.tv_usec = 0;
+    len = select(ctrl_sock+1, &rd, NULL, NULL, &timeout);
+    if(len <= 0){
+        closesocket( ctrl_sock );
+        free(buf);
+        return -1;
+    }else
+    {
+        memset(buf,0x00,512);
+        len = recv( ctrl_sock, buf, 512, 0 );
+        buf[len] = 0;
+        sscanf( buf, "%d", &result );
+        if ( result != 220 ) {
+            closesocket( ctrl_sock );
+            free(buf);
+            return -1;
+        }
+        free(buf);
+        return ctrl_sock;
+    }
 }
- 
+
 //发送命令,返回结果
 int ftp_sendcmd_re( int sock, char *cmd, void *re_buf, ssize_t *len)
 {
     char        *buf;
     ssize_t     r_len;
     fd_set rd;
-		struct timeval timeout;
-	
-	buf = malloc(512);
+    struct timeval timeout;
+
+    buf = malloc(512);
     if ( send( sock, cmd, strlen(cmd), 0 ) == -1 )
-		{
-			free(buf);
-      return -1;
-		}
-		
-		FD_ZERO(&rd);
-		FD_SET(sock, &rd);
-		timeout.tv_sec = 10;
-		timeout.tv_usec = 0;
-		r_len = select(sock+1, &rd, NULL, NULL, &timeout);
-		if(len <= 0){
-			free(buf);
-			return -1;
-		}else
-		{
-			r_len = recv( sock, buf, 512, 0 );
-			if ( r_len < 1 ) 
-			{
-				free(buf);
-				return -1;
-			}
-			buf[r_len] = 0;
-			 
-			if (len != NULL) *len = r_len;
-			if (re_buf != NULL) sprintf(re_buf, "%s", buf);
-			free(buf);
-			return 0;
-		}
+    {
+        free(buf);
+        return -1;
+    }
+
+    FD_ZERO(&rd);
+    FD_SET(sock, &rd);
+    timeout.tv_sec = 10;
+    timeout.tv_usec = 0;
+    r_len = select(sock+1, &rd, NULL, NULL, &timeout);
+    if(len <= 0){
+        free(buf);
+        return -1;
+    }else
+    {
+        r_len = recv( sock, buf, 512, 0 );
+        if ( r_len < 1 )
+        {
+            free(buf);
+            return -1;
+        }
+        buf[r_len] = 0;
+
+        if (len != NULL) *len = r_len;
+        if (re_buf != NULL) sprintf(re_buf, "%s", buf);
+        free(buf);
+        return 0;
+    }
 }
- 
+
 //发送命令,返回编号
 int ftp_sendcmd( int sock, char *cmd )
 {
@@ -223,48 +224,48 @@ int ftp_sendcmd( int sock, char *cmd )
     int      result;
     ssize_t  len;
 
-	buf = malloc(512);
+    buf = malloc(512);
     result = ftp_sendcmd_re(sock, cmd, buf, &len);
     if (result == 0)
     {
         sscanf( buf, "%d", &result );
     }
-    free(buf); 
+    free(buf);
     return result;
 }
- 
+
 //登录ftp服务器
 int login_server( int sock, char *user, char *pwd )
 {
     char    *buf;
     int     result;
 
-	buf = malloc(128); 
+    buf = malloc(128);
     sprintf( buf, "USER %s\r\n", user );
     result = ftp_sendcmd( sock, buf );
     if ( result == 230 )
-	{
-		free(buf);
-		return 0;
-	}
+    {
+        free(buf);
+        return 0;
+    }
     else if ( result == 331 ) {
         sprintf( buf, "PASS %s\r\n", pwd );
-        if ( ftp_sendcmd( sock, buf ) != 230 ) 
-		{
-			free(buf);
-			return -1;
-		}
-		free(buf);
+        if ( ftp_sendcmd( sock, buf ) != 230 )
+        {
+            free(buf);
+            return -1;
+        }
+        free(buf);
         return 0;
     }
     else
     {
-    	free(buf);
-    	return -1;
+        free(buf);
+        return -1;
     }
-        
+
 }
- 
+
 int create_datasock( int ctrl_sock )
 {
     int     lsn_sock;
@@ -272,7 +273,7 @@ int create_datasock( int ctrl_sock )
     int     len;
     struct sockaddr_in sin;
     char    cmd[128];
-     
+
     lsn_sock = socket( PF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( lsn_sock == -1 ) return -1;
     memset( (char *)&sin, 0, sizeof(sin) );
@@ -281,12 +282,12 @@ int create_datasock( int ctrl_sock )
         closesocket( lsn_sock );
         return -1;
     }
-     
+
     if( listen(lsn_sock, 2) == -1 ) {
         closesocket( lsn_sock );
         return -1;
     }
-     
+
     len = sizeof( struct sockaddr );
     if ( getsockname( lsn_sock, (struct sockaddr *)&sin, (socklen_t *)&len ) == -1 )
     {
@@ -294,27 +295,27 @@ int create_datasock( int ctrl_sock )
         return -1;
     }
     port = sin.sin_port;
-     
+
     if( getsockname( ctrl_sock, (struct sockaddr *)&sin, (socklen_t *)&len ) == -1 )
     {
         closesocket( lsn_sock );
         return -1;
     }
-     
+
     sprintf( cmd, "PORT %d,%d,%d,%d,%d,%d\r\n",
-            sin.sin_addr.s_addr&0x000000FF,
-            (sin.sin_addr.s_addr&0x0000FF00)>>8,
-            (sin.sin_addr.s_addr&0x00FF0000)>>16,
-            (sin.sin_addr.s_addr&0xFF000000)>>24,
-            port>>8, port&0xff );
-     
+             sin.sin_addr.s_addr&0x000000FF,
+             (sin.sin_addr.s_addr&0x0000FF00)>>8,
+             (sin.sin_addr.s_addr&0x00FF0000)>>16,
+             (sin.sin_addr.s_addr&0xFF000000)>>24,
+             port>>8, port&0xff );
+
     if ( ftp_sendcmd( ctrl_sock, cmd ) != 200 ) {
         closesocket( lsn_sock );
         return -1;
     }
     return lsn_sock;
 }
- 
+
 //连接到PASV接口
 int ftp_pasv_connect( int c_sock )
 {
@@ -334,12 +335,12 @@ int ftp_pasv_connect( int c_sock )
     if (send_re == 0) {
         sscanf(re_buf, "%*[^(](%d,%d,%d,%d,%d,%d)",&addr[0],&addr[1],&addr[2],&addr[3],&addr[4],&addr[5]);
     }
-     
+
     //连接PASV端口
     memset(buf,0x00, sizeof(buf));
     sprintf( buf, "%d.%d.%d.%d",addr[0],addr[1],addr[2],addr[3]);
-		print2msg(ECU_DBG_UPDATE,"UPDATE IP",buf);
-		printdecmsg(ECU_DBG_UPDATE,"UPDATE PORT",(addr[4]*256+addr[5]));
+    print2msg(ECU_DBG_UPDATE,"UPDATE IP",buf);
+    printdecmsg(ECU_DBG_UPDATE,"UPDATE PORT",(addr[4]*256+addr[5]));
     r_sock = socket_connect("",buf,addr[4]*256+addr[5]);
     free(buf);
     buf = NULL;
@@ -347,7 +348,7 @@ int ftp_pasv_connect( int c_sock )
     re_buf = NULL;
     return r_sock;
 }
- 
+
 //表示类型
 int ftp_type( int c_sock, char mode )
 {
@@ -358,8 +359,8 @@ int ftp_type( int c_sock, char mode )
     else
         return 0;
 }
- 
-//下载文件
+
+//下载文件到文件系统
 int ftp_retrfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, int *stop)
 {
     int     d_sock = 0;
@@ -368,119 +369,245 @@ int ftp_retrfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
     int     handle;
     int     result =0;
     fd_set rd;
-		struct timeval timeout;	
-	  //char time[20];
-	 buf = malloc(1461);
+    struct timeval timeout;
+    //char time[20];
+    buf = malloc(1461);
     //打开本地文件
     handle = fileopen( d,  O_WRONLY | O_CREAT | O_TRUNC, 0 );
-    if ( handle == -1 ) 
-		{
-			free(buf);
-			printmsg(ECU_DBG_UPDATE,"ftp_retrfile FILE open failed");
-			unlink(d);
-			return -1;
-		}
+    if ( handle == -1 )
+    {
+        free(buf);
+        printmsg(ECU_DBG_UPDATE,"ftp_retrfile FILE open failed");
+        unlink(d);
+        return -1;
+    }
     //设置传输模式
     ftp_type(c_sock, 'I');
-     
+
     //连接到PASV接口
     d_sock = ftp_pasv_connect(c_sock);
     if (d_sock == -1)
     {
-			printmsg(ECU_DBG_UPDATE,"ftp_pasv_connect failed");
-      fileclose(handle);
-			free(buf);
-			unlink(d);
-       return -1;
+        printmsg(ECU_DBG_UPDATE,"ftp_pasv_connect failed");
+        fileclose(handle);
+        free(buf);
+        unlink(d);
+        return -1;
     }
-     
+
     //发送STOR命令
     memset(buf,0x00, sizeof(buf));
     sprintf( buf, "RETR %s\r\n", s );
     result = ftp_sendcmd( c_sock, buf );
     if (result >= 300 || result == 0)
     {
-    	closesocket( d_sock );
-		printmsg(ECU_DBG_UPDATE,"RETR response error");
-	    fileclose(handle);
-		free(buf);
-		unlink(d);
-      return result;
+        closesocket( d_sock );
+        printmsg(ECU_DBG_UPDATE,"RETR response error");
+        fileclose(handle);
+        free(buf);
+        unlink(d);
+        return result;
     }
-     
+
     //开始向PASV读取数据
     memset(buf,0x00, sizeof(buf));
-		FD_ZERO(&rd);
-		FD_SET(d_sock, &rd);
-		timeout.tv_sec = 20;
-		timeout.tv_usec = 0;
+    FD_ZERO(&rd);
+    FD_SET(d_sock, &rd);
+    timeout.tv_sec = 20;
+    timeout.tv_usec = 0;
 
-		while (1) {
-			len = select(d_sock+1, &rd, NULL, NULL, &timeout);
-			if(len <= 0){
-				printmsg(ECU_DBG_UPDATE,"ftp_retrfile select out");
-				break;
-			}else
-			{
-				if((len = recv( d_sock, buf, 1460, MSG_DONTWAIT )) > 0 )
-				{
-					sum += len;
+    while (1) {
+        len = select(d_sock+1, &rd, NULL, NULL, &timeout);
+        if(len <= 0){
+            printmsg(ECU_DBG_UPDATE,"ftp_retrfile select out");
+            break;
+        }else
+        {
+            if((len = recv( d_sock, buf, 1460, MSG_DONTWAIT )) > 0 )
+            {
+                sum += len;
 
-					write_len = fileWrite( handle, buf, len );
-					if (write_len != len || (stop != NULL && *stop))
-					{
-							closesocket( d_sock );
-							fileclose( handle );
-							free(buf);
-							unlink(d);
-							return -1;
-					}
-					 
-					if (stor_size != NULL)
-					{
-							*stor_size += write_len;
-					}
-					memset(buf,0x00, sizeof(buf));
-					if(len < 1){	
+                write_len = fileWrite( handle, buf, len );
+				printf("%d\n",write_len);
+                if (write_len != len || (stop != NULL && *stop))
+                {
+                    closesocket( d_sock );
+                    fileclose( handle );
+                    free(buf);
+                    unlink(d);
+                    return -1;
+                }
 
-						printdecmsg(ECU_DBG_UPDATE,"transfer",len);
-						break;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}				
-		}
-		closesocket( d_sock );
-		fileclose( handle );
-		
+                if (stor_size != NULL)
+                {
+                    *stor_size += write_len;
+                }
+                memset(buf,0x00, sizeof(buf));
+                if(len < 1){
 
-		timeout.tv_sec = 3;
-		timeout.tv_usec = 0;		
+                    printdecmsg(ECU_DBG_UPDATE,"transfer",len);
+                    break;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+    closesocket( d_sock );
+    fileclose( handle );
+
+
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
     //向服务器接收返回值
     memset(buf,0x00, sizeof(buf));
-		len = recv( c_sock, buf, 512, 0 );
-		if(len <= 0)
-		{
-			free(buf);
-			unlink(d);
-			return -1;
-		}else
-		{
-			
-			buf[len] = 0;
-			sscanf( buf, "%d", &result );
-			if ( result >= 300 ) {
-				free(buf);
-				unlink(d);
+    len = recv( c_sock, buf, 512, 0 );
+    if(len <= 0)
+    {
+        free(buf);
+        unlink(d);
+        return -1;
+    }else
+    {
+
+        buf[len] = 0;
+        sscanf( buf, "%d", &result );
+        if ( result >= 300 ) {
+            free(buf);
+            unlink(d);
+            return result;
+        }
+        free(buf);
+        return 0;
+    }
+
+}
+
+//下载文件到内部Flash
+int ftp_retrfile_InternalFlash( int c_sock, char *s, char *d ,unsigned long long *stor_size, int *stop)
+{
+    int     d_sock = 0;
+    ssize_t len,write_len,sum=0;
+    unsigned int app2addr = 0x08080000;
+    char    *buf;
+    int     result =0;
+    fd_set rd;
+    struct timeval timeout;
+    //char time[20];
+    buf = malloc(1462);
+
+	
+    //设置传输模式
+    ftp_type(c_sock, 'I');
+
+    //连接到PASV接口
+    d_sock = ftp_pasv_connect(c_sock);
+    if (d_sock == -1)
+    {
+        printmsg(ECU_DBG_UPDATE,"ftp_pasv_connect failed");
+        free(buf);
+        return -1;
+    }
+
+    //发送STOR命令
+    memset(buf,0x00, sizeof(buf));
+    sprintf( buf, "RETR %s\r\n", s );
+    result = ftp_sendcmd( c_sock, buf );
+    if (result >= 300 || result == 0)
+    {
+        closesocket( d_sock );
+        printmsg(ECU_DBG_UPDATE,"RETR response error");
+        free(buf);
         return result;
-			}
-			free(buf);
-			return 0;
-		}
+    }
+	
+    //解锁内部Flash
+    FLASH_Unlock();
+    if(1 == FLASH_If_Erase_APP2())	//清除APP2区域
+    {
+    	free(buf);
+	 printmsg(ECU_DBG_UPDATE,"FLASH_If_Erase_APP2 failed");	
+	 return -1;
+    }
+	
+    //开始向PASV读取数据
+    memset(buf,0x00, sizeof(buf));
+    FD_ZERO(&rd);
+    FD_SET(d_sock, &rd);
+    timeout.tv_sec = 20;
+    timeout.tv_usec = 0;
+
+    while (1) {
+        len = select(d_sock+1, &rd, NULL, NULL, &timeout);
+        if(len <= 0){
+            printmsg(ECU_DBG_UPDATE,"ftp_retrfile select out");
+            break;
+        }else
+        {
+            if((len = recv( d_sock, buf, 1460, MSG_DONTWAIT )) > 0 )
+            {
+                if(len%2 == 1)
+                {
+                    closesocket( d_sock );
+                    free(buf);
+                    return -1;
+                }
+                sum += len;
+				
 		
+		write_len = FLASH_If_WriteData(app2addr,buf,len);
+		app2addr+=len;		
+                if (write_len != len || (stop != NULL && *stop))
+                {
+                    closesocket( d_sock );
+                    free(buf);
+                    return -1;
+                }
+
+                if (stor_size != NULL)
+                {
+                    *stor_size += write_len;
+                }
+                memset(buf,0x00, sizeof(buf));
+                if(len < 1){
+
+                    printdecmsg(ECU_DBG_UPDATE,"transfer",len);
+                    break;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+    closesocket( d_sock );
+
+
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
+    //向服务器接收返回值
+    memset(buf,0x00, sizeof(buf));
+    len = recv( c_sock, buf, 512, 0 );
+    if(len <= 0)
+    {
+        free(buf);
+        return -1;
+    }else
+    {
+
+        buf[len] = 0;
+        sscanf( buf, "%d", &result );
+        if ( result >= 300 ) {
+            free(buf);
+            return result;
+        }
+        free(buf);
+        return 0;
+    }
+
 }
 
 //上传文件
@@ -493,25 +620,25 @@ int ftp_storfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
     int send_re;
     int result = 0;
 
-		buf = malloc(512);
+    buf = malloc(512);
     //打开本地文件
     handle = fileopen( s,  O_RDONLY,0);
-    if ( handle == -1 ) 
-		{
-			free(buf);
-			return -1;
-		}
-     
+    if ( handle == -1 )
+    {
+        free(buf);
+        return -1;
+    }
+
     //设置传输模式
     ftp_type(c_sock, 'I');
-     
+
     //连接到PASV接口
     d_sock = ftp_pasv_connect(c_sock);
     if (d_sock == -1)
     {
-      fileclose(handle);
-			free(buf);
-      return -1;
+        fileclose(handle);
+        free(buf);
+        return -1;
     }
 
     //发送STOR命令
@@ -520,39 +647,39 @@ int ftp_storfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
     send_re = ftp_sendcmd( c_sock, buf );
     if (send_re >= 300 || send_re == 0)
     {
-      fileclose(handle);
-			free(buf);
-      return send_re;
+        fileclose(handle);
+        free(buf);
+        return send_re;
     }
-     
+
     //开始向PASV通道写数据
     memset(buf,0x00, sizeof(buf));
     while ( (len = fileRead( handle, buf, 512)) > 0)
     {
-    	int index = 0;
-			for(index = 0;index < 3 ;index++)
-			{
-				send_len = send(d_sock, buf, len, 0);
-				if(send_len > 0)
-				{
-					break;
-				}else
-				{
-					rt_hw_ms_delay(10);
-			}
-		}	
-		
-        if (send_len != len ||
-            (stop != NULL && *stop))
+        int index = 0;
+        for(index = 0;index < 3 ;index++)
         {
-					printdecmsg(ECU_DBG_UPDATE,"send_len ",send_len);
-					printdecmsg(ECU_DBG_UPDATE,"len:%d ",len);
-          closesocket( d_sock );
-          fileclose( handle );
-					free(buf);
-          return -1;
+            send_len = send(d_sock, buf, len, 0);
+            if(send_len > 0)
+            {
+                break;
+            }else
+            {
+                rt_hw_ms_delay(10);
+            }
         }
-         
+
+        if (send_len != len ||
+                (stop != NULL && *stop))
+        {
+            printdecmsg(ECU_DBG_UPDATE,"send_len ",send_len);
+            printdecmsg(ECU_DBG_UPDATE,"len:%d ",len);
+            closesocket( d_sock );
+            fileclose( handle );
+            free(buf);
+            return -1;
+        }
+
         if (stor_size != NULL)
         {
             *stor_size += send_len;
@@ -560,28 +687,28 @@ int ftp_storfile( int c_sock, char *s, char *d ,unsigned long long *stor_size, i
     }
     closesocket( d_sock );
     fileclose( handle );
-     
+
     //向服务器接收返回值
     memset(buf,0x00, sizeof(buf));
     len = recv( c_sock, buf, 512, 0 );
     buf[len] = 0;
     sscanf( buf, "%d", &result );
     if ( result >= 300 ) {
-			free(buf);
-      return result;
+        free(buf);
+        return result;
     }
-		free(buf);
+    free(buf);
     return 0;
 }
- 
+
 //连接服务器
 int ftp_connect(char *domain, char *host, int port, char *user, char *pwd )
 {
     int     c_sock;
-	if(rt_hw_GetWiredNetConnect() == 0)
-	{
-		return -1;
-	}
+    if(rt_hw_GetWiredNetConnect() == 0)
+    {
+        return -1;
+    }
     c_sock = connect_server(domain,host, port );
     if ( c_sock == -1 ) return -1;
     if ( login_server( c_sock, user, pwd ) == -1 ) {
@@ -590,7 +717,7 @@ int ftp_connect(char *domain, char *host, int port, char *user, char *pwd )
     }
     return c_sock;
 }
- 
+
 //断开服务器
 int ftp_quit( int c_sock)
 {
@@ -605,7 +732,7 @@ int ftp_deletefile( int c_sock, char *s )
 {
     char    buf[512];
     int     re;
-     
+
     sprintf( buf, "DELE %s\r\n", s );
     re = ftp_sendcmd( c_sock, buf );
     if ( re != 250 ) return re;
@@ -613,126 +740,148 @@ int ftp_deletefile( int c_sock, char *s )
 }
 
 
-//下载文件
+//下载文件到文件系统
 int ftpgetfile(char *domain,char *host, int port, char *user, char *pwd,char *remotefile,char *localfile)
 {
-	unsigned long long stor_size = 0;
-	int stop = 0,ret = 0;
-	int sockfd = ftp_connect(domain,host, port, user, pwd  );
-	if(sockfd != -1)
-	{
-		printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);
-	}else
-	{
-		printmsg(ECU_DBG_UPDATE,"ftp connect failed");
-		return -1;
-	}
-	ret = ftp_retrfile(sockfd, remotefile, localfile ,&stor_size, &stop);
-	printdecmsg(ECU_DBG_UPDATE,"ret",ret);
-	printdecmsg(ECU_DBG_UPDATE,"stor_size",stor_size);
-	printdecmsg(ECU_DBG_UPDATE,"stop",stop);
-	ftp_quit( sockfd);
-	return ret;
+    unsigned long long stor_size = 0;
+    int stop = 0,ret = 0;
+    int sockfd = ftp_connect(domain,host, port, user, pwd  );
+    if(sockfd != -1)
+    {
+        printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);
+    }else
+    {
+        printmsg(ECU_DBG_UPDATE,"ftp connect failed");
+        return -1;
+    }
+    ret = ftp_retrfile(sockfd, remotefile, localfile ,&stor_size, &stop);
+    printdecmsg(ECU_DBG_UPDATE,"ret",ret);
+    printdecmsg(ECU_DBG_UPDATE,"stor_size",stor_size);
+    printdecmsg(ECU_DBG_UPDATE,"stop",stop);
+    ftp_quit( sockfd);
+    return ret;
+}
+
+//下载文件到文件系统
+int ftpgetfile_InternalFlash(char *domain,char *host, int port, char *user, char *pwd,char *remotefile,char *localfile)
+{
+    unsigned long long stor_size = 0;
+    int stop = 0,ret = 0;
+    int sockfd = ftp_connect(domain,host, port, user, pwd  );
+    if(sockfd != -1)
+    {
+        printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);
+    }else
+    {
+        printmsg(ECU_DBG_UPDATE,"ftp connect failed");
+        return -1;
+    }
+    ret = ftp_retrfile_InternalFlash(sockfd, remotefile, localfile ,&stor_size, &stop);
+    printdecmsg(ECU_DBG_UPDATE,"ret",ret);
+    printdecmsg(ECU_DBG_UPDATE,"stor_size",stor_size);
+    printdecmsg(ECU_DBG_UPDATE,"stop",stop);
+    ftp_quit( sockfd);
+    return ret;
 }
 
 //上传文件
 int ftpputfile(char *domain,char *host, int port, char *user, char *pwd,char *remotefile,char *localfile)
 {
-	unsigned long long stor_size = 0;
-	int stop = 0,ret = 0;
-	int sockfd = ftp_connect(domain, host, port, user, pwd  );
+    unsigned long long stor_size = 0;
+    int stop = 0,ret = 0;
+    int sockfd = ftp_connect(domain, host, port, user, pwd  );
 
-	if(sockfd != -1)
-	{
-		printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);	
-	}else
-	{
-		printmsg(ECU_DBG_UPDATE,"ftp connect failed");
-		return -1;
-	}
+    if(sockfd != -1)
+    {
+        printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);
+    }else
+    {
+        printmsg(ECU_DBG_UPDATE,"ftp connect failed");
+        return -1;
+    }
 
-  	ret = ftp_storfile(sockfd, localfile,remotefile ,&stor_size, &stop);
-	printdecmsg(ECU_DBG_UPDATE,"ret",ret);
-	printdecmsg(ECU_DBG_UPDATE,"stor_size",stor_size);
-	printdecmsg(ECU_DBG_UPDATE,"stop",stop);
+    ret = ftp_storfile(sockfd, localfile,remotefile ,&stor_size, &stop);
+    printdecmsg(ECU_DBG_UPDATE,"ret",ret);
+    printdecmsg(ECU_DBG_UPDATE,"stor_size",stor_size);
+    printdecmsg(ECU_DBG_UPDATE,"stop",stop);
 
-	ftp_quit( sockfd);
-	return ret;
+    ftp_quit( sockfd);
+    return ret;
 }
 
 //删除文件
 int ftpdeletefile(char *domain,char *host, int port, char *user, char *pwd,char *remotefile)
 {
-	int ret = 0;
-	int sockfd = ftp_connect(domain, host, port, user, pwd  );
+    int ret = 0;
+    int sockfd = ftp_connect(domain, host, port, user, pwd  );
 
-	if(sockfd != -1)
-	{
-		printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);	
-	}else
-	{
-		printmsg(ECU_DBG_UPDATE,"ftp connect failed");
-		return -1;
-	}
-		
-  	ret = ftp_deletefile( sockfd,remotefile);
-	printdecmsg(ECU_DBG_UPDATE,"ftp_deletefile ret",ret);
-	ftp_quit( sockfd);
-	return ret;
+    if(sockfd != -1)
+    {
+        printdecmsg(ECU_DBG_UPDATE,"ftp connect successful",sockfd);
+    }else
+    {
+        printmsg(ECU_DBG_UPDATE,"ftp connect failed");
+        return -1;
+    }
+
+    ret = ftp_deletefile( sockfd,remotefile);
+    printdecmsg(ECU_DBG_UPDATE,"ftp_deletefile ret",ret);
+    ftp_quit( sockfd);
+    return ret;
 }
 
 
 
 int getfile(char *remoteFile, char *localFile)
 {
-	char domain[100]={'\0'};		
-	char FTPIP[50];
-	int port=0;
-	char user[20]={'\0'};
-	char password[20]={'\0'};
-	getFTPConf(domain,FTPIP,&port,user,password);
-	
-	print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
-	printdecmsg(ECU_DBG_UPDATE,"port",port);
-	print2msg(ECU_DBG_UPDATE,"user",user);
-	print2msg(ECU_DBG_UPDATE,"password",password);
+    char domain[100]={'\0'};
+    char FTPIP[50];
+    int port=0;
+    char user[20]={'\0'};
+    char password[20]={'\0'};
+    getFTPConf(domain,FTPIP,&port,user,password);
 
-	return ftpgetfile(domain,FTPIP,port, user, password,remoteFile,localFile);
+    print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
+    printdecmsg(ECU_DBG_UPDATE,"port",port);
+    print2msg(ECU_DBG_UPDATE,"user",user);
+    print2msg(ECU_DBG_UPDATE,"password",password);
+
+    return ftpgetfile(domain,FTPIP,port, user, password,remoteFile,localFile);
 }
 
 int putfile(char *remoteFile, char *localFile)
 {
-	char domain[100]={'\0'};
-	char FTPIP[50];
-	int port=0;
-	char user[20]={'\0'};
-	char password[20]={'\0'};
-	getFTPConf(domain,FTPIP,&port,user,password);
+    char domain[100]={'\0'};
+    char FTPIP[50];
+    int port=0;
+    char user[20]={'\0'};
+    char password[20]={'\0'};
+    getFTPConf(domain,FTPIP,&port,user,password);
 
-	print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
-	printdecmsg(ECU_DBG_UPDATE,"port",port);
-	print2msg(ECU_DBG_UPDATE,"user",user);
-	print2msg(ECU_DBG_UPDATE,"password",password);
+    print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
+    printdecmsg(ECU_DBG_UPDATE,"port",port);
+    print2msg(ECU_DBG_UPDATE,"user",user);
+    print2msg(ECU_DBG_UPDATE,"password",password);
 
-	return ftpputfile(domain,FTPIP,port, user, password,remoteFile,localFile);
+    return ftpputfile(domain,FTPIP,port, user, password,remoteFile,localFile);
 }
 
 int deletefile(char *remoteFile)
 {
-	char domain[100]={'\0'};
-	char FTPIP[50];
-	int port=0;
-	char user[20]={'\0'};
-	char password[20]={'\0'};
-	getFTPConf(domain,FTPIP,&port,user,password);
+    char domain[100]={'\0'};
+    char FTPIP[50];
+    int port=0;
+    char user[20]={'\0'};
+    char password[20]={'\0'};
+    getFTPConf(domain,FTPIP,&port,user,password);
 
-	print2msg(ECU_DBG_UPDATE,"Domain",domain);
-	print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
-	printdecmsg(ECU_DBG_UPDATE,"port",port);
-	print2msg(ECU_DBG_UPDATE,"user",user);
-	print2msg(ECU_DBG_UPDATE,"password",password);
+    print2msg(ECU_DBG_UPDATE,"Domain",domain);
+    print2msg(ECU_DBG_UPDATE,"FTPIP",FTPIP);
+    printdecmsg(ECU_DBG_UPDATE,"port",port);
+    print2msg(ECU_DBG_UPDATE,"user",user);
+    print2msg(ECU_DBG_UPDATE,"password",password);
 
-	return ftpdeletefile(domain,FTPIP,port, user, password,remoteFile);
+    return ftpdeletefile(domain,FTPIP,port, user, password,remoteFile);
 }
 
 
@@ -748,4 +897,4 @@ FINSH_FUNCTION_EXPORT(deletefile,delete file from ftp.)
 
 #endif
 
- 
+

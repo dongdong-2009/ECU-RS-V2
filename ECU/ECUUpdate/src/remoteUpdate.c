@@ -49,19 +49,13 @@ int updateECUByTrinaSolar(char *domain,char *host, int port, char *user, char *p
 {
 	int ret = 0;
 
-	ret=ftpgetfile(domain,host, port, user, pwd,remotefile,UPDATE_PATH);
+	ret=ftpgetfile_InternalFlash(domain,host, port, user, pwd,remotefile,UPDATE_PATH);
 	if(!ret)
 	{
 		//获取到文件，进行更新
-		FLASH_Unlock();
-		FLASH_If_Erase_APP2();
-		FLASH_IF_FILE_COPY_TO_APP2(UPDATE_PATH);
-		unlink(UPDATE_PATH);
+        		UpdateFlag();
 		echo("/TMP/ECUUPVER.CON","1");
 		reboot();
-	}else
-	{
-		unlink(UPDATE_PATH);
 	}
 	return ret;
 }
@@ -83,18 +77,11 @@ int updateECUByVersion_Local(char *Domain,char *IP,int port,char *User,char *pas
 	sprintf(remote_path,"/ECU_R_RS/V%s.%s/%s",MAJORVERSION,MINORVERSION,UPDATE_PATH_SUFFIX);
 	print2msg(ECU_DBG_UPDATE,"VER Path",remote_path);
 
-	ret=ftpgetfile(Domain,IP, port, User, passwd,remote_path,UPDATE_PATH);
+	ret=ftpgetfile_InternalFlash(Domain,IP, port, User, passwd,remote_path,UPDATE_PATH);
 	if(!ret)
 	{
 		//获取到文件，进行更新
-		FLASH_Unlock();
-		FLASH_If_Erase_APP2();
-		FLASH_IF_FILE_COPY_TO_APP2(UPDATE_PATH);
-		unlink(UPDATE_PATH);
-
-	}else
-	{
-		unlink(UPDATE_PATH);
+		UpdateFlag();
 	}
 	return ret;
 }
@@ -114,18 +101,12 @@ int updateECUByID_Local(char *Domain,char *IP,int port,char *User,char *passwd)
 	//获取服务器IP地址
 	sprintf(remote_path,"/ECU_R_RS/%s/%s",ecu.ECUID12,UPDATE_PATH_SUFFIX);
 	print2msg(ECU_DBG_UPDATE,"ID Path",remote_path);
-	ret=ftpgetfile(Domain,IP, port, User, passwd,remote_path,UPDATE_PATH);
+	ret=ftpgetfile_InternalFlash(Domain,IP, port, User, passwd,remote_path,UPDATE_PATH);
 	if(!ret)
 	{
-		//获取到文件，进行更新
-		FLASH_Unlock();
-		FLASH_If_Erase_APP2();
-		FLASH_IF_FILE_COPY_TO_APP2(UPDATE_PATH);
 		deletefile(remote_path);
-		unlink(UPDATE_PATH);
-	}else
-	{
-		unlink(UPDATE_PATH);
+		//获取到文件，进行更新
+		UpdateFlag();
 	}
 	return ret;
 }
@@ -152,19 +133,13 @@ int updateECUByVersion(void)
 	sprintf(remote_path,"/ECU_R_RS/V%s.%s/%s",MAJORVERSION,MINORVERSION,UPDATE_PATH_SUFFIX);
 	print2msg(ECU_DBG_UPDATE,"VER Path",remote_path);
 
-	ret=ftpgetfile(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
+	ret=ftpgetfile_InternalFlash(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
 	if(!ret)
 	{
 		//获取到文件，进行更新
-		FLASH_Unlock();
-		FLASH_If_Erase_APP2();
-		FLASH_IF_FILE_COPY_TO_APP2(UPDATE_PATH);
-		unlink(UPDATE_PATH);
+		UpdateFlag();
 		echo("/TMP/ECUUPVER.CON","1");
 		reboot();
-	}else
-	{
-		unlink(UPDATE_PATH);
 	}
 	return ret;
 }
@@ -194,20 +169,14 @@ int updateECUByID(void)
 	//获取服务器IP地址
 	sprintf(remote_path,"/ECU_R_RS/%s/%s",ecuID,UPDATE_PATH_SUFFIX);
 	print2msg(ECU_DBG_UPDATE,"ID Path",remote_path);
-	ret=ftpgetfile(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
+	ret=ftpgetfile_InternalFlash(domain,IPFTPadd, port, user, password,remote_path,UPDATE_PATH);
 	if(!ret)
 	{
 		//获取到文件，进行更新
-		FLASH_Unlock();
-		FLASH_If_Erase_APP2();
-		FLASH_IF_FILE_COPY_TO_APP2(UPDATE_PATH);
 		deletefile(remote_path);
-		unlink(UPDATE_PATH);
+		UpdateFlag();
 		echo("/TMP/ECUUPVER.CON","1");
 		reboot();
-	}else
-	{
-		unlink(UPDATE_PATH);
 	}
 	return ret;
 }
@@ -258,12 +227,12 @@ void remote_update_thread_entry(void* parameter)
 	
 	while(1)
 	{
-		for(i = 0;i<2;i++)
+		for(i = 0;i<5;i++)
 		{
 			if(-1 != updateECUByVersion())
 				break;
 		}
-		for(i = 0;i<2;i++)
+		for(i = 0;i<5;i++)
 		{
 			if(-1 != updateECUByID())
 				break;
