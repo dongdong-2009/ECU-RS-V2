@@ -20,7 +20,7 @@
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-int resolvedata_OPT700_RS(char *inverter_data, struct inverter_info_t *inverter);
+int resolvedata(char *inverter_data, struct inverter_info_t *inverter);
 
 
 

@@ -607,6 +607,31 @@ int zigbeeRecvMsg(char *data, int timeout_sec)
 	}
 }
 
+int zb_transmission( char *buff, int length)
+{
+	
+	ZIGBEE_SERIAL.write(&ZIGBEE_SERIAL,0, buff, length);
+	printhexmsg(ECU_DBG_COMM,"Send", (char *)buff, length);
+	return 0;
+}
+
+int zb_transmission_reply(char *buff)
+{
+	int temp_size = 0;
+	if(selectZigbee(400) <= 0)
+	{
+		printmsg(ECU_DBG_COMM,"Get reply time out");
+		return -1;
+	}
+	else
+	{
+		temp_size = ZIGBEE_SERIAL.read(&ZIGBEE_SERIAL,0, buff, 255);
+		printhexmsg(ECU_DBG_COMM,"Reply", buff, temp_size);
+		return temp_size;
+
+	}
+}
+
 int zb_send_cmd(inverter_info *inverter, char *buff, int length)		//zigbee包头
 {
 	unsigned char sendbuff[512] = {'\0'};
@@ -844,7 +869,7 @@ int zb_query_heart_data(inverter_info *inverter)		//请求逆变器实时数据
 		//printf("%02x %02x\n",crc16/256,crc16%256);
 		if((data[70] == crc16/256)&&(data[71] == crc16%256))
 		{
-			if(resolvedata_OPT700_RS(&data[4], inverter) == -1)
+			if(resolvedata(&data[4], inverter) == -1)
 				return -1;
 			else
 				return 1;

@@ -48,7 +48,13 @@ int init_ecu(void)
 	ecu.JsonTime[14] = '\0';
 	ecu.polling_total_times = 0;
 	ecu.idUpdateFlag = 0;
-	
+	ecu.ThirdIDUpdateFlag = 0;
+	ecu.thirdCommNum = 0;
+	ecu.abnormalNum = 0;
+	ecu.haveDataTimes = 0;
+	ecu.faulttimes = 0;
+	ecu.nextdetectionTimes = 0;
+	ecu.overdetectionTimes = 0;
 	return 0;
 }
 
@@ -78,11 +84,9 @@ int init_inverter(inverter_info *inverter)
 		curinverter->status.comm_status = 0;
 		curinverter->status.bindflag = 0;
 		curinverter->status.flag = 0;
-		curinverter->status.mos_status = 1;
-		curinverter->status.last_mos_status= 1;
-		curinverter->status.last_function_status = 1;
-		curinverter->status.last_pv1_low_voltage_pritection = 0;
-		curinverter->status.last_pv2_low_voltage_pritection = 0;
+		curinverter->status.turn_on_off_flag = 0;
+		curinverter->status.alarm_flag = 0;
+		curinverter->status.pv2_alarm_status = 0;
 		curinverter->status.turn_on_collect_data = 0;
 		curinverter->temperature = 100;
 		memset(&curinverter->parameter_status,0x00,2);
@@ -103,7 +107,10 @@ int init_inverter(inverter_info *inverter)
 		curinverter->PV2_Energy = 0;
 		curinverter->PV_Output_Energy = 0;
 		curinverter->Mos_CloseNum = 0;
-		
+		curinverter->RSDTimeout = 0;			
+    		curinverter->PV1_low_voltageNUM = 0;	
+    		curinverter->PV2_low_voltageNUM = 0;	
+    		curinverter->PV2_low_differenceNUM = 0;
 		curinverter->Last_PV1_Energy = 0;
 		curinverter->Last_PV2_Energy = 0;
 		curinverter->Last_PV_Output_Energy = 0;
@@ -120,6 +127,7 @@ int init_inverter(inverter_info *inverter)
 		curinverter->no_getdata_num = 0;
 		//初始化配置状态为RSD系统状态
 		curinverter->config_status.rsd_config_status = RSDStatus;
+
 	}
 	
 	while(1) {
@@ -148,13 +156,10 @@ int init_inverter(inverter_info *inverter)
 		}
 		//process_rsd_enable_boardcast();//广播使能RSD
 	}
-
 	//判断是否需要广播参数设置指令  	先广播，然后再每台单播
 	process_rsdFunction_all();
-	
 	//判断是否需要单播参数设置指令		进行每台单播
 	process_rsdFunction();	
-
 	
 	
 	return 0;
@@ -184,12 +189,9 @@ int init_inverter_A103(inverter_info *inverter)
 		curinverter->status.comm_status = 0;
 		curinverter->status.bindflag = 0;
 		curinverter->status.flag = 0;
-		curinverter->status.mos_status = 1;
-		curinverter->status.last_mos_status= 1;
-		curinverter->status.last_function_status = 1;
-		curinverter->status.last_pv1_low_voltage_pritection = 0;
-		curinverter->status.last_pv2_low_voltage_pritection = 0;
-		
+		curinverter->status.turn_on_off_flag = 0;
+		curinverter->status.alarm_flag = 0;
+		curinverter->status.pv2_alarm_status = 0;
 		curinverter->restartNum = 0;
 		curinverter->PV1 = 0;
 		curinverter->PV2 = 0;

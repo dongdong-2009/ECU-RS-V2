@@ -43,7 +43,8 @@ int custom_command(const char *recvbuffer, char *sendbuffer)
 			return -1;
 		}
 		//执行自定义命令
-		ack_flag = mysystem(command);
+		msg_ACK_Char(sendbuffer, "A108", timestamp, mysystem(command));
+		return 0;
 	}
 	msg_ACK(sendbuffer, "A108", timestamp, ack_flag);
 	return 0;

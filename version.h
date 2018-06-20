@@ -4,7 +4,7 @@
 #define ECU_VERSION 		"ECU_R_RS"
 #define ECU_EMA_VERSION		"S"
 #define MAJORVERSION  		"1"
-#define MINORVERSION		"1.1"
+#define MINORVERSION		"1.2"
 
 
 #define INTERNAL_TEST_VERSION		0	//内部版本号，在内部测试过程中使用

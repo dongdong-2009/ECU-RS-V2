@@ -33,7 +33,7 @@
 int msg_Header(char *sendbuffer, const char *cmd_id);
 int msg_REQ(char *sendbuffer);
 int msg_ACK(char *sendbuffer, const char *cmd_id, const char *timestamp, int ack_flag);
-
+int msg_ACK_Char(char *sendbuffer,const char *cmd_id, const char *timestamp, char ack_char_flag);
 int msg_get_int(const char *s, int len);
 int msg_version(const char *msg);
 int msg_length(const char *msg);

@@ -1,20 +1,20 @@
-#ifndef __REMOTE_UPDATE_H__
-#define __REMOTE_UPDATE_H__
+#ifndef __ZIGBEE_TRANSMISSION_H__
+#define __ZIGBEE_TRANSMISSION_H__
 /*****************************************************************************/
-/* File      : remoteUpdate.h                                                */
+/* File      : ZigBeeTransmission.h                                          */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-03-11 * Shengfeng Dong  * Creation of the file                      */
+/*  2018-05-25 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-void remote_update_thread_entry(void* parameter);
-int updateECUByID_Local(char *Domain,char *IP,int port,char *User,char *passwd);
-int updateECUByVersion_Local(char *Domain,char *IP,int port,char *User,char *passwd);
-#endif /*__REMOTE_UPDATE_H__*/
+void process_ZigBeeTransimission(void);
+
+int transmission_ZigBeeInfo(const char *recvbuffer, char *sendbuffer);
+#endif	/*__ZIGBEE_TRANSMISSION_H__*/

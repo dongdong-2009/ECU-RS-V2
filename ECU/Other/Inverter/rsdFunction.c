@@ -53,15 +53,19 @@ int process_rsd_single(void)
 	{
 		if((inverterInfo[ecu.curSequence].status.comm_failed3_status == 1) && (inverterInfo[ecu.curSequence].shortaddr !=0)  && (inverterInfo[ecu.curSequence].status.function_status != inverterInfo[ecu.curSequence].config_status.rsd_config_status))
 		{	
-			if( inverterInfo[ecu.curSequence].config_status.rsd_config_status == 0)
+			if(inverterInfo[ecu.curSequence].model != DEVICE_OPT700)	//非优化器类型
 			{
-				if(1 == zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],2,0,0))
-					inverterInfo[ecu.curSequence].status.function_status =0;
-			}else
-			{
-				if(1 == zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],1,2,0))
-					inverterInfo[ecu.curSequence].status.function_status =1;
+				if( inverterInfo[ecu.curSequence].config_status.rsd_config_status == 0)
+				{
+					if(1 == zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],2,0,0))
+						inverterInfo[ecu.curSequence].status.function_status =0;
+				}else
+				{
+					if(1 == zb_set_heartSwitch_single(&inverterInfo[ecu.curSequence],1,2,0))
+						inverterInfo[ecu.curSequence].status.function_status =1;
+				}
 			}
+
 					
 		}
 	}

@@ -1,29 +1,39 @@
-#ifndef __FLASH_IF_H__
-#define __FLASH_IF_H__
 /*****************************************************************************/
-/* File      : flash_if.h                                                    */
+/* File      : InternalFlash.h                                               */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-03-10 * Shengfeng Dong  * Creation of the file                      */
+/*  2018-05-24 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
 
 /*****************************************************************************/
 /*  Include Files                                                            */
 /*****************************************************************************/
-#include "stm32f10x.h"
+#ifndef __INTERNALFLASH_H__
+#define __INTERNALFLASH_H__
+
+
+/*****************************************************************************/
+/*  Variable Declarations                                                    */
+/*****************************************************************************/
+typedef enum 
+{
+	INTERNAL_FALSH_Update = 0,
+	INTERNAL_FALSH_ID = 1,
+	INTERNAL_FALSH_MAC = 2,
+	INTERNAL_FALSH_AREA = 3,		//??óòNA SAA MX
+
+} eInternalFlashType;
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
+int ErasePage(eInternalFlashType type);
+int WritePage(eInternalFlashType type,char *Data,int Length);
+int ReadPage(eInternalFlashType type,char *Data,int Length);
+void detectionInternalFlash(char *ID,unsigned char *Mac);
+#endif /*__INTERNALFLASH_H__*/
 
-//擦除APP2所在的区域
-uint32_t FLASH_If_Erase_APP2(void);
-//将文件拷贝到APP2区域
-uint32_t FLASH_IF_FILE_COPY_TO_APP2(char * updateFileName);
-int FLASH_If_WriteData(uint32_t Address,char *Data,int length);
-void UpdateFlag(void);
-#endif /*__FLASH_IF_H__*/

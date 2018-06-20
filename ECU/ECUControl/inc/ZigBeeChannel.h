@@ -1,20 +1,23 @@
-#ifndef __REMOTE_UPDATE_H__
-#define __REMOTE_UPDATE_H__
+#ifndef __ZIGBEE_CHANNEL_H__
+#define __ZIGBEE_CHANNEL_H__
 /*****************************************************************************/
-/* File      : remoteUpdate.h                                                */
+/* File      : ZigBeeChannel.h                                               */
 /*****************************************************************************/
 /*  History:                                                                 */
 /*****************************************************************************/
 /*  Date       * Author          * Changes                                   */
 /*****************************************************************************/
-/*  2017-03-11 * Shengfeng Dong  * Creation of the file                      */
+/*  2018-05-25 * Shengfeng Dong  * Creation of the file                      */
 /*             *                 *                                           */
 /*****************************************************************************/
 
 /*****************************************************************************/
 /*  Function Declarations                                                    */
 /*****************************************************************************/
-void remote_update_thread_entry(void* parameter);
-int updateECUByID_Local(char *Domain,char *IP,int port,char *User,char *passwd);
-int updateECUByVersion_Local(char *Domain,char *IP,int port,char *User,char *passwd);
-#endif /*__REMOTE_UPDATE_H__*/
+int set_ZigBeeChannel(const char *recvbuffer, char *sendbuffer);
+int response_ZigBeeChannel_Result(const char *recvbuffer, char *sendbuffer);
+
+void ResponseZigbeeChannel(char *UID,char channel,unsigned short panid,unsigned short shortadd);
+void ResponseECUZigbeeChannel(char channel,unsigned short panid,unsigned short shortadd);
+
+#endif	/*__ZIGBEE_CHANNEL_H__*/

@@ -22,7 +22,9 @@
 #include "serverfile.h"
 #include "thftpapi.h"
 #include <dfs_posix.h>
-
+#include "InternalFlash.h"
+#include "event.h"
+#include "lan8720rst.h"
 typedef struct 
 {
 	char remoteFile[50];
@@ -32,7 +34,7 @@ typedef struct
 rt_timer_t reboottimer;
 rt_timer_t ftpputtimer;
 rt_timer_t ftpgettimer;
-
+rt_timer_t factorytimer;
 
 //定时器超时函数   复位超时
 static void reboottimeout(void* parameter)
@@ -48,6 +50,58 @@ void reboot_timer(int timeout)
 					timeout*RT_TICK_PER_SECOND, /* 定时时间长度,以OS Tick为单位*/
 					 RT_TIMER_FLAG_ONE_SHOT); /* 单周期定时器 */
 	if (reboottimer != RT_NULL) rt_timer_start(reboottimer);
+}
+
+void Factory(void)
+{
+	char InternalECUID[13] = {'0'};
+	char InternalMAC[18] = {'\0'};
+
+	ReadPage(INTERNAL_FALSH_ID,InternalECUID,12);
+	ReadPage(INTERNAL_FALSH_MAC,InternalMAC,17);
+	dfs_mkfs("elm","flash");
+	initPath();
+
+	//写入ID 
+	setECUID(InternalECUID);
+	//写入MAC
+	echo("/config/ecumac.con",InternalMAC);
+}
+
+unsigned char factory_flag = 0;
+static void factorytimeout(void* parameter)
+{
+	factory_flag = 1;
+}
+
+void factory_timer(int timeout)
+{
+	factorytimer = rt_timer_create("factory", /* 定时器名字为 read */
+					factorytimeout, /* 超时时回调的处理函数 */
+					RT_NULL, /* 超时函数的入口参数 */
+					timeout*RT_TICK_PER_SECOND, /* 定时时间长度,以OS Tick为单位*/
+					 RT_TIMER_FLAG_ONE_SHOT); /* 单周期定时器 */
+	if (factorytimer != RT_NULL) rt_timer_start(factorytimer);
+}
+
+void rt_factory_thread_entry(void* parameter)
+{
+	factory_flag = 0;
+	//开启定时器
+	factory_timer(10);
+	while(1)
+	{
+		if(factory_flag == 1)
+		{
+			factory_flag = 0;
+			Factory();
+			reboot();
+			printf("Factory\n");
+			break;
+		}
+		rt_thread_delay(RT_TICK_PER_SECOND);
+	}
+	return;
 }
 
 
@@ -128,28 +182,74 @@ void rt_ftpget_thread_entry(void* parameter)
 }
 
 
+char responsesFlash(long long cap)
+{
+	if(cap == 0)
+	{
+		return 'A';
+	}else if((cap>0)&&(cap<=1000))
+	{
+		return 'B';
+	}else if((cap>1000)&&(cap<=2000))
+	{
+		return 'C';
+	}else if((cap>2000)&&(cap<=3000))
+	{
+		return 'D';
+	}else if((cap>3000)&&(cap<=4000))
+	{
+		return 'E';
+	}else if((cap>4000)&&(cap<=5000))
+	{
+		return 'F';
+	}else if((cap>5000)&&(cap<=6000))
+	{
+		return 'G';
+	}else if((cap>6000)&&(cap<=7000))
+	{
+		return 'H';
+	}else if((cap>7000)&&(cap<=8000))
+	{
+		return 'I';
+	}else 
+	{
+		return 'J';
+	}
+}
+
+char responsesNetwork(int status)
+{
+	if(status == 1)
+	{
+		return 'A';	//存在有线连接
+	}else
+	{
+		return 'B';	//无线连接
+	}
+}
+
 /*****************************************************************************/
 /*  Function Implementations                                                 */
 /*****************************************************************************/
-int mysystem(const char *command)
+char mysystem(const char *command)
 {
-	int res;
+	char res = '4';
 
 	print2msg(ECU_DBG_CONTROL_CLIENT,"Execute:",(char*) command);
 	//需要的命令在此添加
 	if(!memcmp(command,"reboot",6))
 	{
-		res = 0;
+		res = '0';
 		//通过定时器复位程序
 		reboot_timer(10);
 	}else if(!memcmp(command,"restart UPDATE",14))
 	{
 		restartThread(TYPE_UPDATE);
-		res = 0;
+		res = '0';
 	}else if(!memcmp(command,"ftpput",6))	//上传数据
 	{
 		rt_thread_t tid;
-		char sourcePath[50],destPath[50];
+		char sourcePath[50]={0x00},destPath[50]={0x00};
 		//分割字符串为  命令 [本地源路径] [远程目标路径]
 		splitSpace((char *)command,sourcePath,destPath);
 		printf("cmd:%s\n",command);
@@ -157,14 +257,14 @@ int mysystem(const char *command)
 		memcpy(ftp_putPath.localFile,sourcePath,50);
 		memcpy(ftp_putPath.remoteFile,destPath,50);
 		//上传数据
-		res = 0;
+		res = '0';
 		tid = rt_thread_create("ftpput",rt_ftpput_thread_entry, RT_NULL,2048, 14, 20);
 		if (tid != RT_NULL) rt_thread_startup(tid);
 
 	}else if(!memcmp(command,"ftpget",6))	//下载数据
 	{
 		rt_thread_t tid;
-		char sourcePath[50],destPath[50];
+		char sourcePath[50]={0x00},destPath[50]={0x00};
 		//分割字符串为  命令 [本地源路径] [远程目标路径]
 		printf("cmd:%s\n",command);
 		splitSpace((char *)command,sourcePath,destPath);
@@ -172,33 +272,53 @@ int mysystem(const char *command)
 		memcpy(ftp_getPath.localFile,sourcePath,50);
 		memcpy(ftp_getPath.remoteFile,destPath,50);
 		//下载数据
-		res = 0;
+		res = '0';
 		tid = rt_thread_create("ftpget",rt_ftpget_thread_entry, RT_NULL,2048, 14, 20);
 		if (tid != RT_NULL) rt_thread_startup(tid);
 	}else if(!memcmp(command,"rm",2))
 	{
-		char path[50];
+		char path[50]={0x00};
 		memcpy(path,&command[3],(strlen(command)-3));
 		path[strlen(command)-3] = '\0';
 		printf("cmd:%s %s\n","rm",path);
-		res = unlink(path);
+		unlink(path);
+		res = '0';
+	}else if(!memcmp(command,"flash",5)) //查看Flash
+	{
+		long long cap;
+		struct statfs buffer;
+		dfs_statfs("/", &buffer);
+		cap = buffer.f_bsize * buffer.f_bfree / 1024;	//获取到文件系统剩余的大小
+		res = responsesFlash(cap);
+	}else if(!memcmp(command,"factory",7)) //恢复出厂
+	{
+		rt_thread_t tid;
+		res = '0';	
+		tid = rt_thread_create("factory",rt_factory_thread_entry, RT_NULL,2048, 14, 20);
+		if (tid != RT_NULL) rt_thread_startup(tid);		 
+		
+	}else if(!memcmp(command,"network",7)) //查看网络
+	{
+		//查看当前的网络连接
+		res = responsesNetwork(rt_hw_GetWiredNetConnect());
 	}
 		
 	printdecmsg(ECU_DBG_CONTROL_CLIENT,"res",res);
-	if(-1 == res){
-		printmsg(ECU_DBG_CONTROL_CLIENT,"Failed to execute: system error.");
-		return CMD_ERROR;
-	}
-	else{
 
-		if(0 == res){
-			printmsg(ECU_DBG_CONTROL_CLIENT,"Execute successfully.");
-		}
-		else{
-			printdecmsg(ECU_DBG_CONTROL_CLIENT,"Failed to execute: shell failed", res);
-			return CMD_ERROR;
-		}
-
-	}
-	return SUCCESS;
+	return res;
 }
+
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+
+FINSH_FUNCTION_EXPORT(Factory, eg:Factory());
+void fact_thread()
+{
+	rt_thread_t tid;
+	tid = rt_thread_create("factory",rt_factory_thread_entry, RT_NULL,2048, 14, 20);
+	if (tid != RT_NULL) rt_thread_startup(tid);	
+}
+FINSH_FUNCTION_EXPORT(fact_thread, eg:fact_thread());
+
+#endif
+

@@ -19,6 +19,7 @@
 #include <lwip/sockets.h>
 #include "threadlist.h"
 #include "usart5.h"
+#include "InternalFlash.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
@@ -95,7 +96,10 @@ void ECUEvent_thread_entry(void* parameter)
 	IPConfig_t IPconfig;
 	rt_thread_delay(RT_TICK_PER_SECOND*START_TIME_EVENT);
 	add_APP_functions();
+	Read_ECUID(ecu.ECUID12);
 	get_mac((unsigned char*)ecu.MacAddress);			//ECU ”–œﬂMacµÿ÷∑
+	printf("ecu.id:%s   ,ecu.MacAddress: %02x:%02x:%02x:%02x:%02x:%02x\n",ecu.ECUID12,ecu.MacAddress[0],ecu.MacAddress[1],ecu.MacAddress[2],ecu.MacAddress[3],ecu.MacAddress[4],ecu.MacAddress[5]);
+	detectionInternalFlash(ecu.ECUID12,(unsigned char *)ecu.MacAddress);
 	fileflag = file_get_array(array, 5, "/config/staticIP.con");
 	if(fileflag == 0)
 	{

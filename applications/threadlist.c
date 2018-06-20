@@ -40,7 +40,6 @@
 #include "mcp1316.h"
 #include "debug.h"
 
-
 #ifdef RT_USING_DFS
 #include <dfs_fs.h>
 #include <dfs_init.h>
@@ -196,8 +195,8 @@ void rt_init_thread_entry(void* parameter)
 
 	
 #ifdef RT_USING_LWIP
-  /* initialize eth interface */
-  rt_hw_stm32_eth_init();
+         /* initialize eth interface */
+         rt_hw_stm32_eth_init();
 
 	/* initialize lwip stack */
 	/* register ethernetif device */
