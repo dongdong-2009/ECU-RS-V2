@@ -21,7 +21,7 @@ int fileclose(int fd);
 int fileWrite(int fd,char* buf,int len);
 int fileRead(int fd,char* buf,int len);
 
-
+int strtohex(char str[2]);
 int Write_ECUID(char *ECUID);		//ECU ID
 int Read_ECUID(char *ECUID);
 //将12位ECU ID转换为6位ECU ID

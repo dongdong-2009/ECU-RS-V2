@@ -7,6 +7,7 @@
 #include "zigbee.h"
 #include "AppFunction.h"
 #include "dfs_posix.h"
+#include "AppFunction.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];

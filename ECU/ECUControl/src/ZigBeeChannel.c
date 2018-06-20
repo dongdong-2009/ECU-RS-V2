@@ -8,6 +8,7 @@
 #include "threadlist.h"
 #include "stdlib.h"
 #include "dfs_posix.h"
+#include "AppFunction.h"
 
 extern ecu_info ecu;
 extern inverter_info inverterInfo[MAXINVERTERCOUNT];
