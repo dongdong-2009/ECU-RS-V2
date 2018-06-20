@@ -53,6 +53,7 @@ int init_all(inverter_info *inverter)
     //zb_test_communication();
     init_inverter(inverter);
     rateOfProgress = 100;
+    ResponseECUZigbeeChannel(ecu.channel,ecu.panid,0);
     init_tmpdb(inverter);
     init_rsdStatus(inverter);
     return 0;
